@@ -38,15 +38,12 @@ import { UserLevel, Conversation } from '../../types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { conversationAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import FileManagementDialog from '../Chat/FileManagementDialog';
 
 const DRAWER_WIDTH = 280;
 
 const AppLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
-  const [fileDialogOpen, setFileDialogOpen] = useState(false);
-  const [selectedConversationForFiles, setSelectedConversationForFiles] = useState<Conversation | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -121,22 +118,6 @@ const AppLayout: React.FC = () => {
     if (window.confirm('確定要刪除這個對話嗎？')) {
       deleteConversationMutation.mutate(conversationId);
     }
-  };
-
-  const handleOpenFileManager = (e: React.MouseEvent, conversation: Conversation) => {
-    e.stopPropagation();
-    setSelectedConversationForFiles(conversation);
-    setFileDialogOpen(true);
-  };
-
-  const handleCloseFileManager = () => {
-    setFileDialogOpen(false);
-    setSelectedConversationForFiles(null);
-  };
-
-  const handleConversationUpdate = (updatedConversation: Conversation) => {
-    setCurrentConversation(updatedConversation);
-    queryClient.invalidateQueries({ queryKey: ['conversations'] });
   };
 
   const formatConversationTitle = (conversation: Conversation) => {
@@ -270,7 +251,6 @@ const AppLayout: React.FC = () => {
                         <IconButton
                           edge="end"
                           size="small"
-                          onClick={(e) => handleOpenFileManager(e, conversation)}
                           sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
                         >
                           <PanIcon fontSize="small" />
@@ -480,16 +460,6 @@ const AppLayout: React.FC = () => {
         <Toolbar />
         <Outlet />
       </Box>
-
-      {/* File Management Dialog */}
-      {selectedConversationForFiles && (
-        <FileManagementDialog
-          open={fileDialogOpen}
-          onClose={handleCloseFileManager}
-          conversation={selectedConversationForFiles}
-          onConversationUpdate={handleConversationUpdate}
-        />
-      )}
     </Box>
   );
 };

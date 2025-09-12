@@ -33,9 +33,6 @@ export const registerSchema = Joi.object({
     'string.empty': 'Employee ID is required',
     'any.required': 'Employee ID is required'
   }),
-  email: Joi.string().email().optional().messages({
-    'string.email': 'Please provide a valid email address'
-  }),
   password: Joi.string().min(6).required().messages({
     'string.empty': 'Password is required',
     'string.min': 'Password must be at least 6 characters long',
@@ -48,8 +45,5 @@ export const registerSchema = Joi.object({
 });
 
 export const updateProfileSchema = Joi.object({
-  email: Joi.string().email().optional(),
-  address: Joi.string().optional(),
-  carNo: Joi.string().optional(),
-  carPosition: Joi.string().optional()
+  department: Joi.string().optional()
 }).min(1);

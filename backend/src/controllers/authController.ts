@@ -16,9 +16,9 @@ export class AuthController {
   });
 
   register = asyncHandler(async (req: Request, res: Response) => {
-    const { empID, password, email } = req.body;
+    const { empID, password } = req.body;
     
-    const result = await authService.register(empID, password, email);
+    const result = await authService.register(empID, password);
     
     res.status(201).json({
       success: true,
@@ -47,13 +47,10 @@ export class AuthController {
 
   updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { employeeService } = await import('../services');
-    const { email, address, carNo, carPosition } = req.body;
+    const { department } = req.body;
     
     const updatedEmployee = await employeeService.updateEmployee(req.user!.id, {
-      email,
-      address,
-      carNo,
-      carPosition
+      department
     });
     
     if (!updatedEmployee) {

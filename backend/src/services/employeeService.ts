@@ -61,8 +61,8 @@ export class EmployeeService {
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { empID: { $regex: query, $options: 'i' } },
-        { department: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } }
+        { empID2: { $regex: query, $options: 'i' } },
+        { department: { $regex: query, $options: 'i' } }
       ]
     }).select('-password').limit(20);
   }
@@ -121,20 +121,11 @@ export class AuthService {
       throw new APIError('Employee already registered. Please login instead.', 400);
     }
 
-    // Check email uniqueness if provided
-    if (email) {
-      const emailExists = await Employee.findOne({ email, _id: { $ne: existingEmployee._id } });
-      if (emailExists) {
-        throw new APIError('Email already registered', 400);
-      }
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Update employee with authentication details
     existingEmployee.password = hashedPassword;
-    existingEmployee.email = email || existingEmployee.email;
     existingEmployee.lastLogin = new Date();
     
     await existingEmployee.save();

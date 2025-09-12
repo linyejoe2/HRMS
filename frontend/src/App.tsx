@@ -6,7 +6,6 @@ import { ConversationProvider } from './contexts/ConversationContext';
 import AppLayout from './components/Layout/AppLayout';
 import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
-import ChatInterface from './components/Chat/ChatInterface';
 import SettingsPage from './components/Settings/SettingsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,7 +80,6 @@ const App: React.FC = () => {
         }
       >
         <Route index element={<Navigate to="/chat" replace />} />
-        <Route path="chat" element={<ChatInterface />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       

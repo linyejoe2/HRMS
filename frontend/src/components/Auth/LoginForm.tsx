@@ -57,18 +57,14 @@ const LoginForm: React.FC = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="account"
-                label="帳號"
+                id="empID"
+                label="員工編號"
                 autoComplete="username"
                 autoFocus
-                error={!!errors.account}
-                helperText={errors.account?.message}
-                {...register('account', {
-                  required: 'Account is required',
-                  minLength: {
-                    value: 3,
-                    message: '使用者名稱至少需 3 個字元',
-                  },
+                error={!!errors.empID}
+                helperText={errors.empID?.message}
+                {...register('empID', {
+                  required: '請輸入員工編號',
                 })}
               />
 
@@ -83,10 +79,10 @@ const LoginForm: React.FC = () => {
                 error={!!errors.password}
                 helperText={errors.password?.message}
                 {...register('password', {
-                  required: 'Password is required',
+                  required: '請輸入密碼',
                   minLength: {
-                    value: 8,
-                    message: '密碼至少需 8 個字元',
+                    value: 6,
+                    message: '密碼至少需 6 個字元',
                   },
                 })}
               />

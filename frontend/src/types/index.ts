@@ -17,15 +17,13 @@ export enum UserLevel {
 }
 
 export interface AuthRequest {
-  account: string;
+  empID: string;
   password: string;
 }
 
 export interface RegisterRequest {
-  account: string;
-  email: string;
+  empID: string;
   password: string;
-  level?: UserLevel;
 }
 
 export interface AuthResponse {
