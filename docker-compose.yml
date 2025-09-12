@@ -1,0 +1,71 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: HRMS-db
+    restart: always
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: good1234
+      MONGO_INITDB_DATABASE: HRMS
+    volumes:
+      - mongodb_data:/data/db
+      # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - hrms-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: HRMS-nginx
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - hrms-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: HRMS-backend
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV}
+    ports:
+      - "${BACKEND_PORT}:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - hrms-network
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: HRMS-frontend
+    expose:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
+    networks:
+      - hrms-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+
+networks:
+  hrms-network:
+    driver: bridge
