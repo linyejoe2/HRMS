@@ -58,10 +58,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.login(credentials);
-      const { token, user } = response.data;
+      const { token, employee } = response.data.data;
       
       localStorage.setItem('auth_token', token);
-      setUser(user);
+      setUser(employee);
       toast.success('Welcome back!');
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -77,10 +77,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.register(userData);
-      const { token, user } = response.data;
+      const { token, employee } = response.data.data;
       
       localStorage.setItem('auth_token', token);
-      setUser(user);
+      setUser(employee);
       toast.success('Account created successfully!');
     } catch (error: any) {
       console.error('Registration failed:', error);

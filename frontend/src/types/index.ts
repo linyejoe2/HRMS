@@ -1,19 +1,16 @@
 export interface User {
-  id: number;
-  account: string;
-  email: string;
-  level: UserLevel;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  last_login?: string;
+  name: string;
+  empID: string; // Employee ID
+  empID2: string; // Original ID from Access DB
+  role: UserLevel;
+  lastLogin: string;
 }
 
 export enum UserLevel {
-  LAWYER = 0,
-  CO_LAWYER = 1,
-  LAWYER_ASSISTANT = 2,
-  CLIENT = 3
+  ADMIN = 'admin',
+  HR = 'jr',
+  EMPLOYEE = 'employee',
+  MANAGER = 'manager'
 }
 
 export interface AuthRequest {
@@ -27,8 +24,12 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
-  user: User;
+  data: {
+    employee: User,
+    token: string
+  },
+  message: string,
+  success: boolean
 }
 
 export interface Conversation {
@@ -99,4 +100,40 @@ export interface ChangePasswordRequest {
 
 export interface UpdateProfileRequest {
   description?: string;
+}
+
+export interface AttendanceRecord {
+  _id: string;
+  empID2: string;
+  empID?: string;
+  employeeName?: string;
+  department?: string;
+  date: string;
+  clockInTime?: string;
+  clockInStatus?: string;
+  clockOutTime?: string;
+  clockOutStatus?: string;
+  workHours?: number;
+  isLate?: boolean;
+  isAbsent?: boolean;
+  rawRecord: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceResponse {
+  success: boolean;
+  data: {
+    date: string;
+    count: number;
+    records: AttendanceRecord[];
+  };
+}
+
+export interface AttendanceSummary {
+  totalEmployees: number;
+  presentEmployees: number;
+  absentEmployees: number;
+  lateEmployees: number;
+  averageWorkHours: number;
 }

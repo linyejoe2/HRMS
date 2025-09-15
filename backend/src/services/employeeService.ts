@@ -74,6 +74,7 @@ export class AuthService {
     const employee = await Employee.findOne({ empID, isActive: true }).select('+password');
     
     if (!employee) {
+      console.log("Can't find employee")
       throw new APIError('Invalid employee ID or password', 401);
     }
 
@@ -85,6 +86,7 @@ export class AuthService {
     // Validate password
     const isValidPassword = await bcrypt.compare(password, employee.password);
     if (!isValidPassword) {
+      console.log("Invalid password")
       throw new APIError('Invalid employee ID or password', 401);
     }
 

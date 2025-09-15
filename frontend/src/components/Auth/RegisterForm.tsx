@@ -30,7 +30,7 @@ const RegisterForm: React.FC = () => {
   const onSubmit = async (data: RegisterRequest & { confirmPassword: string }) => {
     try {
       await registerUser(data);
-      navigate('/chat');
+      navigate('/attendance');
     } catch (error) {
       // Error is handled by AuthContext
     }
@@ -85,8 +85,8 @@ const RegisterForm: React.FC = () => {
                 {...register('password', {
                   required: '請輸入密碼',
                   minLength: {
-                    value: 8,
-                    message: '密碼至少需 8 個字元',
+                    value: 6,
+                    message: '密碼至少需 6 個字元',
                   },
                   // pattern: {
                   //   value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,

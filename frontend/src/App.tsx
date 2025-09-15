@@ -2,11 +2,11 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
-import { ConversationProvider } from './contexts/ConversationContext';
 import AppLayout from './components/Layout/AppLayout';
 import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
 import SettingsPage from './components/Settings/SettingsPage';
+import AttendanceTab from './components/Attendance/AttendanceTab';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -73,13 +73,12 @@ const App: React.FC = () => {
         path="/"
         element={
           <ProtectedRoute>
-            <ConversationProvider>
-              <AppLayout />
-            </ConversationProvider>
+            <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/chat" replace />} />
+        <Route index element={<Navigate to="/attendance" replace />} />
+        <Route path="attendance" element={<AttendanceTab />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       

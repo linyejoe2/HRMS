@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary } from '../types';
 
 const API_BASE_URL = "";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
@@ -202,4 +202,26 @@ export const documentAPI = {
     aiServiceAPI.get(`/documents/${documentId}/download`, {
       responseType: 'blob',
     }),
+};
+
+export const attendanceAPI = {
+  // Import attendance data for a specific date (admin/hr only)
+  importByDate: (date: string): Promise<AxiosResponse<{ imported: number; errors: string[] }>> =>
+    api.post(`/attendance/import/${date}`),
+  
+  // Get attendance records for a specific date
+  getByDate: (date: string): Promise<AxiosResponse<AttendanceResponse>> =>
+    api.get(`/attendance/date/${date}`),
+  
+  // Get my attendance records
+  getMyAttendance: (startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
+    api.get(`/attendance/my?startDate=${startDate}&endDate=${endDate}`),
+  
+  // Get attendance records for an employee (admin/hr only)
+  getEmployeeAttendance: (empID: string, startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
+    api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`),
+  
+  // Get attendance summary (admin/hr only)
+  getSummary: (startDate: string, endDate: string): Promise<AxiosResponse<{ summary: AttendanceSummary }>> =>
+    api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`)
 };

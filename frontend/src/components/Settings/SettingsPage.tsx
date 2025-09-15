@@ -7,14 +7,11 @@ import {
   TextField,
   Button,
   Grid,
-  Divider,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 import {
   Lock as LockIcon,
   Person as PersonIcon,
-  Save as SaveIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
@@ -36,24 +33,15 @@ const passwordSchema = yup.object({
     .oneOf([yup.ref('newPassword')], '兩次輸入的密碼必須相同'),
 });
 
-const profileSchema = yup.object({
-  description: yup.string().max(1000, '描述不能超過 1000 個字元'),
-});
-
 interface PasswordFormData {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-interface ProfileFormData {
-  description?: string;
-}
-
 const SettingsPage: React.FC = () => {
-  const { user, changePassword, updateProfile, loading } = useAuth();
+  const { user, changePassword, loading } = useAuth();
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
 
   const {
     register: registerPassword,
@@ -64,23 +52,6 @@ const SettingsPage: React.FC = () => {
     resolver: yupResolver(passwordSchema),
   });
 
-  const {
-    register: registerProfile,
-    handleSubmit: handleProfileSubmit,
-    formState: { errors: profileErrors },
-    setValue: setProfileValue,
-  } = useForm<ProfileFormData>({
-    resolver: yupResolver(profileSchema),
-    defaultValues: {
-      description: user?.description || '',
-    },
-  });
-
-  React.useEffect(() => {
-    if (user?.description) {
-      setProfileValue('description', user.description);
-    }
-  }, [user?.description, setProfileValue]);
 
   const onPasswordSubmit = async (data: PasswordFormData) => {
     try {
@@ -97,44 +68,32 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const onProfileSubmit = async (data: ProfileFormData) => {
-    try {
-      setProfileLoading(true);
-      await updateProfile({
-        description: data.description || '',
-      });
-    } catch (error) {
-      // Error is handled by AuthContext
-    } finally {
-      setProfileLoading(false);
-    }
-  };
 
-  const getUserLevelText = (level: number): string => {
-    switch (level) {
-      case 0:
+  const getUserLevelText = (role: string): string => {
+    switch (role) {
+      case 'admin':
         return '管理員';
-      case 1:
-        return '助理';
-      case 2:
-        return '使用者';
+      case 'hr':
+        return '人資';
+      case 'manager':
+        return '主管';
+      case 'employee':
       default:
-        return "使用者";
+        return '員工';
     }
   };
 
-  const getUserLevelColor = (level: number): string => {
-    switch (level) {
-      case 0:
-        return '#1976d2';
-      case 1:
-        return '#388e3c';
-      case 2:
+  const getUserLevelColor = (role: string): string => {
+    switch (role) {
+      case 'admin':
         return '#f57c00';
-      case 3:
-        return '#9c27b0';
+      case 'hr':
+        return '#1976d2';
+      case 'manager':
+        return '#7b1fa2';
+      case 'employee':
       default:
-        return '#666';
+        return '#388e3c';
     }
   };
 
@@ -166,8 +125,8 @@ const SettingsPage: React.FC = () => {
                 <Grid container spacing={2} mb={3}>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="使用者名稱"
-                      value={user.account}
+                      label="員工姓名"
+                      value={user.name}
                       fullWidth
                       disabled
                       variant="outlined"
@@ -175,32 +134,32 @@ const SettingsPage: React.FC = () => {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="電子郵件"
-                      value={user.email}
+                      label="員工編號"
+                      value={user.empID}
                       fullWidth
                       disabled
                       variant="outlined"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} sx={{display:"none"}}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       label="使用者等級"
-                      value={getUserLevelText(user.level)}
+                      value={getUserLevelText(user.role)}
                       fullWidth
                       disabled
                       variant="outlined"
                       sx={{
                         '& .MuiInputBase-input': {
-                          color: getUserLevelColor(user.level),
+                          color: getUserLevelColor(user.role),
                           fontWeight: 'bold',
                         },
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} sx={{display:"none"}}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
-                      label="加入日期"
-                      value={new Date(user.created_at).toLocaleDateString()}
+                      label="最後登入時間"
+                      value={user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '未知'}
                       fullWidth
                       disabled
                       variant="outlined"
@@ -209,40 +168,6 @@ const SettingsPage: React.FC = () => {
                 </Grid>
               )}
 
-              <Divider sx={{ mb: 3 }} />
-
-              <form onSubmit={handleProfileSubmit(onProfileSubmit)}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField
-                      label="個人描述（提供 AI 參考）"
-                      placeholder="輸入你的個人描述，AI 助手將能給予更個人化的回應。"
-                      multiline
-                      rows={4}
-                      fullWidth
-                      variant="outlined"
-                      {...registerProfile('description')}
-                      error={!!profileErrors.description}
-                      helperText={profileErrors.description?.message}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      這段描述會提供給 AI 助手，用來理解你的角色並給出更個人化的回應。
-                    </Alert>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      startIcon={profileLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-                      disabled={profileLoading}
-                    >
-                      {profileLoading ? '更新中...' : '更新個人資訊'}
-                    </Button>
-                  </Grid>
-                </Grid>
-              </form>
             </CardContent>
           </Card>
         </Grid>
