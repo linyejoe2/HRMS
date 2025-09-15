@@ -9,12 +9,14 @@ interface AlertState {
 }
 
 interface AlertContextType {
+  alert: AlertState;
   showAlert: (message: string, severity?: AlertState['severity'], autoHideDuration?: number) => void;
   showError: (message: string, autoHideDuration?: number) => void;
   showSuccess: (message: string, autoHideDuration?: number) => void;
   showWarning: (message: string, autoHideDuration?: number) => void;
   showInfo: (message: string, autoHideDuration?: number) => void;
   hideAlert: () => void;
+  handleClose: () => void;
 }
 
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
@@ -80,12 +82,14 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
   };
 
   const value: AlertContextType = {
+    alert,
     showAlert,
     showError,
     showSuccess,
     showWarning,
     showInfo,
     hideAlert,
+    handleClose
   };
 
   return (
@@ -93,7 +97,7 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
       {children}
       
       {/* Global Alert Component */}
-      <Snackbar
+      {/* <Snackbar
         open={alert.open}
         autoHideDuration={alert.autoHideDuration}
         onClose={handleClose}
@@ -107,7 +111,36 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
         >
           {alert.message}
         </Alert>
-      </Snackbar>
+      </Snackbar> */}
     </AlertContext.Provider>
   );
 };
+
+export default function GlobalAlert() {
+  const context = useContext(AlertContext);
+
+  if (!context) {
+    // Optionally render nothing or a fallback if context is not available
+    return null;
+  }
+
+  const { alert, handleClose } = context;
+
+  return (
+    <Snackbar
+      open={alert.open}
+      autoHideDuration={alert.autoHideDuration}
+      onClose={handleClose}
+      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+    >
+      <Alert
+        onClose={handleClose}
+        severity={alert.severity}
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
+        {alert.message}
+      </Alert>
+    </Snackbar>
+  );
+}
