@@ -31,6 +31,7 @@ router.post('/register', authLimiter, validateRequest(registerSchema), authContr
 router.use(generalLimiter);
 router.use(authenticateToken);
 
+router.get('/me', authController.getProfile);
 router.get('/profile', authController.getProfile);
 router.put('/profile', validateRequest(updateProfileSchema), authController.updateProfile);
 router.post('/change-password', authController.changePassword);

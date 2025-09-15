@@ -43,7 +43,9 @@ export class AuthController {
     
     res.status(200).json({
       success: true,
-      data: { employee }
+      data: { 
+        user: employee // Also provide as 'user' for frontend compatibility
+      }
     });
   });
 
