@@ -1,16 +1,17 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface IAttendance extends Document {
-  empID2?: string; // 8-digit employee ID from access system
   empID: string; // Mapped employee ID (A029, etc.)
+  empID2?: string; // 8-digit employee ID from access system
   employeeName?: string; // Employee name from Employee collection
   department?: string; // Department from Employee collection
   date: Date; // Attendance date (YYYY-MM-DD)
+  clockInRawRecord?: string; // Original raw data for debugging
   clockInTime?: Date; // Clock in time
   clockInStatus?: string; // Clock in status (D000=in, D900=out)
+  clockOutRawRecord?: string; // Original raw data for debugging
   clockOutTime?: Date; // Clock out time  
   clockOutStatus?: string; // Clock out status
-  rawRecord: string; // Original raw data for debugging
   
   // Calculated fields
   workHours?: number; // Total work hours
@@ -43,21 +44,23 @@ const AttendanceSchema = new Schema<IAttendance>({
     required: true,
     index: true
   },
+  clockInRawRecord: {
+    type: String
+  },
   clockInTime: {
     type: Date
   },
   clockInStatus: {
     type: String
   },
+  clockOutRawRecord: {
+    type: String
+  },
   clockOutTime: {
     type: Date
   },
   clockOutStatus: {
-    type: String
-  },
-  rawRecord: {
     type: String,
-    required: true
   },
   workHours: {
     type: Number

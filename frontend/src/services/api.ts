@@ -205,6 +205,8 @@ export const documentAPI = {
 };
 
 export const attendanceAPI = {
+  scanNow: (): Promise<AxiosResponse<{success: boolean, message: string, data: { processed: number, updated: number, imported: number;}}>>=> api.post(`/attendance/scan/now`),
+
   // Import attendance data for a specific date (admin/hr only)
   importByDate: (date: string): Promise<AxiosResponse<{ imported: number; errors: string[] }>> =>
     api.post(`/attendance/import/${date}`),

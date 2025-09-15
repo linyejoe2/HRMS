@@ -12,25 +12,28 @@ export class FileScanService {
   async scanDataFolder(): Promise<{
     processed: number;
     updated: number;
+    imported: number;
     errors: string[];
   }> {
     const errors: string[] = [];
     let processed = 0;
     let updated = 0;
+    let imported = 0;
 
     try {
       if (!fs.existsSync(this.dataFolderPath)) {
         console.log(`Data folder ${this.dataFolderPath} does not exist, creating it...`);
         fs.mkdirSync(this.dataFolderPath, { recursive: true });
-        return { processed: 0, updated: 0, errors: [] };
+        return { processed, updated, imported, errors };
       }
 
-      const files = fs.readdirSync(this.dataFolderPath);
-      const saveDataFiles = files.filter(file => file.endsWith('saveData.txt'));
+      let files = fs.readdirSync(this.dataFolderPath);
+      files = files.filter(file => file.endsWith('saveData.txt'));
+      files = files.filter(file => file.startsWith('001'));
 
-      console.log(`Found ${saveDataFiles.length} saveData.txt files`);
+      console.log(`Found ${files.length} saveData.txt files`);
 
-      for (const fileName of saveDataFiles) {
+      for (const fileName of files) {
         try {
           const filePath = path.join(this.dataFolderPath, fileName);
           const stats = fs.statSync(filePath);
@@ -59,7 +62,8 @@ export class FileScanService {
             if (result.errors.length > 0) {
               errors.push(...result.errors);
             }
-            
+
+            imported += result.imported;
             processed++;
             updated++;
           } else {
@@ -95,13 +99,13 @@ export class FileScanService {
         }
       }
 
-      return { processed, updated, errors };
+      return { processed, updated, imported, errors };
 
     } catch (error) {
       const errorMsg = `Error scanning data folder: ${error}`;
       errors.push(errorMsg);
       console.error(errorMsg);
-      return { processed, updated, errors };
+      return { processed, updated, imported, errors };
     }
   }
 

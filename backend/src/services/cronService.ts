@@ -4,6 +4,8 @@ import { fileScanService } from './fileScanService';
 export class CronService {
   private scanJob: cron.ScheduledTask | null = null;
 
+  private isScanning = false;
+
   /**
    * Start the automated file scanning cron job
    * Runs every 5 minutes
@@ -16,6 +18,13 @@ export class CronService {
 
     // Run every 5 minutes: */5 * * * *
     this.scanJob = cron.schedule('*/5 * * * *', async () => {
+        if (this.isScanning) {
+      console.warn('⏳ Skipping file scan - previous job still running');
+      return;
+    }
+
+    this.isScanning = true;
+
       console.log('🔄 Starting automated attendance file scan...');
       
       try {
@@ -30,13 +39,15 @@ export class CronService {
         }
       } catch (error) {
         console.error('❌ Error during automated file scan:', error);
+      } finally {
+        this.isScanning = false;
       }
     }, {
       timezone: 'Asia/Taipei'
     });
 
     this.scanJob.start();
-    console.log('🚀 Automated file scanning started - runs every 5 minutes');
+    console.log('🤖 Automated file scanning started - runs every 5 minutes');
   }
 
   /**
@@ -82,6 +93,7 @@ export class CronService {
   async runFileScanNow(): Promise<{
     processed: number;
     updated: number;
+    imported: number;
     errors: string[];
   }> {
     console.log('🔄 Manual file scan triggered...');

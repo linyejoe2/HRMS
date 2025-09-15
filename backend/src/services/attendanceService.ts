@@ -100,18 +100,19 @@ export class AttendanceService {
               empID: parsed.empID,
               employeeName: employee?.name,
               department: employee?.department,
-              date: parsed.date,
-              rawRecord: parsed.rawRecord
+              date: parsed.date
             });
           }
           
           // Update attendance based on status
           if (parsed.status === 'D000') {
             // Clock in
+            attendance.clockInRawRecord = parsed.rawRecord;
             attendance.clockInTime = parsed.time;
             attendance.clockInStatus = parsed.status;
           } else if (parsed.status === 'D900') {
             // Clock out
+            attendance.clockOutRawRecord = parsed.rawRecord;
             attendance.clockOutTime = parsed.time;
             attendance.clockOutStatus = parsed.status;
           }

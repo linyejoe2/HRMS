@@ -84,29 +84,50 @@ const AttendanceTab: React.FC = () => {
     }
   };
 
-  // Import attendance data for selected date (admin/hr only)
-  const importAttendanceData = async () => {
-    if (!selectedDate) return;
-
+  const manualupdateAttendanceData = async () => {
     setImporting(true);
     setError(null);
 
     try {
-      const response = await attendanceAPI.importByDate(selectedDate);
-      
-      if (response.data.imported > 0) {
-        // Reload records after import
-        await loadAttendanceRecords();
-        alert(`成功匯入 ${response.data.imported} 筆出勤記錄`);
-      } else {
-        alert('未找到該日期的出勤資料檔案');
+      const res = await attendanceAPI.scanNow()
+
+      if (!res.data.success) {
+        alert('無法更新資料');
+        console.log("error:")
+        console.log(JSON.stringify(res.data))
       }
+
+      alert(`成功更新，掃描 ${res.data.data.processed} 個檔案，更新 ${res.data.data.imported} 筆資料。`);
     } catch (err: any) {
-      setError(err.response?.data?.error || '匯入出勤資料失敗');
+      setError(err.response?.data?.error || '更新出勤資料失敗');
     } finally {
       setImporting(false);
     }
-  };
+  }
+
+  // Import attendance data for selected date (admin/hr only)
+  // const importAttendanceData = async () => {
+  //   if (!selectedDate) return;
+
+  //   setImporting(true);
+  //   setError(null);
+
+  //   try {
+  //     const response = await attendanceAPI.importByDate(selectedDate);
+      
+  //     if (response.data.imported > 0) {
+  //       // Reload records after import
+  //       await loadAttendanceRecords();
+  //       alert(`成功匯入 ${response.data.imported} 筆出勤記錄`);
+  //     } else {
+  //       alert('未找到該日期的出勤資料檔案');
+  //     }
+  //   } catch (err: any) {
+  //     setError(err.response?.data?.error || '匯入出勤資料失敗');
+  //   } finally {
+  //     setImporting(false);
+  //   }
+  // };
 
   // Load records when date changes
   useEffect(() => {
@@ -146,7 +167,7 @@ const AttendanceTab: React.FC = () => {
                   >
                     重新載入
                   </Button>
-                  {isAdminOrHr && (
+                  {/* {isAdminOrHr && (
                     <Button
                       variant="contained"
                       startIcon={<DownloadIcon />}
@@ -155,6 +176,16 @@ const AttendanceTab: React.FC = () => {
                     >
                       {importing ? '匯入中...' : '匯入資料'}
                     </Button>
+                  )} */}
+                  {isAdminOrHr && (
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={manualupdateAttendanceData}
+                    disabled={importing}
+                  >
+                    {importing ? '更新中...' : '更新資料'}
+                  </Button>
                   )}
                 </Box>
               </Grid>
@@ -173,7 +204,7 @@ const AttendanceTab: React.FC = () => {
             {error}
           </Alert>
         )}
-
+        
         {/* Loading */}
         {loading && (
           <Box display="flex" justifyContent="center" sx={{ mb: 3 }}>
