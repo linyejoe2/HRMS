@@ -39,7 +39,7 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
-const SettingsPage: React.FC = () => {
+const SettingsTab: React.FC = () => {
   const { user, changePassword, loading } = useAuth();
   const [passwordLoading, setPasswordLoading] = useState(false);
 
@@ -236,4 +236,4 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-export default SettingsPage;
+export default SettingsTab;

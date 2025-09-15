@@ -5,7 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import AppLayout from './components/Layout/AppLayout';
 import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
-import SettingsPage from './components/Settings/SettingsPage';
+import SettingsTab from './components/Settings/SettingsTab';
 import AttendanceTab from './components/Attendance/AttendanceTab';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,7 +79,7 @@ const App: React.FC = () => {
       >
         <Route index element={<Navigate to="/attendance" replace />} />
         <Route path="attendance" element={<AttendanceTab />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings" element={<SettingsTab />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/" replace />} />
