@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { theme } from './theme';
 import { AuthProvider } from './contexts/AuthContext';
+import { AlertProvider } from './contexts/AlertContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,17 +27,19 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <CssBaseline />
         <BrowserRouter>
           <AuthProvider>
-            <App />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#333',
-                  color: '#fff',
-                },
-              }}
-            />
+            <AlertProvider>
+              <App />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#333',
+                    color: '#fff',
+                  },
+                }}
+              />
+            </AlertProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

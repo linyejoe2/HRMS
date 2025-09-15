@@ -13,7 +13,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Alert,
   CircularProgress,
   Chip,
   Grid
@@ -23,12 +22,13 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { attendanceAPI } from '../../services/api';
 import { AttendanceRecord, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAlert } from '../../contexts/AlertContext';
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
+  const { showError, showSuccess, showWarning, showInfo } = useAlert();
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
 
   // Format date as YYYY-MM-DD
@@ -71,13 +71,15 @@ const AttendanceTab: React.FC = () => {
     if (!selectedDate) return;
 
     setLoading(true);
-    setError(null);
 
     try {
       const response = await attendanceAPI.getByDate(selectedDate);
       setAttendanceRecords(response.data.data.records);
+      if (response.data.data.records.length === 0) {
+        showInfo('該日期無出勤記錄');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || '載入出勤記錄失敗');
+      showError(err.response?.data?.error || '載入出勤記錄失敗');
       setAttendanceRecords([]);
     } finally {
       setLoading(false);
@@ -86,20 +88,27 @@ const AttendanceTab: React.FC = () => {
 
   const manualupdateAttendanceData = async () => {
     setImporting(true);
-    setError(null);
 
     try {
       const res = await attendanceAPI.scanNow()
 
       if (!res.data.success) {
-        alert('無法更新資料');
+        showError('無法更新資料');
         console.log("error:")
         console.log(JSON.stringify(res.data))
+        return;
       }
 
-      alert(`成功更新，掃描 ${res.data.data.processed} 個檔案，更新 ${res.data.data.imported} 筆資料。`);
+      const { processed, imported } = res.data.data;
+      if (imported > 0) {
+        showSuccess(`成功更新，掃描 ${processed} 個檔案，更新 ${imported} 筆資料。`);
+        // Reload records after successful update
+        await loadAttendanceRecords();
+      } else {
+        showWarning(`掃描了 ${processed} 個檔案，但沒有新的資料需要更新。`);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || '更新出勤資料失敗');
+      showError(err.response?.data?.error || '更新出勤資料失敗');
     } finally {
       setImporting(false);
     }
@@ -198,12 +207,6 @@ const AttendanceTab: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Error Display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
         
         {/* Loading */}
         {loading && (
