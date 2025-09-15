@@ -24,6 +24,7 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon,
   Schedule as AttendanceIcon,
+  Group as EmployeeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -88,10 +89,27 @@ const AppLayout: React.FC = () => {
     }
   };
 
-  const menuItems = [
-    { text: '出勤管理', icon: <AttendanceIcon />, path: '/attendance' },
-    { text: '設定', icon: <SettingsIcon />, path: '/settings' },
-  ];
+  // Get menu items based on user role
+  const getMenuItems = () => {
+    const baseItems = [
+      { text: '出勤管理', icon: <AttendanceIcon />, path: '/attendance' },
+    ];
+
+    // Add Employee Management for HR and Admin only
+    if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
+      baseItems.push({
+        text: '員工管理', 
+        icon: <EmployeeIcon />, 
+        path: '/employees'
+      });
+    }
+
+    baseItems.push({ text: '設定', icon: <SettingsIcon />, path: '/settings' });
+    
+    return baseItems;
+  };
+
+  const menuItems = getMenuItems();
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

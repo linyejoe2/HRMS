@@ -7,6 +7,7 @@ import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
 import SettingsTab from './components/Settings/SettingsTab';
 import AttendanceTab from './components/Attendance/AttendanceTab';
+import EmployeeManagement from './components/Employee/EmployeeManagement';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -79,6 +80,7 @@ const App: React.FC = () => {
       >
         <Route index element={<Navigate to="/attendance" replace />} />
         <Route path="attendance" element={<AttendanceTab />} />
+        <Route path="employees" element={<EmployeeManagement />} />
         <Route path="settings" element={<SettingsTab />} />
       </Route>
       

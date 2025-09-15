@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee } from '../types';
 
 const API_BASE_URL = "";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
@@ -226,4 +226,30 @@ export const attendanceAPI = {
   // Get attendance summary (admin/hr only)
   getSummary: (startDate: string, endDate: string): Promise<AxiosResponse<{ summary: AttendanceSummary }>> =>
     api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`)
+};
+
+export const employeeAPI = {
+  // Get all employees (with pagination)
+  getAll: (page: number = 1, limit: number = 20, department?: string): Promise<AxiosResponse<{ data:{ employees: Employee[], total: number, pages: number }}>> =>
+    api.get(`/employees?page=${page}&limit=${limit}${department ? `&department=${department}` : ''}`),
+  
+  // Search employees
+  search: (query: string): Promise<AxiosResponse<{ employees: Employee[] }>> =>
+    api.get(`/employees/search?q=${encodeURIComponent(query)}`),
+  
+  // Get single employee
+  getById: (id: string): Promise<AxiosResponse<{ employee: Employee }>> =>
+    api.get(`/employees/${id}`),
+  
+  // Create employee (HR/Admin only)
+  create: (employeeData: Partial<Employee>): Promise<AxiosResponse<{ employee: Employee }>> =>
+    api.post('/employees', employeeData),
+  
+  // Update employee (HR/Admin only)
+  update: (id: string, employeeData: Partial<Employee>): Promise<AxiosResponse<{ employee: Employee }>> =>
+    api.put(`/employees/${id}`, employeeData),
+  
+  // Delete/deactivate employee (Admin only)
+  delete: (id: string): Promise<AxiosResponse<{ message: string }>> =>
+    api.delete(`/employees/${id}`)
 };

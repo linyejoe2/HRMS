@@ -6,6 +6,19 @@ export interface User {
   lastLogin: string;
 }
 
+export interface Employee {
+  _id?: string;
+  name: string;
+  empID: string;
+  empID2: string;
+  isActive: boolean;
+  role: UserLevel;
+  lastLogin?: string;
+  department?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export enum UserLevel {
   ADMIN = 'admin',
   HR = 'jr',
