@@ -4,8 +4,8 @@ import { asyncHandler, AuthRequest } from '../middleware';
 
 export class AuthController {
   login = asyncHandler(async (req: Request, res: Response) => {
-    console.log("req")
-    console.log(req.body)
+    // console.log("req")
+    // console.log(req.body)
     const { empID, password } = req.body;
     
     const result = await authService.login(empID, password);

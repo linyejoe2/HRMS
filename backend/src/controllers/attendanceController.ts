@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { attendanceService } from '../services';
+import { attendanceService, fileScanService, cronService } from '../services';
 import { asyncHandler, AuthRequest } from '../middleware';
 
 export class AttendanceController {
@@ -150,6 +150,83 @@ export class AttendanceController {
         period: { startDate, endDate },
         summary
       }
+    });
+  });
+
+  // Scan data folder for saveData.txt files and process them
+  scanAndImport = asyncHandler(async (req: Request, res: Response) => {
+    const result = await fileScanService.scanDataFolder();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Data folder scan completed',
+      data: result
+    });
+  });
+
+  // Get tracked files information
+  getTrackedFiles = asyncHandler(async (req: Request, res: Response) => {
+    const files = await fileScanService.getTrackedFiles();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        count: files.length,
+        files
+      }
+    });
+  });
+
+  // Get file scanning statistics
+  getFileStats = asyncHandler(async (req: Request, res: Response) => {
+    const stats = await fileScanService.getFileStats();
+    
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  });
+
+  // Start automated file scanning cron job
+  startCronJob = asyncHandler(async (req: Request, res: Response) => {
+    cronService.startFileScanning();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Automated file scanning started (runs every 5 minutes)',
+      data: cronService.getStatus()
+    });
+  });
+
+  // Stop automated file scanning cron job
+  stopCronJob = asyncHandler(async (req: Request, res: Response) => {
+    cronService.stopFileScanning();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Automated file scanning stopped',
+      data: cronService.getStatus()
+    });
+  });
+
+  // Get cron job status
+  getCronStatus = asyncHandler(async (req: Request, res: Response) => {
+    const status = cronService.getStatus();
+    
+    res.status(200).json({
+      success: true,
+      data: status
+    });
+  });
+
+  // Run file scan manually
+  runScanNow = asyncHandler(async (req: Request, res: Response) => {
+    const result = await cronService.runFileScanNow();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Manual file scan completed',
+      data: result
     });
   });
 }

@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import app from './app';
 import connectDB from './config/database';
 import { config } from './config';
+import { cronService } from './services';
 
 // Load environment variables
 dotenv.config();
@@ -26,11 +27,17 @@ const startServer = async (): Promise<void> => {
       if (config.nodeEnv === 'development') {
         console.log(`🗄️  Legacy DB Explorer: http://localhost:${config.port}/db`);
       }
+      
+      // Start automated attendance file scanning
+      cronService.startFileScanning();
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
+      
+      // Stop cron jobs
+      cronService.stopFileScanning();
       
       server.close(() => {
         console.log('HTTP server closed');

@@ -8,6 +8,8 @@ import routes from './routes';
 
 const app = express();
 
+app.set('trust proxy', 2); 
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }

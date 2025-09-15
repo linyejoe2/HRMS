@@ -2,6 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { Attendance, IAttendance, Employee } from '../models';
 import { APIError } from '../middleware';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface ParsedRecord {
   empID: string;
@@ -20,7 +26,6 @@ export class AttendanceService {
    */
   private parseSaveDataLine(line: string): ParsedRecord | null {
     if (!line.trim()) return null;
-    console.log(line)
     
     try {
       // Extract components using regex
@@ -35,12 +40,12 @@ export class AttendanceService {
       const year = 2000 + parseInt(dateStr.substring(0, 2));
       const month = parseInt(dateStr.substring(2, 4)) - 1; // JS months are 0-based
       const day = parseInt(dateStr.substring(4, 6));
-      const date = new Date(year, month, day);
+      const date = dayjs.tz(`${year}-${month + 1}-${day}`, 'Asia/Taipei').toDate();
       
       // Parse time (MMss format + additional digits)
       const hour = parseInt(timeStr.substring(0, 2));
       const minute = parseInt(timeStr.substring(2, 4));
-      const time = new Date(year, month, day, hour, minute);
+      const time = dayjs.tz(`${year}-${month}-${day} ${hour}:${minute}`, 'YYYY-MM-DD HH:mm', 'Asia/Taipei').toDate();
       
       return {
         empID: empID,
@@ -75,20 +80,18 @@ export class AttendanceService {
       for (const line of lines) {
         const parsed = this.parseSaveDataLine(line);
         if (!parsed) continue;
-        console.log(parsed)
+        // console.log(parsed)
         
         try {
           // Find employee info
           const employee = await Employee.findOne({ empID: parsed.empID });
           
           // Find or create attendance record for this employee and date
-          const dateStr = parsed.date.toISOString().split('T')[0];
+          // const dateStr = parsed.date.toISOString().split('T')[0];
+          // console.log(dateStr)
           let attendance = await Attendance.findOne({
             empID: parsed.empID,
-            date: {
-              $gte: new Date(dateStr + 'T00:00:00.000Z'),
-              $lt: new Date(dateStr + 'T23:59:59.999Z')
-            }
+            date: parsed.date
           });
           
           if (!attendance) {
@@ -160,15 +163,11 @@ export class AttendanceService {
   /**
    * Get attendance records for a specific date
    */
-  async getAttendanceByDate(date: string): Promise<IAttendance[]> {
-    const startDate = new Date(date + 'T00:00:00.000Z');
-    const endDate = new Date(date + 'T23:59:59.999Z');
+  async getAttendanceByDate(dateStr: string): Promise<IAttendance[]> {
+    const date = dayjs.tz(dateStr, 'Asia/Taipei').toDate();
     
     return Attendance.find({
-      date: {
-        $gte: startDate,
-        $lte: endDate
-      }
+      date
     }).sort({ empID2: 1 });
   }
   

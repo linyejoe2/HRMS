@@ -1,8 +1,8 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface IAttendance extends Document {
-  empID2: string; // 8-digit employee ID from access system
-  empID?: string; // Mapped employee ID (A029, etc.)
+  empID2?: string; // 8-digit employee ID from access system
+  empID: string; // Mapped employee ID (A029, etc.)
   employeeName?: string; // Employee name from Employee collection
   department?: string; // Department from Employee collection
   date: Date; // Attendance date (YYYY-MM-DD)
@@ -25,11 +25,11 @@ export interface IAttendance extends Document {
 const AttendanceSchema = new Schema<IAttendance>({
   empID2: {
     type: String,
-    required: true,
     index: true
   },
   empID: {
     type: String,
+    required: true,
     index: true
   },
   employeeName: {
@@ -73,10 +73,5 @@ const AttendanceSchema = new Schema<IAttendance>({
 }, {
   timestamps: true
 });
-
-// Compound indexes for efficient queries
-AttendanceSchema.index({ empID2: 1, date: 1 });
-AttendanceSchema.index({ empID: 1, date: 1 });
-AttendanceSchema.index({ date: 1, empID2: 1 });
 
 export const Attendance = model<IAttendance>('Attendance', AttendanceSchema);
