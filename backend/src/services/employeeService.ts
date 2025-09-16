@@ -32,7 +32,7 @@ export class EmployeeService {
     total: number;
     pages: number;
   }> {
-    const filter: any = { isActive: true };
+    const filter: any = {  };
     if (department) {
       filter.department = department;
     }

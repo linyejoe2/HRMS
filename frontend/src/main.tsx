@@ -4,12 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer, Bounce } from 'react-toastify';
 
 import App from './App';
 import { theme } from './theme';
 import { AuthProvider } from './contexts/AuthContext';
-import { AlertProvider } from './contexts/AlertContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,19 +26,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <CssBaseline />
         <BrowserRouter>
           <AuthProvider>
-            <AlertProvider>
               <App />
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#333',
-                    color: '#fff',
-                  },
-                }}
+              <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick={false}
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+              transition={Bounce}
               />
-            </AlertProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

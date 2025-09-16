@@ -29,7 +29,6 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserLevel } from '../../types';
-import GlobalAlert from '@/contexts/AlertContext';
 
 const DRAWER_WIDTH = 280;
 
@@ -301,7 +300,6 @@ const AppLayout: React.FC = () => {
         }}
       >
         <Toolbar />
-        <GlobalAlert />
         <Outlet />
       </Box>
     </Box>

@@ -30,12 +30,11 @@ import PersonIcon from '@mui/icons-material/Person';
 import { employeeAPI } from '../../services/api';
 import { Employee, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { useAlert } from '../../contexts/AlertContext';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
+import { toast } from 'react-toastify';
 
 const EmployeeManagement: React.FC = () => {
   const { user } = useAuth();
-  const { showError, showSuccess } = useAlert();
   
   // State
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -69,7 +68,7 @@ const EmployeeManagement: React.FC = () => {
       setTotal(response.data.data.total || 0);
       setTotalPages(response.data.data.pages || 1);
     } catch (err: any) {
-      showError(err.response?.data?.error || '載入員工資料失敗');
+      toast.error(err.response?.data?.error || '載入員工資料失敗');
       setEmployees([]);
     } finally {
       setLoading(false);
@@ -91,7 +90,7 @@ const EmployeeManagement: React.FC = () => {
       setTotalPages(1);
       setPage(1);
     } catch (err: any) {
-      showError(err.response?.data?.error || '搜尋員工失敗');
+      toast.error(err.response?.data?.error || '搜尋員工失敗');
       setEmployees([]);
     } finally {
       setLoading(false);
@@ -149,7 +148,7 @@ const EmployeeManagement: React.FC = () => {
   const handleEmployeeSaved = () => {
     handleModalClose();
     loadEmployees(page);
-    showSuccess(editingEmployee ? '員工資料更新成功' : '員工新增成功');
+    toast.success(editingEmployee ? '員工資料更新成功' : '員工新增成功');
   };
 
   // Handle deactivate confirmation
@@ -168,17 +167,17 @@ const EmployeeManagement: React.FC = () => {
     try {
       if (confirmDialog.action === 'deactivate') {
         await employeeAPI.delete(confirmDialog.employee._id!);
-        showSuccess('員工已停用');
+        toast.success('員工已停用');
       } else {
         // For reactivation, we update the employee with isActive: true
         await employeeAPI.update(confirmDialog.employee._id!, { isActive: true });
-        showSuccess('員工已重新啟用');
+        toast.success('員工已重新啟用');
       }
       
       setConfirmDialog({ open: false, employee: null, action: 'deactivate' });
       loadEmployees(page);
     } catch (err: any) {
-      showError(err.response?.data?.error || '操作失敗');
+      toast.error(err.response?.data?.error || '操作失敗');
     }
   };
 
@@ -349,7 +348,7 @@ const EmployeeManagement: React.FC = () => {
                       <TableCell>
                         <Chip
                           label={employee.isActive ? '啟用' : '停用'}
-                          color={employee.isActive ? 'success' : 'default'}
+                          color={employee.isActive ? 'success' : 'error'}
                           size="small"
                         />
                       </TableCell>

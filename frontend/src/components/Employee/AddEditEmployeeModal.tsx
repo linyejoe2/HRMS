@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 import { Employee, UserLevel } from '../../types';
 import { employeeAPI } from '../../services/api';
-import { useAlert } from '../../contexts/AlertContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -35,7 +35,6 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   onSaved
 }) => {
   const { user } = useAuth();
-  const { showError } = useAlert();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -172,7 +171,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 
         (employee ? '更新員工失敗' : '新增員工失敗');
-      showError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
