@@ -6,17 +6,11 @@ import {
   Typography,
   TextField,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Chip,
   Grid
 } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import { attendanceAPI } from '../../services/api';
@@ -159,6 +153,86 @@ const AttendanceTab: React.FC = () => {
   // Check if user has admin/hr permissions (based on the user level system)
   const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR; // 0=LAWYER/Admin, 1=CO_LAWYER/HR
 
+  // DataGrid column definitions
+  const columns: GridColDef[] = [
+    {
+      field: 'empID',
+      headerName: '員工編號',
+      // width: 120,
+      flex: 1,
+      valueGetter: (_, row) => row.empID || '-'
+    },
+    {
+      field: 'employeeName',
+      headerName: '員工姓名',
+      // width: 150,
+      flex: 1,
+      valueGetter: (_, row) => row.employeeName || '-'
+    },
+    {
+      field: 'department',
+      headerName: '部門名稱',
+      // width: 150,
+      flex: 1,
+      valueGetter: (_, row) => row.department || '-'
+    },
+    {
+      field: 'date',
+      headerName: '出勤日期',
+      // width: 120,
+      flex: 1,
+      valueGetter: (_, row) => formatDate(new Date(row.date))
+    },
+    {
+      field: 'clockInTime',
+      headerName: '上班出勤時間',
+      // width: 140,
+      flex: 1,
+      valueGetter: (_, row) => formatTime(row.clockInTime)
+    },
+    {
+      field: 'clockInStatus',
+      headerName: '上班出勤狀態',
+      // width: 140,
+      flex: 1,
+      valueGetter: (_, row) => row.clockInStatus === 'D000' ? '打卡' : row.clockInStatus || '-'
+    },
+    {
+      field: 'clockOutTime',
+      headerName: '下班出勤時間',
+      // width: 140,
+      flex: 1,
+      valueGetter: (_, row) => formatTime(row.clockOutTime)
+    },
+    {
+      field: 'clockOutStatus',
+      headerName: '下班出勤狀態',
+      // width: 140,
+      flex: 1,
+      valueGetter: (_, row) => row.clockOutStatus === 'D900' ? '打卡' : row.clockOutStatus || '-'
+    },
+    {
+      field: 'workHours',
+      headerName: '工作時數',
+      // width: 120,
+      flex: 1,
+      valueGetter: (_, row) => formatWorkHours(row.workHours)
+    },
+    {
+      field: 'status',
+      headerName: '出勤狀態',
+      // width: 120,
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => (
+        <Chip
+          label={getStatusText(params.row.isLate, params.row.isAbsent, params.row.clockInTime)}
+          color={getStatusColor(params.row.isLate, params.row.isAbsent)}
+          size="small"
+        />
+      ),
+    },
+  ];
+
   return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom>
@@ -249,67 +323,58 @@ const AttendanceTab: React.FC = () => {
           </Box>
         )}
 
-        {/* Attendance Records Table */}
+        {/* Attendance Records DataGrid */}
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               出勤記錄 ({attendanceRecords.length} 筆)
             </Typography>
 
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>員工編號</TableCell>
-                    <TableCell>員工姓名</TableCell>
-                    <TableCell>部門名稱</TableCell>
-                    <TableCell>出勤日期</TableCell>
-                    <TableCell>上班出勤時間</TableCell>
-                    <TableCell>上班出勤狀態</TableCell>
-                    <TableCell>下班出勤時間</TableCell>
-                    <TableCell>下班出勤狀態</TableCell>
-                    <TableCell>工作時數</TableCell>
-                    <TableCell>出勤狀態</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {attendanceRecords.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} align="center">
-                        <Typography color="text.secondary">
-                          {loading ? '載入中...' : '該日期範圍無出勤記錄'}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    attendanceRecords.map((record) => (
-                      <TableRow key={record._id} hover>
-                        <TableCell>{record.empID || record.empID2}</TableCell>
-                        <TableCell>{record.employeeName || '-'}</TableCell>
-                        <TableCell>{record.department || '-'}</TableCell>
-                        <TableCell>{formatDate(new Date(record.date))}</TableCell>
-                        <TableCell>{formatTime(record.clockInTime)}</TableCell>
-                        <TableCell>
-                          {record.clockInStatus === 'D000' ? '打卡' : record.clockInStatus || '-'}
-                        </TableCell>
-                        <TableCell>{formatTime(record.clockOutTime)}</TableCell>
-                        <TableCell>
-                          {record.clockOutStatus === 'D900' ? '打卡' : record.clockOutStatus || '-'}
-                        </TableCell>
-                        <TableCell>{formatWorkHours(record.workHours)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getStatusText(record.isLate, record.isAbsent, record.clockInTime)}
-                            color={getStatusColor(record.isLate, record.isAbsent)}
-                            size="small"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Box sx={{ width: '100%' }}>
+              <DataGrid
+                rows={attendanceRecords.map((record, index) => ({
+                  id: record._id || index,
+                  ...record
+                }))}
+                columns={columns}
+                initialState={{
+                  pagination: {
+                    paginationModel: { page: 0, pageSize: 10 },
+                  },
+                }}
+                pageSizeOptions={[10, 25, 50, 100]}
+                checkboxSelection={false}
+                disableRowSelectionOnClick
+                loading={loading}
+                sx={{
+                  '& .MuiDataGrid-cell': {
+                    borderRight: 1,
+                    borderColor: 'divider',
+                  },
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: 'action.hover',
+                    borderBottom: 2,
+                    borderColor: 'divider',
+                  },
+                }}
+                slots={{
+                  noRowsOverlay: () => (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                      }}
+                    >
+                      <Typography color="text.secondary">
+                        {loading ? '載入中...' : '該日期範圍無出勤記錄'}
+                      </Typography>
+                    </Box>
+                  ),
+                }}
+              />
+            </Box>
           </CardContent>
         </Card>
       </Box>
