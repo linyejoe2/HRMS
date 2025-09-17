@@ -59,6 +59,46 @@ export class AttendanceController {
       }
     });
   });
+
+  // Get attendance records for a date range
+  getByDateRange = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { startDate, endDate } = req.query;
+    const user = req.user;
+    
+    if (!startDate || !endDate) {
+      res.status(400).json({
+        success: false,
+        error: 'Start date and end date are required'
+      });
+      return;
+    }
+    
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        error: 'User information not found in token'
+      });
+      return;
+    }
+    
+    const records = await attendanceService.getAttendanceByDateRange(
+      startDate as string,
+      endDate as string,
+      user.role,
+      user.empID,
+      user.department
+    );
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        startDate,
+        endDate,
+        count: records.length,
+        records
+      }
+    });
+  });
   
   // Get attendance records for an employee within a date range
   getEmployeeAttendance = asyncHandler(async (req: AuthRequest, res: Response) => {

@@ -25,7 +25,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 7 days ago
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]); // today
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -65,17 +66,22 @@ const AttendanceTab: React.FC = () => {
     return '未知';
   };
 
-  // Load attendance records for selected date
+  // Load attendance records for selected date range
   const loadAttendanceRecords = async () => {
-    if (!selectedDate) return;
+    if (!startDate || !endDate) return;
+
+    if (startDate > endDate) {
+      toast.error('開始日期不能晚於結束日期');
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const response = await attendanceAPI.getByDate(selectedDate);
+      const response = await attendanceAPI.getByDateRange(startDate, endDate);
       setAttendanceRecords(response.data.data.records);
       if (response.data.data.records.length === 0) {
-        toast.info('該日期無出勤記錄');
+        toast.info('該日期範圍無出勤記錄');
       }
     } catch (err: any) {
       toast.error(err.response?.data?.error || '載入出勤記錄失敗');
@@ -137,10 +143,18 @@ const AttendanceTab: React.FC = () => {
   //   }
   // };
 
-  // Load records when date changes
+  // Load records when date range changes
   useEffect(() => {
     loadAttendanceRecords();
-  }, [selectedDate]);
+  }, [startDate, endDate]);
+
+  // Quick date range setters
+  const setDateRange = (days: number) => {
+    const today = new Date();
+    const pastDate = new Date(today.getTime() - days * 24 * 60 * 60 * 1000);
+    setStartDate(pastDate.toISOString().split('T')[0]);
+    setEndDate(today.toISOString().split('T')[0]);
+  };
 
   // Check if user has admin/hr permissions (based on the user level system)
   const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR; // 0=LAWYER/Admin, 1=CO_LAWYER/HR
@@ -151,22 +165,53 @@ const AttendanceTab: React.FC = () => {
           出勤管理
         </Typography>
 
-        {/* Date Selection and Controls */}
+        {/* Date Range Selection and Controls */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2}>
                 <TextField
-                  label="選擇日期"
+                  label="開始日期"
                   type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
+              <Grid item xs={12} md={2}>
+                <TextField
+                  label="結束日期"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setDateRange(0)}
+                  >
+                    今天
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setDateRange(7)}
+                  >
+                    7天
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setDateRange(30)}
+                  >
+                    30天
+                  </Button>
                   <Button
                     variant="outlined"
                     startIcon={<RefreshIcon />}
@@ -175,16 +220,6 @@ const AttendanceTab: React.FC = () => {
                   >
                     重新載入
                   </Button>
-                  {/* {isAdminOrHr && (
-                    <Button
-                      variant="contained"
-                      startIcon={<DownloadIcon />}
-                      onClick={importAttendanceData}
-                      disabled={importing}
-                    >
-                      {importing ? '匯入中...' : '匯入資料'}
-                    </Button>
-                  )} */}
                   {isAdminOrHr && (
                   <Button
                     variant="contained"
@@ -199,7 +234,7 @@ const AttendanceTab: React.FC = () => {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography variant="body2" color="text.secondary">
-                  {selectedDate ? `${selectedDate} 出勤記錄` : '請選擇日期'}
+                  {startDate && endDate ? `${startDate} 至 ${endDate} 出勤記錄` : '請選擇日期範圍'}
                 </Typography>
               </Grid>
             </Grid>
@@ -242,7 +277,7 @@ const AttendanceTab: React.FC = () => {
                     <TableRow>
                       <TableCell colSpan={10} align="center">
                         <Typography color="text.secondary">
-                          {loading ? '載入中...' : '該日期無出勤記錄'}
+                          {loading ? '載入中...' : '該日期範圍無出勤記錄'}
                         </Typography>
                       </TableCell>
                     </TableRow>

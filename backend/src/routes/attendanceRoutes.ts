@@ -31,6 +31,7 @@ router.get('/employee/:empID', requireRole(['admin', 'hr', 'manager']), attendan
 
 // All authenticated users can access these
 router.get('/date/:date', attendanceController.getByDate);
+router.get('/daterange', attendanceController.getByDateRange);
 router.get('/my', attendanceController.getMyAttendance);
 
 export default router;

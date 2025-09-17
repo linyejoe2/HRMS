@@ -215,6 +215,10 @@ export const attendanceAPI = {
   getByDate: (date: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/date/${date}`),
   
+  // Get attendance records for a date range
+  getByDateRange: (startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
+    api.get(`/attendance/daterange?startDate=${startDate}&endDate=${endDate}`),
+  
   // Get my attendance records
   getMyAttendance: (startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/my?startDate=${startDate}&endDate=${endDate}`),

@@ -199,6 +199,45 @@ export class AttendanceService {
     
     return Attendance.find(query).sort({ empID: 1 });
   }
+
+  /**
+   * Get attendance records for a date range with role-based filtering
+   */
+  async getAttendanceByDateRange(
+    startDateStr: string, 
+    endDateStr: string, 
+    userRole: string, 
+    userEmpID: string, 
+    userDepartment?: string
+  ): Promise<IAttendance[]> {
+    const startDate = dayjs.tz(startDateStr, 'Asia/Taipei').startOf('day').toDate();
+    const endDate = dayjs.tz(endDateStr, 'Asia/Taipei').endOf('day').toDate();
+    
+    let query: any = {
+      date: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    };
+    
+    // Role-based filtering
+    if (userRole === 'admin' || userRole === 'hr') {
+      // HR and admin can see all user data - no additional filter needed
+    } else if (userRole === 'manager') {
+      // Manager can see same department's employee data
+      if (userDepartment) {
+        query.department = userDepartment;
+      } else {
+        // If manager has no department, they can only see their own data
+        query.empID = userEmpID;
+      }
+    } else {
+      // Employee can only see self's data
+      query.empID = userEmpID;
+    }
+    
+    return Attendance.find(query).sort({ date: -1, empID: 1 });
+  }
   
   /**
    * Get attendance records for an employee within a date range with role-based filtering
