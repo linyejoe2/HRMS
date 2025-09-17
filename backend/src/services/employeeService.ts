@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { Employee, IEmployee } from '../models';
+import { Employee, IEmployee, Attendance } from '../models';
 import { config } from '../config';
 import { APIError } from '../middleware';
 
@@ -19,7 +19,22 @@ export class EmployeeService {
   }
 
   async updateEmployee(id: string, updateData: Partial<IEmployee>): Promise<IEmployee | null> {
-    return Employee.findByIdAndUpdate(id, updateData, { new: true });
+    const employee = await Employee.findByIdAndUpdate(id, updateData, { new: true });
+    
+    if (employee && (updateData.name || updateData.department || updateData.empID2)) {
+      await Attendance.updateMany(
+        { empID: employee.empID },
+        {
+          $set: {
+            ...(updateData.name && { employeeName: employee.name }),
+            ...(updateData.department && { department: employee.department }),
+            ...(updateData.empID2 && { empID2: employee.empID2 })
+          }
+        }
+      );
+    }
+    
+    return employee;
   }
 
   async deleteEmployee(id: string): Promise<boolean> {
