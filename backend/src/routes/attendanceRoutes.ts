@@ -27,7 +27,7 @@ router.get('/cron/status', requireRole(['admin', 'hr']), attendanceController.ge
 router.get('/files', requireRole(['admin', 'hr']), attendanceController.getTrackedFiles);
 router.get('/files/stats', requireRole(['admin', 'hr']), attendanceController.getFileStats);
 router.get('/summary', requireRole(['admin', 'hr']), attendanceController.getSummary);
-router.get('/employee/:empID', requireRole(['admin', 'hr']), attendanceController.getEmployeeAttendance);
+router.get('/employee/:empID', requireRole(['admin', 'hr', 'manager']), attendanceController.getEmployeeAttendance);
 
 // All authenticated users can access these
 router.get('/date/:date', attendanceController.getByDate);

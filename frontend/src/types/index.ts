@@ -21,7 +21,7 @@ export interface Employee {
 
 export enum UserLevel {
   ADMIN = 'admin',
-  HR = 'jr',
+  HR = 'hr',
   EMPLOYEE = 'employee',
   MANAGER = 'manager'
 }

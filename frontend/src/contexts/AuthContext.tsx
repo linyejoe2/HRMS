@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       localStorage.setItem('auth_token', token);
       setUser(employee);
-      toast.success('Welcome back!');
+      toast.success('成功登入!');
     } catch (error: any) {
       console.error('Login failed:', error);
       const message = error.response?.data?.error || 'Login failed';
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('auth_token');
     setUser(null);
-    toast.success('Logged out successfully');
+    toast.success('成功登出');
   };
 
   const changePassword = async (passwordData: ChangePasswordRequest) => {

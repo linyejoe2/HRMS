@@ -26,8 +26,9 @@ export class AttendanceController {
   });
   
   // Get attendance records for a specific date
-  getByDate = asyncHandler(async (req: Request, res: Response) => {
+  getByDate = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { date } = req.params; // Expected format: YYYY-MM-DD
+    const user = req.user;
     
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       res.status(400).json({
@@ -37,7 +38,17 @@ export class AttendanceController {
       return;
     }
     
-    const records = await attendanceService.getAttendanceByDate(date);
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        error: 'User information not found in token'
+      });
+      return;
+    }
+
+    console.log(`departemnt: ${user.department}`)
+    
+    const records = await attendanceService.getAttendanceByDate(date, user.role, user.empID, user.department);
     
     res.status(200).json({
       success: true,
@@ -53,6 +64,7 @@ export class AttendanceController {
   getEmployeeAttendance = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { empID } = req.params;
     const { startDate, endDate } = req.query;
+    const user = req.user;
     
     if (!empID) {
       res.status(400).json({
@@ -69,11 +81,22 @@ export class AttendanceController {
       });
       return;
     }
+
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        error: 'User information not found in token'
+      });
+      return;
+    }
     
     const records = await attendanceService.getEmployeeAttendance(
       empID,
       startDate as string,
-      endDate as string
+      endDate as string,
+      user.role,
+      user.empID,
+      user.department
     );
     
     res.status(200).json({

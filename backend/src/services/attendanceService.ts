@@ -102,6 +102,13 @@ export class AttendanceService {
               department: employee?.department,
               date: parsed.date
             });
+          } else {
+            // Update existing attendance record with latest employee data
+            if (employee) {
+              attendance.empID2 = employee.empID2;
+              attendance.employeeName = employee.name;
+              attendance.department = employee.department;
+            }
           }
           
           // Update attendance based on status
@@ -162,36 +169,87 @@ export class AttendanceService {
   }
   
   /**
-   * Get attendance records for a specific date
+   * Get attendance records for a specific date with role-based filtering
    */
-  async getAttendanceByDate(dateStr: string): Promise<IAttendance[]> {
+  async getAttendanceByDate(
+    dateStr: string, 
+    userRole: string, 
+    userEmpID: string, 
+    userDepartment?: string
+  ): Promise<IAttendance[]> {
     const date = dayjs.tz(dateStr, 'Asia/Taipei').toDate();
     
-    return Attendance.find({
-      date
-    }).sort({ empID2: 1 });
+    let query: any = { date };
+    
+    // Role-based filtering
+    if (userRole === 'admin' || userRole === 'hr') {
+      // HR and admin can see all user data - no additional filter needed
+    } else if (userRole === 'manager') {
+      // Manager can see same department's employee data
+      if (userDepartment) {
+        query.department = userDepartment;
+      } else {
+        // If manager has no department, they can only see their own data
+        query.empID = userEmpID;
+      }
+    } else {
+      // Employee can only see self's data
+      query.empID = userEmpID;
+    }
+    
+    return Attendance.find(query).sort({ empID: 1 });
   }
   
   /**
-   * Get attendance records for an employee within a date range
+   * Get attendance records for an employee within a date range with role-based filtering
    */
   async getEmployeeAttendance(
     empID: string, 
     startDate: string, 
-    endDate: string
+    endDate: string,
+    userRole?: string,
+    userEmpID?: string,
+    userDepartment?: string
   ): Promise<IAttendance[]> {
     const start = new Date(startDate + 'T00:00:00.000Z');
     const end = new Date(endDate + 'T23:59:59.999Z');
     
-    return Attendance.find({
-      $or: [
-        { empID: empID }
-      ],
+    let query: any = {
+      empID: empID,
       date: {
         $gte: start,
         $lte: end
       }
-    }).sort({ date: -1 });
+    };
+
+    // Role-based access control for the requested employee
+    if (userRole && userEmpID) {
+      if (userRole === 'admin' || userRole === 'hr') {
+        // HR and admin can access any employee's data - no additional filter needed
+      } else if (userRole === 'manager') {
+        // Manager can only access employees in their department or themselves
+        if (userDepartment) {
+          // First check if the requested employee is in the same department
+          const targetEmployee = await Employee.findOne({ empID: empID });
+          if (!targetEmployee || (targetEmployee.department !== userDepartment && empID !== userEmpID)) {
+            // If target employee is not in manager's department and not the manager themselves, return empty
+            return [];
+          }
+        } else {
+          // Manager with no department can only access their own data
+          if (empID !== userEmpID) {
+            return [];
+          }
+        }
+      } else {
+        // Employee can only access their own data
+        if (empID !== userEmpID) {
+          return [];
+        }
+      }
+    }
+    
+    return Attendance.find(query).sort({ date: -1 });
   }
   
   /**

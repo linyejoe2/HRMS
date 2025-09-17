@@ -40,7 +40,7 @@ const DepartmentSchema = new Schema<IDepartment>({
   timestamps: true
 });
 
-DepartmentSchema.index({ code: 1 });
-DepartmentSchema.index({ isActive: 1 });
+// DepartmentSchema.index({ code: 1 });
+// DepartmentSchema.index({ isActive: 1 });
 
 export const Department = model<IDepartment>('Department', DepartmentSchema);
