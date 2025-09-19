@@ -30,6 +30,7 @@ const startServer = async (): Promise<void> => {
       
       // Start automated attendance file scanning
       cronService.startFileScanning();
+      cronService.startTestCronJob();
     });
 
     // Graceful shutdown

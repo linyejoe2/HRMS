@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Chip,
   Grid
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
@@ -17,6 +16,7 @@ import { attendanceAPI } from '../../services/api';
 import { AttendanceRecord, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import StatusChip from './StatusChip';
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
   const [startDate, setStartDate] = useState<string>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 7 days ago
@@ -38,26 +38,11 @@ const AttendanceTab: React.FC = () => {
   };
 
   // Format work hours for display
-  const formatWorkHours = (hours?: number) => {
-    if (!hours) return '-';
-    const wholeHours = Math.floor(hours);
-    const minutes = Math.round((hours - wholeHours) * 60);
+  const formatWorkDuration = (duration?: number) => {
+    if (!duration) return '-';
+    const wholeHours = Math.floor(duration / 60);
+    const minutes = Math.round(duration % 60);
     return `${wholeHours}h ${minutes}m`;
-  };
-
-  // Get status chip color
-  const getStatusColor = (isLate?: boolean, isAbsent?: boolean) => {
-    if (isAbsent) return 'error';
-    if (isLate) return 'warning';
-    return 'success';
-  };
-
-  // Get status text
-  const getStatusText = (isLate?: boolean, isAbsent?: boolean, clockInTime?: string) => {
-    if (isAbsent) return '缺勤';
-    if (isLate) return '遲到';
-    if (clockInTime) return '正常';
-    return '未知';
   };
 
   // Load attendance records for selected date range
@@ -212,11 +197,11 @@ const AttendanceTab: React.FC = () => {
       valueGetter: (_, row) => row.clockOutStatus === 'D900' ? '打卡' : row.clockOutStatus || '-'
     },
     {
-      field: 'workHours',
+      field: 'workDuration',
       headerName: '工作時數',
       // width: 120,
       flex: 1,
-      valueGetter: (_, row) => formatWorkHours(row.workHours)
+      valueGetter: (_, row) => formatWorkDuration(row.workDuration)
     },
     {
       field: 'status',
@@ -224,11 +209,7 @@ const AttendanceTab: React.FC = () => {
       // width: 120,
       flex: 1,
       renderCell: (params: GridRenderCellParams) => (
-        <Chip
-          label={getStatusText(params.row.isLate, params.row.isAbsent, params.row.clockInTime)}
-          color={getStatusColor(params.row.isLate, params.row.isAbsent)}
-          size="small"
-        />
+        <StatusChip log={params.row} />
       ),
     },
   ];

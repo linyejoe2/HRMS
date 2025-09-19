@@ -6,6 +6,12 @@ export class CronService {
 
   private isScanning = false;
 
+  startTestCronJob(): void {
+    cron.schedule('* * * * *', () => {
+      console.log(`[${new Date().toISOString()}] cron executed`);
+    });
+  }
+
   /**
    * Start the automated file scanning cron job
    * Runs every 5 minutes
@@ -18,12 +24,12 @@ export class CronService {
 
     // Run every 5 minutes: */5 * * * *
     this.scanJob = cron.schedule('*/5 * * * *', async () => {
-        if (this.isScanning) {
-      console.warn('⏳ Skipping file scan - previous job still running');
-      return;
-    }
+      if (this.isScanning) {
+        console.warn('⏳ Skipping file scan - previous job still running');
+        return;
+      }
 
-    this.isScanning = true;
+      this.isScanning = true;
 
       console.log('🔄 Starting automated attendance file scan...');
       
@@ -42,8 +48,6 @@ export class CronService {
       } finally {
         this.isScanning = false;
       }
-    }, {
-      timezone: 'Asia/Taipei'
     });
 
     this.scanJob.start();

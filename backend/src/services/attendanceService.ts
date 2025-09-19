@@ -38,9 +38,9 @@ export class AttendanceService {
       
       // Parse date (YYmmDD format, assuming 25 = 2025)
       const year = 2000 + parseInt(dateStr.substring(0, 2));
-      const month = parseInt(dateStr.substring(2, 4)) - 1; // JS months are 0-based
+      const month = parseInt(dateStr.substring(2, 4));
       const day = parseInt(dateStr.substring(4, 6));
-      const date = dayjs.tz(`${year}-${month + 1}-${day}`, 'Asia/Taipei').toDate();
+      const date = dayjs.tz(`${year}-${month}-${day}`, 'Asia/Taipei').toDate();
       
       // Parse time (MMss format + additional digits)
       const hour = parseInt(timeStr.substring(0, 2));
@@ -127,19 +127,32 @@ export class AttendanceService {
           // Calculate work hours if both times are available
           if (attendance.clockInTime && attendance.clockOutTime) {
             const timeDiff = attendance.clockOutTime.getTime() - attendance.clockInTime.getTime();
-            attendance.workHours = timeDiff / (1000 * 60 * 60); // Convert to hours
+            attendance.workDuration = timeDiff / (1000 * 60); // Convert to hours
+
+            const TIMEZONE = 'Asia/Taipei';
+            const clockIn = dayjs(attendance.clockInTime).tz(TIMEZONE);
+            const clockOut = dayjs(attendance.clockOutTime).tz(TIMEZONE);
+            const startTime = dayjs(attendance.date).tz(TIMEZONE).hour(9).minute(30).second(0).millisecond(0);
+            const endTime = dayjs(attendance.date).tz(TIMEZONE).hour(17).minute(20).second(0).millisecond(0);
+            // console.log(`clockIn: ${clockIn.toISOString()}`)
+            // console.log(`clockOut: ${clockOut.toISOString()}`)
+            // console.log(`startTime: ${startTime.toISOString()}`)
+            // console.log(`endTime: ${endTime.toISOString()}`)
             
-            // Check if late (assuming 9 AM start time)
-            const startTime = new Date(attendance.date);
-            startTime.setHours(9, 0, 0, 0);
-            attendance.isLate = attendance.clockInTime > startTime;
+            // Check if late
+            attendance.isLate = clockIn > startTime;
+
+            // Check if early leave
+            attendance.isEarlyLeave = clockOut < endTime;
           }
           
           // Check if absent (no clock in by end of day)
           if (!attendance.clockInTime) {
             attendance.isAbsent = true;
           }
-          
+
+          if (!attendance.clockOutTime) attendance.isEarlyLeave = true
+          console.log(JSON.stringify(attendance))
           await attendance.save();
           imported++;
           
@@ -314,8 +327,8 @@ export class AttendanceService {
     const lateEmployees = records.filter(r => r.isLate).length;
     
     const totalWorkHours = records
-      .filter(r => r.workHours)
-      .reduce((sum, r) => sum + (r.workHours || 0), 0);
+      .filter(r => r.workDuration)
+      .reduce((sum, r) => sum + (r.workDuration || 0) / 60, 0);
     const averageWorkHours = records.length > 0 ? totalWorkHours / records.length : 0;
     
     return {
