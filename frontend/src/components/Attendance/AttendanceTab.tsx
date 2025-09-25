@@ -222,7 +222,11 @@ const AttendanceTab: React.FC = () => {
 
         {/* Date Range Selection and Controls */}
         <Card sx={{ mb: 3 }}>
-          <CardContent>
+          <CardContent sx={{
+          "&:last-child": {
+              p: 2
+          }
+        }}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={2}>
                 <TextField

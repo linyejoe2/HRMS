@@ -106,9 +106,9 @@ const SettingsTab: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Settings
+        設定
       </Typography>
       
       <Grid container spacing={3}>

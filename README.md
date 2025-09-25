@@ -1,320 +1,239 @@
 # Human Resource Management System (HRMS)
 
-A modern web-based Human Resource Management System built with React, Node.js, and MongoDB. This system helps companies manage employee information, authentication, and HR processes efficiently.
+A modern HRMS built with **React**, **Node.js**, and **MongoDB**. Provides employee management, authentication, leave management, attendance tracking, and HR workflows.
+
+---
 
 ## 🏗️ Architecture
 
-### Tech Stack
+**Backend**: Node.js (TS), Express, MongoDB (Mongoose), JWT + bcrypt, Helmet, CORS, rate limiting, Access DB migration  
+**Frontend**: React 18 (TS), MUI v5, Context API, Axios, React Hook Form + Yup, Vite  
+**Infrastructure**: Docker, Nginx, MongoDB, Docker Compose
 
-**Backend:**
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js with layered architecture
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT-based with bcrypt password hashing
-- **Security**: Helmet, CORS, Rate limiting
-- **Legacy Integration**: Access Database (.mdb) migration support
-
-**Frontend:**
-- **Framework**: React 18 with TypeScript
-- **UI Library**: Material-UI (MUI) v5
-- **State Management**: React Context API
-- **HTTP Client**: Axios with interceptors
-- **Form Handling**: React Hook Form with Yup validation
-- **Build Tool**: Vite
-
-**Infrastructure:**
-- **Containerization**: Docker with multi-stage builds
-- **Reverse Proxy**: Nginx with load balancing
-- **Database**: MongoDB with authentication
-- **Environment**: Docker Compose orchestration
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Access to existing PGA.mdb database file (placed in `./data/` directory)
+- Docker & Compose  
+- Node.js 18+  
+- `PGA.mdb` in `./data/`  
 
-### Production Deployment
+### Production
 
-1. **Clone and Setup**
-   ```bash
-   git clone <repository-url>
-   cd HRMS
-   cp .env.example .env
-   ```
-
-2. **Configure Environment**
-   Edit `.env` file with your settings:
-   ```env
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   MONGODB_URI=mongodb://root:good1234@mongodb:27017/HRMS?authSource=admin
-   NGINX_PORT=80
-   ```
-
-3. **Start Services**
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Access Application**
-   - **Web App**: http://localhost:80
-   - **API Health**: http://localhost:80/api/health
-   - **Database Admin**: http://localhost:27019 (MongoDB Express)
-
-### Development Setup
-
-1. **Backend Development**
-   ```bash
-   cd backend
-   npm install
-   npm run dev  # Starts on port 3000
-   ```
-
-2. **Frontend Development**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev  # Starts on port 5173
-   ```
-
-3. **Access Development Tools**
-   - **API**: http://localhost:3000/api/health
-   - **Legacy DB Explorer**: http://localhost:3000/db
-   - **Frontend**: http://localhost:5173
-
-## 📊 Database Schema
-
-### Employee Collection
-```typescript
-{
-  name: string;           // Employee full name
-  id: string;            // Original ID from Access DB
-  empID: string;         // Unique employee identifier
-  department: string;    // Department name
-  email?: string;        // Email address (optional)
-  password?: string;     // Hashed password (set during registration)
-  role: 'admin' | 'hr' | 'employee' | 'manager';
-  isActive: boolean;     // Account status
-  startDate: Date;       // Employment start date
-  lastLogin?: Date;      // Last login timestamp
-  // ... additional fields from Access DB
-}
+```
+git clone <repo>
+cd HRMS
+cp .env.example .env
+docker-compose up -d
 ```
 
-### Authentication Flow
-1. **Data Migration**: Import existing employee data from Access DB
-2. **Employee Registration**: Employees register with existing `empID`
-3. **Login**: Authenticate using `empID` and password
-4. **JWT Token**: Issued upon successful authentication
-5. **Protected Routes**: Access based on user role
+- Web: <http://localhost>  
+- API: <http://localhost/api/health>  
+- DB Admin: <http://localhost:27019>  
 
-## 🛠️ API Endpoints
+### Development
 
-### Authentication (`/api/auth`)
-- `POST /login` - Employee login
-- `POST /register` - Employee registration (requires existing empID)
-- `GET /profile` - Get current user profile
-- `PUT /profile` - Update user profile
-- `POST /change-password` - Change password
-- `POST /logout` - Logout (client-side token removal)
-
-### Employee Management (`/api/employees`)
-- `GET /` - List all employees (paginated)
-- `GET /search?q=term` - Search employees
-- `GET /:id` - Get employee details
-- `POST /` - Create employee (HR/Admin only)
-- `PUT /:id` - Update employee (HR/Admin only)
-- `DELETE /:id` - Deactivate employee (Admin only)
-
-### Data Migration (`/api/migration`) - Admin Only
-- `POST /migrate` - Migrate data from Access DB
-- `GET /access/count` - Get Access DB record count
-- `GET /access/test` - Test Access DB connection
-
-## 🔒 Security Features
-
-### Authentication & Authorization
-- **JWT Tokens**: Stateless authentication with expiration
-- **Password Hashing**: bcrypt with salt rounds
-- **Role-based Access**: Admin, HR, Manager, Employee roles
-- **Rate Limiting**: API endpoint protection
-
-### Security Headers & CORS
-- **Helmet**: Security headers (XSS, CSRF, etc.)
-- **CORS**: Cross-origin request handling
-- **Rate Limiting**: Prevent brute force attacks
-- **Input Validation**: Joi schema validation
-
-### Data Protection
-- **Password Policy**: Minimum 6 characters
-- **Unique Constraints**: Prevent duplicate emails/empIDs
-- **Soft Delete**: Deactivate instead of hard delete
-- **Audit Trail**: Creation and update timestamps
-
-## 🐳 Docker Configuration
-
-### Services Overview
-- **nginx**: Reverse proxy and load balancer (Port: 80)
-- **backend**: Node.js API server (Internal: 3000)
-- **frontend**: React SPA (Internal: 80)  
-- **mongodb**: Database server (Port: 27019)
-
-### Networking
-- **Internal Network**: `hrms-network` for service communication
-- **Volume Mounting**: Persistent data storage for MongoDB
-- **Health Checks**: Service health monitoring
-
-### Build Process
-```bash
-# Multi-stage Docker builds for optimization
-docker-compose build  # Build all services
-docker-compose up -d  # Start in detached mode
-docker-compose logs   # View logs
 ```
+# Backend
+cd backend && npm install && npm run dev
 
-## 🔧 Development Workflow
-
-### Code Structure
+# Frontend
+cd frontend && npm install && npm run dev
 ```
-backend/
-├── src/
-│   ├── controllers/     # HTTP request handlers
-│   ├── services/        # Business logic layer
-│   ├── models/          # Database models
-│   ├── middleware/      # Express middleware
-│   ├── routes/          # API route definitions
-│   ├── config/          # Configuration files
-│   └── legacy/          # Access DB integration
-frontend/
-├── src/
-│   ├── components/      # React components
-│   ├── contexts/        # React Context providers
-│   ├── services/        # API service calls
-│   ├── types/           # TypeScript definitions
-│   └── theme.ts         # Material-UI theme
-```
-
-### Testing Strategy
-```bash
-# Backend testing
-cd backend
-npm test
-
-# Frontend testing  
-cd frontend
-npm test
-
-# E2E testing
-npm run test:e2e
-```
-
-## 📝 Environment Variables
-
-### Required Configuration
-```env
-# Server
-NODE_ENV=development|production
-PORT=3000
-
-# Database
-MONGODB_URI=mongodb://user:pass@host:port/db?authSource=admin
-
-# Security
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-
-# CORS
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-
-# Docker
-NGINX_PORT=80
-BACKEND_PORT=3000
-FRONTEND_PORT=80
-```
-
-## 🚀 Deployment
-
-### Production Checklist
-- [ ] Update JWT_SECRET to strong random value
-- [ ] Configure production MongoDB URI
-- [ ] Set NODE_ENV=production
-- [ ] Configure proper CORS origins
-- [ ] Set up SSL certificates for HTTPS
-- [ ] Configure backup strategies
-- [ ] Set up monitoring and logging
-
-### Scaling Considerations
-- **Database**: MongoDB replica sets for high availability
-- **API Server**: Multiple backend instances behind nginx
-- **Frontend**: CDN distribution for static assets
-- **Monitoring**: Application and infrastructure monitoring
-
-## 📋 Migration from Legacy System
-
-### Access Database Integration
-1. **Data Assessment**: Review existing Access DB schema
-2. **Schema Mapping**: Map Access fields to MongoDB schema
-3. **Data Migration**: Use `/api/migration/migrate` endpoint
-4. **Validation**: Verify data integrity after migration
-5. **User Onboarding**: Guide employees through registration process
-
-### Migration Steps
-```bash
-# 1. Test Access DB connection
-curl http://localhost:3000/api/migration/access/test
-
-# 2. Check record count
-curl http://localhost:3000/api/migration/access/count
-
-# 3. Run migration (Admin token required)
-curl -X POST http://localhost:3000/api/migration/migrate \
-  -H "Authorization: Bearer <admin-token>"
-```
-
-## 🤝 Contributing
-
-### Development Guidelines
-1. **Code Style**: Follow TypeScript and ESLint rules
-2. **Testing**: Write unit tests for new features
-3. **Documentation**: Update README for significant changes
-4. **Security**: Follow secure coding practices
-
-### Git Workflow
-```bash
-git checkout -b feature/your-feature
-git commit -m "feat: add new feature"
-git push origin feature/your-feature
-# Create Pull Request
-```
-
-## 📞 Support
-
-### Common Issues
-- **Database Connection**: Check MongoDB service and credentials
-- **Authentication**: Verify JWT secret and token validity
-- **Migration**: Ensure Access DB file is accessible
-- **CORS**: Check origin configuration for frontend
-
-### Logs and Debugging
-```bash
-# View service logs
-docker-compose logs nginx
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs mongodb
-
-# Access container for debugging
-docker exec -it HRMS-backend sh
-```
-
-## 📄 License
-
-This project is proprietary software developed for internal company use.
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2024-09-11  
-**Maintained By**: Development Team
+## 📊 Database
+
+**Employee Collection**
+
+```
+{
+  empID: string;
+  name: string;
+  department: string;
+  email?: string;
+  password?: string;
+  role: 'admin'|'hr'|'manager'|'employee';
+  isActive: boolean;
+  startDate: Date;
+  lastLogin?: Date;
+}
+```
+
+**Leave Collection**
+
+```
+{
+  empID: string;
+  name: string;
+  department: string;
+  leaveType: string; // 婚假, 喪假, 病假, 事假, etc.
+  reason: string;
+  leaveStart: Date;
+  leaveEnd: Date;
+  status: 'created'|'approved'|'rejected';
+  rejectionReason?: string;
+  approvedBy?: string;
+  YY: string; // Application year
+  mm: string; // Application month
+  DD: string; // Application day
+  hour: string;
+  minutes: string;
+}
+```
+
+**Auth Flow**: Migrate → Register → Login → JWT → Role-based access
+
+---
+
+## 🛠️ API Endpoints
+
+**Auth (`/api/auth`)**  
+
+- POST `/login`, `/register`, `/change-password`, `/logout`  
+- GET/PUT `/profile`  
+
+**Employees (`/api/employees`)**
+
+- CRUD, search, deactivate
+
+**Leave Management (`/api/leave`)**
+
+- POST `/create` - Create leave request
+- GET `/my` - Get employee's leave requests
+- GET `/all` - Get all leave requests (HR/Admin only)
+- PUT `/:id/approve` - Approve leave request (HR/Admin only)
+- PUT `/:id/reject` - Reject leave request (HR/Admin only)
+- GET `/:id` - Get specific leave request
+
+**Attendance (`/api/attendance`)**
+
+- POST `/scan/now` - Trigger attendance scan
+- GET `/date/:date` - Get records by date
+- GET `/daterange` - Get records by date range
+- GET `/my` - Get personal attendance
+
+**Migration (`/api/migration`)**
+
+- POST `/migrate`
+- GET `/access/count`, `/access/test`  
+
+---
+
+## 🔒 Security
+
+- JWT tokens, bcrypt hashing  
+- Role-based access (admin/hr/manager/employee)  
+- Helmet, CORS, rate limiting  
+- Soft delete, audit trail, validation  
+
+---
+
+## 🐳 Docker
+
+- **nginx** (80)  
+- **backend** (3000)  
+- **frontend** (80)  
+- **mongodb** (27019)  
+
+```
+docker-compose build
+docker-compose up -d
+docker-compose logs
+```
+
+---
+
+## 🔧 Development
+
+**Backend Structure**
+
+```
+controllers/        # Request handlers (auth, employee, leave, attendance)
+services/           # Business logic (employeeService, leaveService, etc.)
+models/             # MongoDB schemas (Employee, Leave, Attendance)
+middleware/         # Auth, validation, error handling
+routes/             # API route definitions
+config/             # Database & environment config
+legacy/             # Access DB migration tools
+```
+
+**Frontend Structure**
+
+```
+components/         # React components
+├── Auth/           # Login, Register forms
+├── Employee/       # Employee management
+├── Leave/          # Leave request & approval
+├── Attendance/     # Attendance tracking
+└── Layout/         # Navigation, layout
+contexts/           # React Context (AuthContext)
+services/           # API clients (axios)
+types/              # TypeScript interfaces
+utils/              # Utilities (docx generation)
+theme.ts            # MUI theme configuration
+```
+
+## ✨ Features
+
+### 📝 Leave Management
+- **Employee Features**:
+  - Create leave requests with multiple types (婚假, 喪假, 病假, 事假, etc.)
+  - View personal leave request history
+  - Download leave request forms as DOCX documents
+  - Real-time status tracking (pending, approved, rejected)
+
+- **HR/Admin Features**:
+  - Review all leave requests with DataGrid interface
+  - Filter by status (created, approved, rejected, all)
+  - Approve or reject requests with reasons
+  - Sortable columns and pagination
+  - Audit trail with approval history
+
+### 👤 Employee Management
+- Complete CRUD operations for employee data
+- Role-based access control (Admin, HR, Manager, Employee)
+- Department-based filtering and search
+- Employee status management (active/inactive)
+
+### ⏰ Attendance Tracking
+- Automated attendance data import
+- Date range queries and reporting
+- Individual and department-level analytics
+- Integration with existing attendance systems
+
+**Testing**
+
+```
+npm test        # unit tests
+npm run test:e2e
+```
+
+---
+
+## 📝 Env Variables
+
+```
+NODE_ENV=development|production
+PORT=3000
+MONGODB_URI=mongodb://user:pass@host:port/db?authSource=admin
+JWT_SECRET=your-secret
+JWT_EXPIRES_IN=7d
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+NGINX_PORT=80
+```
+
+---
+
+## 🚀 Deployment
+
+- Strong JWT secret  
+- Production MongoDB URI  
+- NODE_ENV=production  
+- Proper CORS + HTTPS  
+- Backups + monitoring  
+
+Scaling: MongoDB replica sets, multiple backend instances, CDN for frontend.
