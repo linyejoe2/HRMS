@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest } from '../types';
 
 const API_BASE_URL = "";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
@@ -257,3 +257,37 @@ export const employeeAPI = {
   delete: (id: string): Promise<AxiosResponse<{ message: string }>> =>
     api.delete(`/employees/${id}`)
 };
+
+export const leaveAPI = {
+  // Create leave request
+  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+    api.post('/leave/create', leaveData),
+
+  // Get my leave requests
+  getMy: (): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+    api.get('/leave/my'),
+
+  // Get all leave requests (HR/Admin only)
+  getAll: (status?: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+    api.get(`/leave/all${status ? `?status=${status}` : ''}`),
+
+  // Get leave request by ID
+  getById: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+    api.get(`/leave/${id}`),
+
+  // Approve leave request (HR/Admin only)
+  approve: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+    api.put(`/leave/${id}/approve`),
+
+  // Reject leave request (HR/Admin only)
+  reject: (id: string, reason: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+    api.put(`/leave/${id}/reject`, { reason })
+};
+
+// Convenience functions for leave operations
+export const createLeaveRequest = leaveAPI.create;
+export const getMyLeaveRequests = leaveAPI.getMy;
+export const getAllLeaveRequests = leaveAPI.getAll;
+export const getLeaveRequestById = leaveAPI.getById;
+export const approveLeaveRequest = leaveAPI.approve;
+export const rejectLeaveRequest = leaveAPI.reject;

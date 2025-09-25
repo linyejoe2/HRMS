@@ -25,6 +25,8 @@ import {
   Logout as LogoutIcon,
   Schedule as AttendanceIcon,
   Group as EmployeeIcon,
+  RequestQuote as LeaveIcon,
+  Assignment as ApprovalIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -94,17 +96,31 @@ const AppLayout: React.FC = () => {
       { text: '出勤管理', icon: <AttendanceIcon />, path: '/attendance' },
     ];
 
+    // Add Leave Request for all users
+    baseItems.push({
+      text: '請假申請',
+      icon: <LeaveIcon />,
+      path: '/leave/ask'
+    });
+
     // Add Employee Management for HR and Admin only
     if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
+      // Add Leave Approval for HR and Admin only
       baseItems.push({
-        text: '員工管理', 
-        icon: <EmployeeIcon />, 
+        text: '請假審核',
+        icon: <ApprovalIcon />,
+        path: '/leave/approve'
+      });
+      
+      baseItems.push({
+        text: '員工管理',
+        icon: <EmployeeIcon />,
         path: '/employees'
       });
     }
 
     baseItems.push({ text: '設定', icon: <SettingsIcon />, path: '/settings' });
-    
+
     return baseItems;
   };
 

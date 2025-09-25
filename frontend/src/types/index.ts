@@ -27,14 +27,20 @@ export interface LeaveRequestForm {
 }
 
 export interface LeaveRequest extends LeaveRequestForm {
+  _id?: string; // MongoDB ID
   name: string; // from table employee
-  deparment: string; // from table employee
+  department: string; // from table employee
   empID: string; // from table employee
   YY: string; // the date that create this request
   mm: string; // the date that create this request
   DD: string; // the date that create this request
   hour: string; // calc by leaveStart and leaveEnd
   minutes: string; // calc by leaveStart and leaveEnd
+  status: 'created' | 'approved' | 'rejected';
+  rejectionReason?: string;
+  approvedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum UserLevel {

@@ -47,3 +47,26 @@ export const registerSchema = Joi.object({
 export const updateProfileSchema = Joi.object({
   department: Joi.string().optional()
 }).min(1);
+
+export const leaveRequestSchema = Joi.object({
+  leaveType: Joi.string().required().messages({
+    'string.empty': 'Leave type is required',
+    'any.required': 'Leave type is required'
+  }),
+  reason: Joi.string().required().messages({
+    'string.empty': 'Reason is required',
+    'any.required': 'Reason is required'
+  }),
+  leaveStart: Joi.string().isoDate().required().messages({
+    'string.empty': 'Leave start date is required',
+    'string.isoDate': 'Leave start date must be a valid ISO date',
+    'any.required': 'Leave start date is required'
+  }),
+  leaveEnd: Joi.string().isoDate().required().messages({
+    'string.empty': 'Leave end date is required',
+    'string.isoDate': 'Leave end date must be a valid ISO date',
+    'any.required': 'Leave end date is required'
+  })
+});
+
+export const validateLeaveRequest = validateRequest(leaveRequestSchema);
