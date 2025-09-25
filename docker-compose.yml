@@ -48,7 +48,6 @@ services:
       - hrms-network
     restart: unless-stopped
     volumes:
-      - ./backend/uploads:/app/uploads
       - ./data:/app/data
 
   frontend:

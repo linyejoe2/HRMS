@@ -19,6 +19,24 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface LeaveRequestForm {
+  leaveType: string; // select
+  reason: string;
+  leaveStart: string; // use timedate choose components
+  leaveEnd: string; // use timedate choose components
+}
+
+export interface LeaveRequest extends LeaveRequestForm {
+  name: string; // from table employee
+  deparment: string; // from table employee
+  empID: string; // from table employee
+  YY: string; // the date that create this request
+  mm: string; // the date that create this request
+  DD: string; // the date that create this request
+  hour: string; // calc by leaveStart and leaveEnd
+  minutes: string; // calc by leaveStart and leaveEnd
+}
+
 export enum UserLevel {
   ADMIN = 'admin',
   HR = 'hr',

@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>填寫 Word 並下載</title>
+  <script src="https://cdn.jsdelivr.net/npm/pizzip@3.2.0/dist/pizzip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.38.0/docxtemplater.js"></script>
+</head>
+<body>
+  <h2>填寫 Word 模板並下載</h2>
+  <input type="file" id="uploadTemplate" accept=".docx" />
+  <button id="generate">產生 Word 文件</button>
+
+  <script>
+    document.getElementById("generate").addEventListener("click", async () => {
+      const fileInput = document.getElementById("uploadTemplate");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("請先上傳 Word 模板 (.docx)");
+        return;
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = new PizZip(arrayBuffer);
+      const doc = new window.docxtemplater().loadZip(zip);
+
+      // 替換 Word 中的變數
+      doc.setData({
+        name: "王小明",
+        order: "12345678"
+      });
+
+      try {
+        doc.render();
+      } catch (error) {
+        console.error("渲染錯誤：", error);
+        alert("Word 文件處理失敗，請檢查模板格式");
+        return;
+      }
+
+      const out = doc.getZip().generate({
+        type: "blob",
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(out);
+      link.download = "填寫後的文件.docx";
+      link.click();
+    });
+  </script>
+</body>
+</html>
