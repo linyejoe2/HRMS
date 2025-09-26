@@ -101,8 +101,10 @@ const AskLeaveTab: React.FC = () => {
                   <TableCell>申請日期</TableCell>
                   <TableCell>請假開始</TableCell>
                   <TableCell>請假結束</TableCell>
+                  <TableCell>請假理由</TableCell>
                   <TableCell>請假時數</TableCell>
                   <TableCell>狀態</TableCell>
+                  <TableCell>說明</TableCell>
                   <TableCell>操作</TableCell>
                 </TableRow>
               </TableHead>
@@ -133,10 +135,16 @@ const AskLeaveTab: React.FC = () => {
                         {new Date(request.leaveEnd).toLocaleString('zh-TW')}
                       </TableCell>
                       <TableCell>
+                        {request.reason}
+                      </TableCell>
+                      <TableCell>
                         {request.hour}小時{request.minutes}分鐘
                       </TableCell>
                       <TableCell>
                         {getStatusChip(request.status)}
+                      </TableCell>
+                      <TableCell>
+                        {request.rejectionReason ?? ""}
                       </TableCell>
                       <TableCell>
                         <Tooltip title="下載請假單">
