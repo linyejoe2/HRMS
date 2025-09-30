@@ -17,12 +17,14 @@ import {
 } from '@mui/material';
 import {
   Check as ApproveIcon,
-  Close as RejectIcon
+  Close as RejectIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 const ApproveLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -31,6 +33,8 @@ const ApproveLeaveTab: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -92,6 +96,27 @@ const ApproveLeaveTab: React.FC = () => {
     setRejectReason('');
   };
 
+  const handleCancelClick = (leaveId: string) => {
+    setSelectedLeaveId(leaveId);
+    setCancelConfirmOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedLeaveId) return;
+
+    try {
+      await cancelLeaveRequest(selectedLeaveId);
+      toast.success('請假申請已抽單');
+      fetchLeaveRequests(statusFilter || undefined);
+    } catch (error: any) {
+      console.error('Error cancelling leave request:', error);
+      const message = error.response?.data?.message || '抽單失敗';
+      toast.error(message);
+    } finally {
+      setSelectedLeaveId(null);
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -100,6 +125,8 @@ const ApproveLeaveTab: React.FC = () => {
         return <Chip label="已核准" color="success" size="small" />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
+      case 'cancel':
+        return <Chip label="已取消" color="default" size="small" />;
       default:
         return <Chip label={status} size="small" />;
     }
@@ -206,6 +233,15 @@ const ApproveLeaveTab: React.FC = () => {
               }
               label="拒絕"
               onClick={() => handleRejectClick(params.row)}
+            />,
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="抽單">
+                  <CancelIcon color="warning" />
+                </Tooltip>
+              }
+              label="抽單"
+              onClick={() => handleCancelClick(params.row._id)}
             />
           );
         }
@@ -340,6 +376,17 @@ const ApproveLeaveTab: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmationModal
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleCancelConfirm}
+        title="確認抽單"
+        message="您確定要抽掉這個請假申請嗎？"
+        confirmText="確認抽單"
+        cancelText="取消"
+        confirmColor="warning"
+      />
     </Box>
   );
 };

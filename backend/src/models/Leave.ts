@@ -13,7 +13,7 @@ export interface ILeave extends Document {
   DD: string;
   hour: string;
   minutes: string;
-  status: 'created' | 'approved' | 'rejected';
+  status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
   createdAt: Date;
@@ -72,7 +72,7 @@ const leaveSchema = new Schema<ILeave>({
   },
   status: {
     type: String,
-    enum: ['created', 'approved', 'rejected'],
+    enum: ['created', 'approved', 'rejected', 'cancel'],
     default: 'created',
     index: true
   },

@@ -18,18 +18,22 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  GetApp as DownloadIcon
+  GetApp as DownloadIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { LeaveRequest } from '../../types';
 import LeaveRequestModal from './LeaveRequestModal';
-import { getMyLeaveRequests } from '../../services/api';
+import { getMyLeaveRequests, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import { generateLeaveRequestDocx } from '../../utils/docxGenerator';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -63,6 +67,26 @@ const AskLeaveTab: React.FC = () => {
     }
   };
 
+  const handleCancelClick = (leaveId: string) => {
+    setSelectedLeaveId(leaveId);
+    setCancelConfirmOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedLeaveId) return;
+
+    try {
+      await cancelLeaveRequest(selectedLeaveId);
+      toast.success('請假申請已取消');
+      fetchLeaveRequests(); // Refresh the list
+    } catch (error) {
+      console.error('Error cancelling leave request:', error);
+      toast.error('取消失敗: ' + (error as any)?.response?.data?.message || '未知錯誤');
+    } finally {
+      setSelectedLeaveId(null);
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -71,6 +95,8 @@ const AskLeaveTab: React.FC = () => {
         return <Chip label="已核准" color="success" size="small" />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
+      case 'cancel':
+        return <Chip label="已取消" color="default" size="small" />;
       default:
         return <Chip label={status} size="small" />;
     }
@@ -147,14 +173,27 @@ const AskLeaveTab: React.FC = () => {
                         {request.rejectionReason ?? ""}
                       </TableCell>
                       <TableCell>
-                        <Tooltip title="下載請假單">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDownload(request)}
-                          >
-                            <DownloadIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="下載請假單">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDownload(request)}
+                            >
+                              <DownloadIcon />
+                            </IconButton>
+                          </Tooltip>
+                          {request.status === 'created' && (
+                            <Tooltip title="取消申請">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleCancelClick(request._id ?? "")}
+                              >
+                                <CancelIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -168,6 +207,17 @@ const AskLeaveTab: React.FC = () => {
       <LeaveRequestModal
         open={isModalOpen}
         onClose={handleModalClose}
+      />
+
+      <ConfirmationModal
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleCancelConfirm}
+        title="確認取消請假申請"
+        message="您確定要取消這個請假申請嗎？此操作無法復原。"
+        confirmText="確認取消"
+        cancelText="保持申請"
+        confirmColor="error"
       />
     </Box>
   );

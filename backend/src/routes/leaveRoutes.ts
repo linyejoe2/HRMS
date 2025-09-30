@@ -5,7 +5,9 @@ import {
   getAllLeaveRequests,
   approveLeaveRequest,
   rejectLeaveRequest,
-  getLeaveRequestById
+  getLeaveRequestById,
+  cancelLeaveRequest,
+  getCancelLeaveRequests
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -24,5 +26,9 @@ router.get('/:id', authenticateToken, getLeaveRequestById);
 router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), approveLeaveRequest);
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), rejectLeaveRequest);
+
+router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
+
+router.get('/cancelled/all', authenticateToken, requireRole(['hr', 'admin']), getCancelLeaveRequests);
 
 export default router;

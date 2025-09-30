@@ -101,11 +101,11 @@ export class LeaveService {
   }
 
   static async getLeaveRequestsByEmployee(empID: string): Promise<ILeave[]> {
-    return await Leave.find({ empID }).sort({ createdAt: -1 });
+    return await Leave.find({ empID, status: { $ne: 'cancel' } }).sort({ createdAt: -1 });
   }
 
   static async getAllLeaveRequests(status?: string): Promise<ILeave[]> {
-    const query = status ? { status } : {};
+    const query = status ? { status } : { status: { $ne: 'cancel' } };
     return await Leave.find(query).sort({ createdAt: -1 });
   }
 
@@ -154,5 +154,33 @@ export class LeaveService {
     }
 
     return leave;
+  }
+
+  static async cancelLeaveRequest(leaveId: string, cancelledBy: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+
+    if (leave.status === 'cancel') {
+      throw new APIError('Leave request already cancelled', 400);
+    }
+
+    if (leave.status === 'approved') {
+      throw new APIError('Cannot cancel approved leave request', 400);
+    }
+
+    leave.status = 'cancel';
+    leave.approvedBy = cancelledBy;
+
+    return await leave.save();
+  }
+
+  static async getCancelLeaveRequests(employeeID?: string): Promise<ILeave[]> {
+    const query = employeeID
+      ? { empID: employeeID, status: 'cancel' }
+      : { status: 'cancel' };
+
+    return await Leave.find(query).sort({ createdAt: -1 });
   }
 }

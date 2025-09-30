@@ -81,3 +81,27 @@ export const getLeaveRequestById = asyncHandler(async (req: AuthRequest, res: Re
     message: 'Leave request retrieved successfully'
   });
 });
+
+export const cancelLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const cancelledBy = req.user!.empID;
+
+  const leave = await LeaveService.cancelLeaveRequest(id, cancelledBy);
+
+  res.json({
+    success: true,
+    data: leave,
+    message: 'Leave request cancelled successfully'
+  });
+});
+
+export const getCancelLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { employeeID } = req.query;
+  const leaves = await LeaveService.getCancelLeaveRequests(employeeID as string);
+
+  res.json({
+    success: true,
+    data: leaves,
+    message: 'Cancelled leave requests retrieved successfully'
+  });
+});

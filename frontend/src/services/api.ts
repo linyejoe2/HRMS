@@ -281,7 +281,15 @@ export const leaveAPI = {
 
   // Reject leave request (HR/Admin only)
   reject: (id: string, reason: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
-    api.put(`/leave/${id}/reject`, { reason })
+    api.put(`/leave/${id}/reject`, { reason }),
+
+  // Cancel leave request
+  cancel: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+    api.put(`/leave/${id}/cancel`),
+
+  // Get cancelled leave requests (HR/Admin only)
+  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+    api.get(`/leave/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
 };
 
 // Convenience functions for leave operations
@@ -291,3 +299,5 @@ export const getAllLeaveRequests = leaveAPI.getAll;
 export const getLeaveRequestById = leaveAPI.getById;
 export const approveLeaveRequest = leaveAPI.approve;
 export const rejectLeaveRequest = leaveAPI.reject;
+export const cancelLeaveRequest = leaveAPI.cancel;
+export const getCancelledLeaveRequests = leaveAPI.getCancelled;
