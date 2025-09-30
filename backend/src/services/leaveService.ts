@@ -3,6 +3,49 @@ import { APIError } from '../middleware/errorHandler';
 import { calcWarkingDurent } from '../utility';
 
 export class LeaveService {
+  static async checkLeaveRequestDidntRepeat(leave: ILeave): Promise<boolean> {
+    const leaves = await this.getLeaveRequestsByEmployee(leave.empID);
+
+    const approvedLeaves = leaves.filter(existingLeave =>
+      existingLeave.status === 'approved' &&
+      existingLeave._id?.toString() !== leave._id?.toString()
+    );
+
+    if (approvedLeaves.length === 0) {
+      return true;
+    }
+
+    const newLeaveStart = new Date(leave.leaveStart);
+    const newLeaveEnd = new Date(leave.leaveEnd);
+
+    for (const approvedLeave of approvedLeaves) {
+      const existingStart = new Date(approvedLeave.leaveStart);
+      const existingEnd = new Date(approvedLeave.leaveEnd);
+
+      const hasOverlap = this.checkDateRangeOverlap(
+        newLeaveStart,
+        newLeaveEnd,
+        existingStart,
+        existingEnd
+      );
+
+      if (hasOverlap) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static checkDateRangeOverlap(
+    start1: Date,
+    end1: Date,
+    start2: Date,
+    end2: Date
+  ): boolean {
+    return start1 < end2 && end1 > start2;
+  }
+
   static async createLeaveRequest(empID: string, leaveData: {
     leaveType: string;
     reason: string;
@@ -47,7 +90,14 @@ export class LeaveService {
       status: 'created'
     });
 
-    return await leave.save();
+    const isNotOverlapping = await this.checkLeaveRequestDidntRepeat(leave);
+    if (!isNotOverlapping) {
+      throw new APIError('請假時間重複!', 409);      
+    }
+
+    const savedLeave = await leave.save();
+
+    return savedLeave;
   }
 
   static async getLeaveRequestsByEmployee(empID: string): Promise<ILeave[]> {
@@ -67,6 +117,11 @@ export class LeaveService {
 
     if (leave.status !== 'created') {
       throw new APIError('Leave request already processed', 400);
+    }
+
+    const didntRepeat = await this.checkLeaveRequestDidntRepeat(leave)
+    if (!didntRepeat) {
+      throw new APIError("請假時間重複!無法完成請假。", 409);
     }
 
     leave.status = 'approved';

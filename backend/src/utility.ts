@@ -41,6 +41,15 @@ export function toTaipeiString(date?: string): string {
   return dayjs(date).locale("tw").format('YYYY/MM/DD HH:mm')
 }
 
+/**
+ * 
+ * @param date ex: 2025-08-10T07:42:00.000Z
+ */
+export function toDayjs(date?: string): dayjs.Dayjs {
+  if (!date) return dayjs().tz("Asia/Taipei")
+  return dayjs(date).tz("Asia/Taipei")
+}
+
 export interface DateObjectQ {
   YY: string;
   YYYY: string;

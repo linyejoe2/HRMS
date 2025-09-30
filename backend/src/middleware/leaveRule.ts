@@ -1,15 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import { toSeparatVariable } from '../utility';
+import { toDayjs, toSeparatVariable } from '../utility';
 
 export const validateLeaveRule = (req: Request, res: Response, next: NextFunction) => {
   const { leaveType, reason, leaveStart, leaveEnd } = req.body as { [key: string]: string };
 
   const leaveStartObject = toSeparatVariable(leaveStart)
   const leaveEndObject = toSeparatVariable(leaveEnd)
+  const leaveStartDayjs = toDayjs(leaveStart)
+  const leaveEndDayjs = toDayjs(leaveEnd)
   // console.log("leaveStartObject")
   // console.log("leaveEndObject")
   // console.log(JSON.stringify(leaveStartObject))
   // console.log(JSON.stringify(leaveEndObject))
+
+  if (leaveEndDayjs.isBefore(leaveStartDayjs)) 
+    return res.status(400).json({ success: false, message: "結束時間早於開始時間" });
 
   // 1. 開始時間不得早於上班時間 830 8:30
   if (parseInt(leaveStartObject.H + leaveStartObject.mm) < 830)
