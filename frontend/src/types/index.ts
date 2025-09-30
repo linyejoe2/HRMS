@@ -36,9 +36,10 @@ export interface LeaveRequest extends LeaveRequestForm {
   DD: string; // the date that create this request
   hour: string; // calc by leaveStart and leaveEnd
   minutes: string; // calc by leaveStart and leaveEnd
-  status: 'created' | 'approved' | 'rejected';
+  status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
 }

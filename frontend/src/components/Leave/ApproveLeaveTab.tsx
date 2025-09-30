@@ -13,12 +13,14 @@ import {
   Button,
   TextField,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  InputAdornment
 } from '@mui/material';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
-  Cancel as CancelIcon
+  Delete as DeleteIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
@@ -35,6 +37,7 @@ const ApproveLeaveTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+  const [searchSequence, setSearchSequence] = useState<string>('');
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -136,7 +139,20 @@ const ApproveLeaveTab: React.FC = () => {
     setStatusFilter(newValue);
   };
 
+  const filteredLeaveRequests = leaveRequests.filter(request => {
+    if (!searchSequence) return true;
+    const sequenceStr = request.sequenceNumber?.toString() || '';
+    return sequenceStr.includes(searchSequence);
+  });
+
   const columns: GridColDef[] = [
+    {
+      field: 'sequenceNumber',
+      headerName: '編號',
+      flex: 1,
+      valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
+      sortable: true
+    },
     {
       field: 'name',
       headerName: '員工姓名',
@@ -237,7 +253,7 @@ const ApproveLeaveTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="抽單">
-                  <CancelIcon color="warning" />
+                  <DeleteIcon color="warning" />
                 </Tooltip>
               }
               label="抽單"
@@ -264,26 +280,43 @@ const ApproveLeaveTab: React.FC = () => {
               p: 2
           }
         }}>
-          <ToggleButtonGroup
-            value={statusFilter}
-            exclusive
-            onChange={handleStatusFilterChange}
-            aria-label="狀態篩選"
-            size="small"
-          >
-            <ToggleButton value="created" aria-label="待審核">
-              待審核
-            </ToggleButton>
-            <ToggleButton value="approved" aria-label="已核准">
-              已核准
-            </ToggleButton>
-            <ToggleButton value="rejected" aria-label="已拒絕">
-              已拒絕
-            </ToggleButton>
-            <ToggleButton value="" aria-label="全部">
-              全部
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+            <ToggleButtonGroup
+              value={statusFilter}
+              exclusive
+              onChange={handleStatusFilterChange}
+              aria-label="狀態篩選"
+              size="small"
+            >
+              <ToggleButton value="created" aria-label="待審核">
+                待審核
+              </ToggleButton>
+              <ToggleButton value="approved" aria-label="已核准">
+                已核准
+              </ToggleButton>
+              <ToggleButton value="rejected" aria-label="已拒絕">
+                已拒絕
+              </ToggleButton>
+              <ToggleButton value="" aria-label="全部">
+                全部
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            <TextField
+              size="small"
+              placeholder="搜尋申請編號..."
+              value={searchSequence}
+              onChange={(e) => setSearchSequence(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ minWidth: 200 }}
+            />
+          </Box>
         </CardContent>
       </Card>
 
@@ -291,7 +324,7 @@ const ApproveLeaveTab: React.FC = () => {
         <CardContent>
           <Box sx={{ height: 600, width: '100%' }}>
             <DataGrid
-              rows={leaveRequests}
+              rows={filteredLeaveRequests}
               columns={columns}
               getRowId={(row) => row._id}
               loading={loading}

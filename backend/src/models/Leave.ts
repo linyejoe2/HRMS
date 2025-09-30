@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { Counter } from './Counter';
 
 export interface ILeave extends Document {
   empID: string;
@@ -16,6 +17,7 @@ export interface ILeave extends Document {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  sequenceNumber: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,9 +83,32 @@ const leaveSchema = new Schema<ILeave>({
   },
   approvedBy: {
     type: String
+  },
+  sequenceNumber: {
+    type: Number,
+    unique: true
   }
 }, {
   timestamps: true
+});
+
+// Auto-increment sequence number
+leaveSchema.pre('save', async function(next) {
+  if (this.isNew && !this.sequenceNumber) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        'leave_sequence',
+        { $inc: { sequence_value: 1 } },
+        { new: true, upsert: true }
+      );
+      this.sequenceNumber = counter.sequence_value;
+      next();
+    } catch (error) {
+      next(error as Error);
+    }
+  } else {
+    next();
+  }
 });
 
 export const Leave = mongoose.model<ILeave>('Leave', leaveSchema);

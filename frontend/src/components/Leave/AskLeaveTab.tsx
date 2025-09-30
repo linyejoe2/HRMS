@@ -19,7 +19,7 @@ import {
 import {
   Add as AddIcon,
   GetApp as DownloadIcon,
-  Cancel as CancelIcon
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { LeaveRequest } from '../../types';
 import LeaveRequestModal from './LeaveRequestModal';
@@ -123,6 +123,7 @@ const AskLeaveTab: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell>編號</TableCell>
                   <TableCell>請假類型</TableCell>
                   <TableCell>申請日期</TableCell>
                   <TableCell>請假開始</TableCell>
@@ -137,19 +138,20 @@ const AskLeaveTab: React.FC = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       載入中...
                     </TableCell>
                   </TableRow>
                 ) : leaveRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       尚無請假申請
                     </TableCell>
                   </TableRow>
                 ) : (
                   leaveRequests.map((request) => (
                     <TableRow key={request._id}>
+                      <TableCell>#{request.sequenceNumber || 'N/A'}</TableCell>
                       <TableCell>{request.leaveType}</TableCell>
                       <TableCell>
                         {request.YY}/{request.mm}/{request.DD}
@@ -186,10 +188,9 @@ const AskLeaveTab: React.FC = () => {
                             <Tooltip title="取消申請">
                               <IconButton
                                 size="small"
-                                color="error"
                                 onClick={() => handleCancelClick(request._id ?? "")}
                               >
-                                <CancelIcon />
+                                <DeleteIcon />
                               </IconButton>
                             </Tooltip>
                           )}
