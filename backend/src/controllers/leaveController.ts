@@ -4,6 +4,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  // return res.status(400).json({success: false, message: "測試失敗"})
   const { leaveType, reason, leaveStart, leaveEnd } = req.body;
   const empID = req.user!.empID;
 

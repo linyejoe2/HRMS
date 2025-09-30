@@ -151,13 +151,13 @@ export function calcWarkingDurent(
     }
 
     cursor = cursor.add(1, "day");
-  }
 
-  // 判斷是否跨過午休 12:00–13:00
-  const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
-  const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
-  if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
-    crossBreaktime = 60;
+    // 判斷是否跨過午休 12:00–13:00
+    const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
+    const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
+    if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
+      crossBreaktime = 60;
+    }
   }
 
   return { durent, crossBreaktime, crossNight, crossholiday };

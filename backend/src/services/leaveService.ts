@@ -1,5 +1,6 @@
 import { Leave, ILeave, Employee } from '../models';
 import { APIError } from '../middleware/errorHandler';
+import { calcWarkingDurent } from '../utility';
 
 export class LeaveService {
   static async createLeaveRequest(empID: string, leaveData: {
@@ -16,10 +17,14 @@ export class LeaveService {
     const leaveStart = new Date(leaveData.leaveStart);
     const leaveEnd = new Date(leaveData.leaveEnd);
 
-    const timeDiff = leaveEnd.getTime() - leaveStart.getTime();
-    const totalMinutes = Math.floor(timeDiff / (1000 * 60));
+    const timeDiff = calcWarkingDurent(leaveData.leaveStart, leaveData.leaveEnd);
+    const totalMinutes = Math.floor(timeDiff.durent);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
+    console.log(timeDiff)
+    console.log(totalMinutes)
+    console.log(hours)
+    console.log(minutes)
 
     const createdDate = new Date();
     const YY = String(createdDate.getFullYear()).slice(-2);

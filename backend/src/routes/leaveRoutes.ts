@@ -9,10 +9,11 @@ import {
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
+import { validateLeaveRule } from '../middleware/leaveRule';
 
 const router = Router();
 
-router.post('/create', authenticateToken, validateLeaveRequest, createLeaveRequest);
+router.post('/create', authenticateToken, validateLeaveRequest, validateLeaveRule, createLeaveRequest);
 
 router.get('/my', authenticateToken, getMyLeaveRequests);
 
