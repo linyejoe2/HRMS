@@ -14,10 +14,16 @@ import {
   FormControlLabel,
   Switch,
   Typography,
-  Box
+  Box,
+  Chip,
+  Divider
 } from '@mui/material';
+import {
+  Visibility as VisibilityIcon,
+  Lock as LockIcon
+} from '@mui/icons-material';
 import { Employee, UserLevel } from '../../types';
-import { employeeAPI } from '../../services/api';
+import { employeeAPI, authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -43,11 +49,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     empID2: '',
     department: '',
     role: UserLevel.EMPLOYEE,
-    isActive: true
+    isActive: true,
+    hireDate: '',
+    salary: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSensitive, setShowSensitive] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [verificationPassword, setVerificationPassword] = useState('');
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+  const [sensitiveData, setSensitiveData] = useState<Employee | null>(null);
 
   // Department options
   const departments = [
@@ -83,6 +96,43 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     return false;
   };
 
+  // Password verification functions
+  const handleToggleSensitive = () => {
+    if (showSensitive) {
+      setShowSensitive(false);
+      setSensitiveData(null);
+    } else {
+      setPasswordDialogOpen(true);
+    }
+  };
+
+  const handlePasswordVerification = async () => {
+    if (!verificationPassword.trim()) {
+      toast.error('請輸入密碼');
+      return;
+    }
+
+    try {
+      setVerifyingPassword(true);
+      const response = await authAPI.getMeWithSensitive(verificationPassword);
+      setSensitiveData(response.data.data.user);
+      setShowSensitive(true);
+      setPasswordDialogOpen(false);
+      setVerificationPassword('');
+      toast.success('敏感資訊已顯示');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || '密碼驗證失敗');
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
+  const handleClosePasswordDialog = () => {
+    setPasswordDialogOpen(false);
+    setVerificationPassword('');
+    setVerifyingPassword(false);
+  };
+
   // Initialize form data
   useEffect(() => {
     if (employee) {
@@ -92,7 +142,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         empID2: employee.empID2 || '',
         department: employee.department || '',
         role: employee.role || UserLevel.EMPLOYEE,
-        isActive: employee.isActive ?? true
+        isActive: employee.isActive ?? true,
+        hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
+        salary: employee.salary ? employee.salary.toString() : ''
       });
     } else {
       setFormData({
@@ -101,10 +153,14 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         empID2: '',
         department: '',
         role: UserLevel.EMPLOYEE,
-        isActive: true
+        isActive: true,
+        hireDate: '',
+        salary: ''
       });
     }
     setErrors({});
+    setShowSensitive(false);
+    setSensitiveData(null);
   }, [employee, open]);
 
   // Handle input change
@@ -138,6 +194,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       newErrors.department = '請選擇部門';
     }
 
+    // Validate salary if provided
+    if (formData.salary && isNaN(Number(formData.salary))) {
+      newErrors.salary = '薪水必須是有效的數字';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -150,7 +211,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: any = {
         name: formData.name.trim(),
         empID: formData.empID.trim(),
         empID2: formData.empID2.trim(),
@@ -158,6 +219,14 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         role: formData.role,
         isActive: formData.isActive
       };
+
+      // Add sensitive fields if provided
+      if (formData.hireDate) {
+        payload.hireDate = formData.hireDate;
+      }
+      if (formData.salary) {
+        payload.salary = Number(formData.salary);
+      }
 
       if (employee?._id) {
         // Update existing employee
@@ -169,7 +238,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
       onSaved();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 
+      const errorMessage = err.response?.data?.error ||
         (employee ? '更新員工失敗' : '新增員工失敗');
       toast.error(errorMessage);
     } finally {
@@ -188,7 +257,22 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       PaperProps={{ sx: { minHeight: '500px' } }}
     >
       <DialogTitle>
-        {isEditing ? '編輯員工' : '新增員工'}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">
+            {isEditing ? '編輯員工' : '新增員工'}
+          </Typography>
+          {isEditing && (
+            <Button
+              variant={showSensitive ? "contained" : "outlined"}
+              size="small"
+              startIcon={showSensitive ? <VisibilityIcon /> : <LockIcon />}
+              onClick={handleToggleSensitive}
+              color={showSensitive ? "secondary" : "primary"}
+            >
+              {showSensitive ? '隱藏敏感資訊' : '顯示敏感資訊'}
+            </Button>
+          )}
+        </Box>
       </DialogTitle>
       
       <DialogContent>
@@ -298,6 +382,75 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
               </Box>
             </Grid>
 
+            {/* Sensitive Information Section */}
+            {showSensitive && sensitiveData && (
+              <>
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>
+                    <Chip
+                      label="敏感資訊"
+                      color="secondary"
+                      size="small"
+                      icon={<LockIcon />}
+                    />
+                  </Divider>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="入職日期"
+                    type="date"
+                    value={formData.hireDate}
+                    onChange={(e) => handleInputChange('hireDate', e.target.value)}
+                    disabled={loading}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    // sx={{
+                    //   '& .MuiOutlinedInput-root': {
+                    //     '& fieldset': {
+                    //       borderColor: '#1976d2',
+                    //     },
+                    //   },
+                    //   '& .MuiInputBase-input': {
+                    //     color: '#1976d2',
+                    //     fontWeight: 'bold',
+                    //   },
+                    // }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="薪水"
+                    type="number"
+                    value={sensitiveData.salary}
+                    onChange={(e) => handleInputChange('salary', e.target.value)}
+                    error={!!errors.salary}
+                    helperText={errors.salary || 'NT$ 月薪'}
+                    disabled={loading}
+                    inputProps={{
+                      min: 0,
+                      step: 1000
+                    }}
+                    // sx={{
+                    //   '& .MuiOutlinedInput-root': {
+                    //     '& fieldset': {
+                    //       borderColor: '#1976d2',
+                    //     },
+                    //   },
+                    //   '& .MuiInputBase-input': {
+                    //     color: '#1976d2',
+                    //     fontWeight: 'bold',
+                    //   },
+                    // }}
+                  />
+                </Grid>
+              </>
+            )}
+
             {isEditing && (
               <Grid item xs={12}>
                 <Box sx={{ 
@@ -338,6 +491,48 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           {loading ? '儲存中...' : isEditing ? '更新' : '新增'}
         </Button>
       </DialogActions>
+
+      {/* Password Verification Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={handleClosePasswordDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box display="flex" alignItems="center">
+            <LockIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="h6">請輸入系統密碼</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            為了保護敏感資訊，請輸入您的系統密碼以驗證身份。
+          </Typography>
+          <TextField
+            label="系統密碼"
+            type="password"
+            fullWidth
+            value={verificationPassword}
+            onChange={(e) => setVerificationPassword(e.target.value)}
+            variant="outlined"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handlePasswordVerification();
+              }
+            }}
+            disabled={verifyingPassword}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePasswordDialog} disabled={verifyingPassword}>
+            取消
+          </Button>
+          <Button
+            onClick={handlePasswordVerification}
+            variant="contained"
+            disabled={verifyingPassword || !verificationPassword.trim()}
+            startIcon={verifyingPassword ? undefined : <LockIcon />}
+          >
+            {verifyingPassword ? '驗證中...' : '驗證密碼'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

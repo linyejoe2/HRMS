@@ -9,7 +9,9 @@ export interface IEmployee extends Document {
   role: 'admin' | 'hr' | 'employee' | 'manager';
   lastLogin?: Date;
   department?: string;
-  
+  hireDate?: Date; // 入職日期
+  salary?: number; // 薪水
+
   // Audit fields
   createdAt: Date;
   updatedAt: Date;
@@ -50,6 +52,13 @@ const EmployeeSchema = new Schema<IEmployee>({
   department: {
     type: String,
     trim: true
+  },
+  hireDate: {
+    type: Date
+  },
+  salary: {
+    type: Number,
+    select: false // Don't include salary in queries by default for security
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically

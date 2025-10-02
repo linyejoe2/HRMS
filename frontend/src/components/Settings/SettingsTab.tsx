@@ -8,15 +8,24 @@ import {
   Button,
   Grid,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Lock as LockIcon,
   Person as PersonIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { authAPI } from '../../services/api';
+import { toast } from 'react-toastify';
+import { Employee } from '../../types';
 
 const passwordSchema = yup.object({
   currentPassword: yup
@@ -42,6 +51,11 @@ interface PasswordFormData {
 const SettingsTab: React.FC = () => {
   const { user, changePassword, loading } = useAuth();
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showSensitive, setShowSensitive] = useState(false);
+  const [sensitiveData, setSensitiveData] = useState<Employee | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [verificationPassword, setVerificationPassword] = useState('');
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
 
   const {
     register: registerPassword,
@@ -66,6 +80,42 @@ const SettingsTab: React.FC = () => {
     } finally {
       setPasswordLoading(false);
     }
+  };
+
+  const handleToggleSensitive = () => {
+    if (showSensitive) {
+      setShowSensitive(false);
+      setSensitiveData(null);
+    } else {
+      setPasswordDialogOpen(true);
+    }
+  };
+
+  const handlePasswordVerification = async () => {
+    if (!verificationPassword.trim()) {
+      toast.error('請輸入密碼');
+      return;
+    }
+
+    try {
+      setVerifyingPassword(true);
+      const response = await authAPI.getMeWithSensitive(verificationPassword);
+      setSensitiveData(response.data.data.user);
+      setShowSensitive(true);
+      setPasswordDialogOpen(false);
+      setVerificationPassword('');
+      toast.success('敏感資訊已顯示');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || '密碼驗證失敗');
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
+  const handleClosePasswordDialog = () => {
+    setPasswordDialogOpen(false);
+    setVerificationPassword('');
+    setVerifyingPassword(false);
   };
 
 
@@ -107,9 +157,19 @@ const SettingsTab: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        設定
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          設定
+        </Typography>
+        <Button
+          variant={showSensitive ? "contained" : "outlined"}
+          startIcon={showSensitive ? <VisibilityOffIcon /> : <VisibilityIcon />}
+          onClick={handleToggleSensitive}
+          color={showSensitive ? "secondary" : "primary"}
+        >
+          {showSensitive ? '隱藏敏感資訊' : '顯示敏感資訊'}
+        </Button>
+      </Box>
       
       <Grid container spacing={3}>
         {/* User Profile Section */}
@@ -165,6 +225,41 @@ const SettingsTab: React.FC = () => {
                       variant="outlined"
                     />
                   </Grid>
+
+                  {showSensitive && sensitiveData && (
+                    <>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="入職日期"
+                          value={sensitiveData.hireDate ? new Date(sensitiveData.hireDate).toLocaleDateString('zh-TW') : '未設定'}
+                          fullWidth
+                          disabled
+                          variant="outlined"
+                          sx={{
+                            '& .MuiInputBase-input': {
+                              color: '#1976d2',
+                              fontWeight: 'bold',
+                            },
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="薪水"
+                          value={sensitiveData.salary ? `NT$ ${sensitiveData.salary.toLocaleString()}` : '未設定'}
+                          fullWidth
+                          disabled
+                          variant="outlined"
+                          sx={{
+                            '& .MuiInputBase-input': {
+                              color: '#1976d2',
+                              fontWeight: 'bold',
+                            },
+                          }}
+                        />
+                      </Grid>
+                    </>
+                  )}
                 </Grid>
               )}
 
@@ -232,6 +327,48 @@ const SettingsTab: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Password Verification Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={handleClosePasswordDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box display="flex" alignItems="center">
+            <LockIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="h6">請輸入系統密碼</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            為了保護敏感資訊，請輸入您的系統密碼以驗證身份。
+          </Typography>
+          <TextField
+            label="系統密碼"
+            type="password"
+            fullWidth
+            value={verificationPassword}
+            onChange={(e) => setVerificationPassword(e.target.value)}
+            variant="outlined"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handlePasswordVerification();
+              }
+            }}
+            disabled={verifyingPassword}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePasswordDialog} disabled={verifyingPassword}>
+            取消
+          </Button>
+          <Button
+            onClick={handlePasswordVerification}
+            variant="contained"
+            disabled={verifyingPassword || !verificationPassword.trim()}
+            startIcon={verifyingPassword ? <CircularProgress size={20} /> : <LockIcon />}
+          >
+            {verifyingPassword ? '驗證中...' : '驗證密碼'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

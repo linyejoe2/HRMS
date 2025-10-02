@@ -33,6 +33,7 @@ router.use(authenticateToken);
 
 router.get('/me', authController.getProfile);
 router.get('/profile', authController.getProfile);
+router.post('/profile/sensitive', authController.getProfileWithSensitive);
 router.put('/profile', validateRequest(updateProfileSchema), authController.updateProfile);
 router.post('/change-password', authController.changePassword);
 router.post('/logout', authController.logout);

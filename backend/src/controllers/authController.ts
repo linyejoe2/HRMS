@@ -32,7 +32,7 @@ export class AuthController {
   getProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { employeeService } = await import('../services');
     const employee = await employeeService.findById(req.user!.id);
-    
+
     if (!employee) {
       res.status(404).json({
         success: false,
@@ -40,11 +40,52 @@ export class AuthController {
       });
       return;
     }
-    
+
     res.status(200).json({
       success: true,
-      data: { 
+      data: {
         user: employee // Also provide as 'user' for frontend compatibility
+      }
+    });
+  });
+
+  getProfileWithSensitive = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { password } = req.body;
+
+    if (!password) {
+      res.status(400).json({
+        success: false,
+        error: '請輸入密碼'
+      });
+      return;
+    }
+
+    const { employeeService } = await import('../services');
+
+    // Verify password first
+    const isValidPassword = await employeeService.verifyPassword(req.user!.id, password);
+    if (!isValidPassword) {
+      res.status(401).json({
+        success: false,
+        error: '密碼錯誤'
+      });
+      return;
+    }
+
+    const employee = await employeeService.findByIdWithSensitive(req.user!.id);
+
+    if (!employee) {
+      res.status(404).json({
+        success: false,
+        error: '找不到員工'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: employee
       }
     });
   });

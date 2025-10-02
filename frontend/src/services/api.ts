@@ -38,7 +38,9 @@ export const authAPI = {
     api.post('/auth/register', userData),
   
   getMe: () => api.get('/auth/me'),
-  
+
+  getMeWithSensitive: (password: string) => api.post('/auth/profile/sensitive', { password }),
+
   verify: () => api.post('/auth/verify'),
   
   changePassword: (passwordData: ChangePasswordRequest): Promise<AxiosResponse<{ message: string }>> =>

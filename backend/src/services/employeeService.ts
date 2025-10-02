@@ -13,6 +13,18 @@ export class EmployeeService {
     return Employee.findById(id);
   }
 
+  async findByIdWithSensitive(id: string): Promise<IEmployee | null> {
+    return Employee.findById(id).select('+salary');
+  }
+
+  async verifyPassword(id: string, password: string): Promise<boolean> {
+    const employee = await Employee.findById(id).select('+password');
+    if (!employee || !employee.password) {
+      return false;
+    }
+    return bcrypt.compare(password, employee.password);
+  }
+
   async createEmployee(employeeData: Partial<IEmployee>): Promise<IEmployee> {
     const employee = new Employee(employeeData);
     return employee.save();

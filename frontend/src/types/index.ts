@@ -15,6 +15,8 @@ export interface Employee {
   role: UserLevel;
   lastLogin?: string;
   department?: string;
+  hireDate?: string; // 入職日期
+  salary?: number; // 薪水
   createdAt?: string;
   updatedAt?: string;
 }
