@@ -319,7 +319,7 @@ const EmployeeManagement: React.FC = () => {
                   <TableCell>職位</TableCell>
                   <TableCell>狀態</TableCell>
                   <TableCell>最後登入</TableCell>
-                  <TableCell>建立時間</TableCell>
+                  <TableCell>入職日</TableCell>
                   <TableCell align="center">操作</TableCell>
                 </TableRow>
               </TableHead>
@@ -353,7 +353,7 @@ const EmployeeManagement: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>{formatDate(employee.lastLogin)}</TableCell>
-                      <TableCell>{formatDate(employee.createdAt)}</TableCell>
+                      <TableCell>{formatDate(employee.hireDate)}</TableCell>
                       <TableCell align="center">
                         <Tooltip title="編輯員工">
                           <IconButton
