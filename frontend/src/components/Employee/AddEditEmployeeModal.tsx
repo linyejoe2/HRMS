@@ -114,8 +114,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
     try {
       setVerifyingPassword(true);
-      const response = await authAPI.getMeWithSensitive(verificationPassword);
-      setSensitiveData(response.data.data.user);
+      const response = await authAPI.getMeWithSensitive(verificationPassword, employee?._id);
+      const sensitiveEmployee = response.data.data.user;
+      setSensitiveData(sensitiveEmployee);
+
+      // Update form data with sensitive information
+      setFormData(prev => ({
+        ...prev,
+        hireDate: sensitiveEmployee.hireDate ? sensitiveEmployee.hireDate.split('T')[0] : '',
+        salary: sensitiveEmployee.salary ? sensitiveEmployee.salary.toString() : ''
+      }));
+
       setShowSensitive(true);
       setPasswordDialogOpen(false);
       setVerificationPassword('');
@@ -426,7 +435,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                     fullWidth
                     label="薪水"
                     type="number"
-                    value={sensitiveData.salary}
+                    value={formData.salary}
                     onChange={(e) => handleInputChange('salary', e.target.value)}
                     error={!!errors.salary}
                     helperText={errors.salary || 'NT$ 月薪'}

@@ -50,7 +50,7 @@ export class AuthController {
   });
 
   getProfileWithSensitive = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { password } = req.body;
+    const { password, employee_id } = req.body;
 
     if (!password) {
       res.status(400).json({
@@ -62,7 +62,22 @@ export class AuthController {
 
     const { employeeService } = await import('../services');
 
-    // Verify password first
+    // Determine target employee ID
+    const targetEmployeeId = employee_id || req.user!.id;
+
+    // Check if user is trying to access another employee's data
+    if (employee_id && employee_id !== req.user!.id) {
+      // Only HR and Admin can access other employees' sensitive data
+      if (req.user!.role !== 'hr' && req.user!.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          error: '權限不足，無法查看其他員工的敏感資訊'
+        });
+        return;
+      }
+    }
+
+    // Verify password first (always verify current user's password)
     const isValidPassword = await employeeService.verifyPassword(req.user!.id, password);
     if (!isValidPassword) {
       res.status(401).json({
@@ -72,7 +87,7 @@ export class AuthController {
       return;
     }
 
-    const employee = await employeeService.findByIdWithSensitive(req.user!.id);
+    const employee = await employeeService.findByIdWithSensitive(targetEmployeeId);
 
     if (!employee) {
       res.status(404).json({

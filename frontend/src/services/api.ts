@@ -39,7 +39,7 @@ export const authAPI = {
   
   getMe: () => api.get('/auth/me'),
 
-  getMeWithSensitive: (password: string) => api.post('/auth/profile/sensitive', { password }),
+  getMeWithSensitive: (password: string, employee_id?: string) => api.post('/auth/profile/sensitive', { password, employee_id }),
 
   verify: () => api.post('/auth/verify'),
   
