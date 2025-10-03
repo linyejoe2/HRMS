@@ -18,6 +18,7 @@ export interface ILeave extends Document {
   rejectionReason?: string;
   approvedBy?: string;
   sequenceNumber: number;
+  pastYear: number; // Track leave aging: 0=current, 1=past 1 year, 2=past 2 years, 3=past 3+ years
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,6 +88,10 @@ const leaveSchema = new Schema<ILeave>({
   sequenceNumber: {
     type: Number,
     unique: true
+  },
+  pastYear: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true

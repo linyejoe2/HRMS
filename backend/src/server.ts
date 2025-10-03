@@ -31,6 +31,9 @@ const startServer = async (): Promise<void> => {
       // Start automated attendance file scanning
       // cronService.startFileScanning();
       cronService.startTestCronJob();
+
+      // Start leave tracking for sick leave rules
+      cronService.startLeaveTracking();
     });
 
     // Graceful shutdown
@@ -39,6 +42,7 @@ const startServer = async (): Promise<void> => {
       
       // Stop cron jobs
       cronService.stopFileScanning();
+      cronService.stopLeaveTracking();
       
       server.close(() => {
         console.log('HTTP server closed');

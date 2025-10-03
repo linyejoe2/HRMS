@@ -124,6 +124,26 @@ export class LeaveService {
       throw new APIError("請假時間重複!無法完成請假。", 409);
     }
 
+    // Update employee sick leave counters if it's a sick leave
+    if (leave.leaveType === '普通傷病假' || leave.leaveType === '普通傷病假(住院)') {
+      const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
+      if (!employee) {
+        throw new APIError('Employee not found', 404);
+      }
+
+      // Calculate leave days
+      const timeDiff = calcWarkingDurent(leave.leaveStart.toISOString(), leave.leaveEnd.toISOString());
+      const leaveDays = Math.ceil(timeDiff.durent / (8 * 60)); // 8小時 = 480分鐘
+
+      if (leave.leaveType === '普通傷病假') {
+        employee.sickLeaveDaysInThePastYear += leaveDays;
+      } else if (leave.leaveType === '普通傷病假(住院)') {
+        employee.sickLeaveDaysInHospitalInThePastYear += leaveDays;
+      }
+
+      await employee.save();
+    }
+
     leave.status = 'approved';
     leave.approvedBy = approvedBy;
 
