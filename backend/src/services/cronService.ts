@@ -11,17 +11,19 @@ export class CronService {
   private isScanning = false;
   private isUpdatingSickLeave = false;
 
-  startTestCronJob(): void {
-    cron.schedule('* * * * *', () => {
-      console.log(`[${new Date().toISOString()}] cron executed`);
-    });
-  }
-
   /**
    * Start the automated file scanning cron job
    * Runs every 5 minutes
    */
   startFileScanning(): void {
+    // console.log('File scanning cron job start running');
+
+    // this.scanJob = cron.schedule('*/5 * * * *', async () => {
+      
+    //     console.warn('⏳ Skipping file scan - test');
+    // })
+    // return;
+
     if (this.scanJob) {
       console.log('File scanning cron job is already running');
       return;
@@ -35,13 +37,15 @@ export class CronService {
       }
 
       this.isScanning = true;
+      const startTime = Date.now();
 
       console.log('🔄 Starting automated attendance file scan...');
-      
+
       try {
         const result = await fileScanService.scanDataFolder();
-        console.log(`✅ File scan completed - Processed: ${result.processed}, Updated: ${result.updated}`);
-        
+        const duration = Date.now() - startTime;
+        console.log(`✅ File scan completed in ${duration}ms - Processed: ${result.processed}, Updated: ${result.updated}`);
+
         if (result.errors.length > 0) {
           console.log(`⚠️  Scan completed with ${result.errors.length} errors:`);
           result.errors.forEach((error, index) => {
@@ -55,7 +59,7 @@ export class CronService {
       }
     });
 
-    this.scanJob.start();
+    this.scanJob!.start();
     console.log('🤖 Automated file scanning started - runs every 5 minutes');
   }
 
@@ -95,28 +99,13 @@ export class CronService {
     return {
       fileScanning: {
         isRunning: this.isFileScanningRunning(),
-        schedule: 'Every 5 minutes (*/5 * * * *)'
+        schedule: 'Every 10 minutes (*/10 * * * *)'
       },
       leaveTracking: {
         isRunning: this.isLeaveTrackingRunning(),
         schedule: 'Daily at midnight (0 0 * * *)'
       }
     };
-  }
-
-  /**
-   * Run file scan immediately (manual trigger)
-   */
-  async runFileScanNow(): Promise<{
-    processed: number;
-    updated: number;
-    imported: number;
-    errors: string[];
-  }> {
-    console.log('🔄 Manual file scan triggered...');
-    const result = await fileScanService.scanDataFolder();
-    console.log(`✅ Manual scan completed - Processed: ${result.processed}, Updated: ${result.updated}`);
-    return result;
   }
 
   /**
@@ -137,12 +126,14 @@ export class CronService {
       }
 
       this.isUpdatingSickLeave = true;
+      const startTime = Date.now();
 
       console.log('🔄 Starting leave tracking update...');
 
       try {
         const result = await this.updateLeaveTracking();
-        console.log(`✅ Leave tracking completed - Updated ${result.updatedLeaves} leaves, ${result.updatedEmployees} employees`);
+        const duration = Date.now() - startTime;
+        console.log(`✅ Leave tracking completed in ${duration}ms - Updated ${result.updatedLeaves} leaves, ${result.updatedEmployees} employees`);
 
         if (result.errors.length > 0) {
           console.log(`⚠️  Update completed with ${result.errors.length} errors:`);

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { attendanceService, fileScanService, cronService } from '../services';
+import { attendanceService, fileScanService } from '../services';
 import { asyncHandler, AuthRequest } from '../middleware';
 
 export class AttendanceController {
@@ -250,41 +250,9 @@ export class AttendanceController {
     });
   });
 
-  // Start automated file scanning cron job
-  startCronJob = asyncHandler(async (req: Request, res: Response) => {
-    cronService.startFileScanning();
-    
-    res.status(200).json({
-      success: true,
-      message: 'Automated file scanning started (runs every 5 minutes)',
-      data: cronService.getStatus()
-    });
-  });
-
-  // Stop automated file scanning cron job
-  stopCronJob = asyncHandler(async (req: Request, res: Response) => {
-    cronService.stopFileScanning();
-    
-    res.status(200).json({
-      success: true,
-      message: 'Automated file scanning stopped',
-      data: cronService.getStatus()
-    });
-  });
-
-  // Get cron job status
-  getCronStatus = asyncHandler(async (req: Request, res: Response) => {
-    const status = cronService.getStatus();
-    
-    res.status(200).json({
-      success: true,
-      data: status
-    });
-  });
-
   // Run file scan manually
   runScanNow = asyncHandler(async (req: Request, res: Response) => {
-    const result = await cronService.runFileScanNow();
+    const result = await fileScanService.scanDataFolder();
     
     res.status(200).json({
       success: true,

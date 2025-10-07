@@ -88,7 +88,7 @@ export class FileScanService {
               processed++;
               updated++;
             } else {
-              console.log(`File ${fileName} unchanged, skipping`);
+              // console.log(`File ${fileName} unchanged, skipping`);
               processed++;
             }
           }
