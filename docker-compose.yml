@@ -10,7 +10,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: good1234
       MONGO_INITDB_DATABASE: HRMS
     volumes:
-      - mongodb_data:/data/db
+      - ./database/data/db:/data/db
       # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - hrms-network

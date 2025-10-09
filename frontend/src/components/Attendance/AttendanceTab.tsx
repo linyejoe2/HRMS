@@ -324,8 +324,13 @@ const AttendanceTab: React.FC = () => {
                 columns={columns}
                 initialState={{
                   pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
+                    paginationModel: { page: 0, pageSize: 50 },
                   },
+                  filter: {
+                    filterModel: {
+                      items: [{ field: 'employeeName', operator: 'doesNotContain', value: '-' }]
+                    }
+                  }
                 }}
                 pageSizeOptions={[10, 25, 50, 100]}
                 checkboxSelection={false}
