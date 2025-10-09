@@ -87,8 +87,6 @@ const EmployeeSchema = new Schema<IEmployee>({
 });
 
 // Indexes for performance
-EmployeeSchema.index({ empID: 1 });
-EmployeeSchema.index({ empID2: 1 });
 EmployeeSchema.index({ department: 1 });
 EmployeeSchema.index({ isActive: 1 });
 

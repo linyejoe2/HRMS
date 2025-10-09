@@ -13,7 +13,12 @@ services:
       - ./database/data/db:/data/db
       # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
-      - hrms-network
+      - hrms-network    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
 
   nginx:
     image: nginx:alpine
@@ -29,6 +34,11 @@ services:
     networks:
       - hrms-network
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
 
   backend:
     build:
@@ -50,6 +60,11 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
 
   frontend:
     build:
@@ -66,9 +81,11 @@ services:
     networks:
       - hrms-network
     restart: unless-stopped
-
-volumes:
-  mongodb_data:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
 
 networks:
   hrms-network:
