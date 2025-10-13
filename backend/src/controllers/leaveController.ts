@@ -16,9 +16,9 @@ export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
   });
 
   res.status(201).json({
-    success: true,
-    data: leave,
-    message: 'Leave request created successfully'
+    error: false,
+    message: '請假申請已成功建立',
+    data: leave
   });
 });
 
@@ -27,9 +27,9 @@ export const getMyLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
   const leaves = await LeaveService.getLeaveRequestsByEmployee(empID);
 
   res.json({
-    success: true,
-    data: leaves,
-    message: 'Leave requests retrieved successfully'
+    error: false,
+    message: '已成功取得請假紀錄',
+    data: leaves
   });
 });
 
@@ -38,9 +38,9 @@ export const getAllLeaveRequests = asyncHandler(async (req: AuthRequest, res: Re
   const leaves = await LeaveService.getAllLeaveRequests(status as string);
 
   res.json({
-    success: true,
-    data: leaves,
-    message: 'All leave requests retrieved successfully'
+    error: false,
+    message: '成功取得所有請假紀錄',
+    data: leaves
   });
 });
 
@@ -51,9 +51,9 @@ export const approveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Re
   const leave = await LeaveService.approveLeaveRequest(id, approvedBy);
 
   res.json({
-    success: true,
-    data: leave,
-    message: 'Leave request approved successfully'
+    error: false,
+    message: '請假申請已核准',
+    data: leave
   });
 });
 
@@ -65,9 +65,9 @@ export const rejectLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
   const leave = await LeaveService.rejectLeaveRequest(id, reason, rejectedBy);
 
   res.json({
-    success: true,
-    data: leave,
-    message: 'Leave request rejected successfully'
+    error: false,
+    message: '請假申請已駁回',
+    data: leave
   });
 });
 
@@ -76,9 +76,9 @@ export const getLeaveRequestById = asyncHandler(async (req: AuthRequest, res: Re
   const leave = await LeaveService.getLeaveRequestById(id);
 
   res.json({
-    success: true,
-    data: leave,
-    message: 'Leave request retrieved successfully'
+    error: false,
+    message: '成功取得請假紀錄',
+    data: leave
   });
 });
 
@@ -89,9 +89,9 @@ export const cancelLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
   const leave = await LeaveService.cancelLeaveRequest(id, cancelledBy);
 
   res.json({
-    success: true,
-    data: leave,
-    message: 'Leave request cancelled successfully'
+    error: false,
+    message: '請假申請已取消',
+    data: leave
   });
 });
 
@@ -100,8 +100,8 @@ export const getCancelLeaveRequests = asyncHandler(async (req: AuthRequest, res:
   const leaves = await LeaveService.getCancelLeaveRequests(employeeID as string);
 
   res.json({
-    success: true,
-    data: leaves,
-    message: 'Cancelled leave requests retrieved successfully'
+    error: false,
+    message: '成功取得已取消的請假紀錄',
+    data: leaves
   });
 });

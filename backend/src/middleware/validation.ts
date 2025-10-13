@@ -7,7 +7,7 @@ export const validateRequest = (schema: Joi.ObjectSchema) => {
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
-      res.status(400).json({ error: errorMessage });
+      res.status(400).json({ error: true, message: errorMessage });
       return;
     }
     

@@ -11,8 +11,8 @@ export class AuthController {
     const result = await authService.login(empID, password);
     
     res.status(200).json({
-      success: true,
-      message: 'Login successful',
+      error: false,
+      message: '登入成功',
       data: result
     });
   });
@@ -23,8 +23,8 @@ export class AuthController {
     const result = await authService.register(empID, password);
     
     res.status(201).json({
-      success: true,
-      message: 'Registration successful',
+      error: false,
+      message: '註冊成功',
       data: result
     });
   });
@@ -35,14 +35,15 @@ export class AuthController {
 
     if (!employee) {
       res.status(404).json({
-        success: false,
-        error: 'Employee not found'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
 
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得個人資料',
       data: {
         user: employee // Also provide as 'user' for frontend compatibility
       }
@@ -54,8 +55,8 @@ export class AuthController {
 
     if (!password) {
       res.status(400).json({
-        success: false,
-        error: '請輸入密碼'
+        error: true,
+        message: '請輸入密碼'
       });
       return;
     }
@@ -70,8 +71,8 @@ export class AuthController {
       // Only HR and Admin can access other employees' sensitive data
       if (req.user!.role !== 'hr' && req.user!.role !== 'admin') {
         res.status(403).json({
-          success: false,
-          error: '權限不足，無法查看其他員工的敏感資訊'
+          error: true,
+          message: '權限不足，無法查看其他員工的敏感資訊'
         });
         return;
       }
@@ -81,8 +82,8 @@ export class AuthController {
     const isValidPassword = await employeeService.verifyPassword(req.user!.id, password);
     if (!isValidPassword) {
       res.status(401).json({
-        success: false,
-        error: '密碼錯誤'
+        error: true,
+        message: '密碼錯誤'
       });
       return;
     }
@@ -91,14 +92,15 @@ export class AuthController {
 
     if (!employee) {
       res.status(404).json({
-        success: false,
-        error: '找不到員工'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
 
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得個人敏感資料',
       data: {
         user: employee
       }
@@ -115,15 +117,15 @@ export class AuthController {
     
     if (!updatedEmployee) {
       res.status(404).json({
-        success: false,
-        error: 'Employee not found'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
-    
+
     res.status(200).json({
-      success: true,
-      message: 'Profile updated successfully',
+      error: false,
+      message: '個人資料已更新',
       data: { employee: updatedEmployee }
     });
   });
@@ -134,8 +136,8 @@ export class AuthController {
     await authService.changePassword(req.user!.id, currentPassword, newPassword);
     
     res.status(200).json({
-      success: true,
-      message: 'Password changed successfully'
+      error: false,
+      message: '密碼已變更'
     });
   });
 
@@ -143,8 +145,8 @@ export class AuthController {
     // Since we're using stateless JWT, logout is handled client-side
     // We could implement token blacklisting here if needed
     res.status(200).json({
-      success: true,
-      message: 'Logout successful'
+      error: false,
+      message: '已登出'
     });
   });
 }

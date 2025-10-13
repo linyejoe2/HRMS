@@ -7,11 +7,11 @@ export class AttendanceController {
   // Import attendance data for a specific date
   importByDate = asyncHandler(async (req: Request, res: Response) => {
     const { date } = req.params; // Expected format: YYYY-MM-DD
-    
+
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       res.status(400).json({
-        success: false,
-        error: 'Invalid date format. Expected: YYYY-MM-DD'
+        error: true,
+        message: '無效的日期格式，應為：YYYY-MM-DD'
       });
       return;
     }
@@ -19,8 +19,8 @@ export class AttendanceController {
     const result = await attendanceService.importAttendanceByDate(date);
     
     res.status(200).json({
-      success: true,
-      message: `Attendance data imported for ${date}`,
+      error: false,
+      message: `已匯入 ${date} 的出勤資料`,
       data: result
     });
   });
@@ -32,16 +32,16 @@ export class AttendanceController {
     
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       res.status(400).json({
-        success: false,
-        error: 'Invalid date format. Expected: YYYY-MM-DD'
+        error: true,
+        message: '無效的日期格式，應為：YYYY-MM-DD'
       });
       return;
     }
-    
+
     if (!user) {
       res.status(401).json({
-        success: false,
-        error: 'User information not found in token'
+        error: true,
+        message: '權杖中找不到使用者資訊'
       });
       return;
     }
@@ -51,7 +51,8 @@ export class AttendanceController {
     const records = await attendanceService.getAttendanceByDate(date, user.role, user.empID, user.department);
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得出勤紀錄',
       data: {
         date,
         count: records.length,
@@ -67,16 +68,16 @@ export class AttendanceController {
     
     if (!startDate || !endDate) {
       res.status(400).json({
-        success: false,
-        error: 'Start date and end date are required'
+        error: true,
+        message: '開始日期和結束日期為必填'
       });
       return;
     }
-    
+
     if (!user) {
       res.status(401).json({
-        success: false,
-        error: 'User information not found in token'
+        error: true,
+        message: '找不到使用者資訊'
       });
       return;
     }
@@ -90,7 +91,8 @@ export class AttendanceController {
     );
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得出勤紀錄',
       data: {
         startDate,
         endDate,
@@ -108,24 +110,24 @@ export class AttendanceController {
     
     if (!empID) {
       res.status(400).json({
-        success: false,
-        error: 'Employee ID is required'
+        error: true,
+        message: '員工編號為必填'
       });
       return;
     }
-    
+
     if (!startDate || !endDate) {
       res.status(400).json({
-        success: false,
-        error: 'Start date and end date are required'
+        error: true,
+        message: '開始日期和結束日期為必填'
       });
       return;
     }
 
     if (!user) {
       res.status(401).json({
-        success: false,
-        error: 'User information not found in token'
+        error: true,
+        message: '找不到使用者資訊'
       });
       return;
     }
@@ -138,9 +140,10 @@ export class AttendanceController {
       user.empID,
       user.department
     );
-    
+
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得員工出勤紀錄',
       data: {
         empID,
         startDate,
@@ -158,16 +161,16 @@ export class AttendanceController {
     
     if (!empID) {
       res.status(401).json({
-        success: false,
-        error: 'Employee ID not found in token'
+        error: true,
+        message: '找不到員工編號'
       });
       return;
     }
-    
+
     if (!startDate || !endDate) {
       res.status(400).json({
-        success: false,
-        error: 'Start date and end date are required'
+        error: true,
+        message: '開始日期和結束日期為必填'
       });
       return;
     }
@@ -179,7 +182,8 @@ export class AttendanceController {
     );
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得我的出勤紀錄',
       data: {
         empID,
         startDate,
@@ -189,15 +193,15 @@ export class AttendanceController {
       }
     });
   });
-  
+
   // Get attendance summary for a date range
   getSummary = asyncHandler(async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
-    
+
     if (!startDate || !endDate) {
       res.status(400).json({
-        success: false,
-        error: 'Start date and end date are required'
+        error: true,
+        message: '開始日期和結束日期為必填'
       });
       return;
     }
@@ -208,7 +212,8 @@ export class AttendanceController {
     );
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得出勤統計',
       data: {
         period: { startDate, endDate },
         summary
@@ -221,8 +226,8 @@ export class AttendanceController {
     const result = await fileScanService.scanDataFolder();
     
     res.status(200).json({
-      success: true,
-      message: 'Data folder scan completed',
+      error: false,
+      message: '資料夾掃描完成',
       data: result
     });
   });
@@ -232,7 +237,8 @@ export class AttendanceController {
     const files = await fileScanService.getTrackedFiles();
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得追蹤檔案清單',
       data: {
         count: files.length,
         files
@@ -245,7 +251,8 @@ export class AttendanceController {
     const stats = await fileScanService.getFileStats();
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得檔案統計',
       data: stats
     });
   });
@@ -255,8 +262,8 @@ export class AttendanceController {
     const result = await fileScanService.scanDataFolder();
     
     res.status(200).json({
-      success: true,
-      message: 'Manual file scan completed',
+      error: false,
+      message: '手動掃描完成',
       data: result
     });
   });

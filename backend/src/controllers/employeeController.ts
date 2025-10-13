@@ -11,7 +11,8 @@ export class EmployeeController {
     const result = await employeeService.getAllEmployees(page, limit, department);
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得員工清單',
       data: result
     });
   });
@@ -23,14 +24,15 @@ export class EmployeeController {
     
     if (!employee) {
       res.status(404).json({
-        success: false,
-        error: 'Employee not found'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
-    
+
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得員工資料',
       data: { employee }
     });
   });
@@ -40,16 +42,17 @@ export class EmployeeController {
     
     if (!q || typeof q !== 'string') {
       res.status(400).json({
-        success: false,
-        error: 'Search query is required'
+        error: true,
+        message: '搜尋關鍵字為必填'
       });
       return;
     }
-    
+
     const employees = await employeeService.searchEmployees(q);
-    
+
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功搜尋員工',
       data: { employees }
     });
   });
@@ -60,8 +63,8 @@ export class EmployeeController {
     const employee = await employeeService.createEmployee(employeeData);
     
     res.status(201).json({
-      success: true,
-      message: 'Employee created successfully',
+      error: false,
+      message: '員工資料成功建立',
       data: { employee }
     });
   });
@@ -74,15 +77,15 @@ export class EmployeeController {
     
     if (!employee) {
       res.status(404).json({
-        success: false,
-        error: 'Employee not found'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
-    
+
     res.status(200).json({
-      success: true,
-      message: 'Employee updated successfully',
+      error: false,
+      message: '員工資料成功更新',
       data: { employee }
     });
   });
@@ -94,15 +97,15 @@ export class EmployeeController {
     
     if (!success) {
       res.status(404).json({
-        success: false,
-        error: 'Employee not found'
+        error: true,
+        message: '找不到員工資料'
       });
       return;
     }
-    
+
     res.status(200).json({
-      success: true,
-      message: 'Employee deleted successfully'
+      error: false,
+      message: '員工資料已刪除'
     });
   });
 }

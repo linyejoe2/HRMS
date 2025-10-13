@@ -22,7 +22,7 @@ export const authenticateToken = async (
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      res.status(401).json({ error: 'Access token required' });
+      res.status(401).json({ error: true, message: '需要存取權杖' });
       return;
     }
 
@@ -31,7 +31,7 @@ export const authenticateToken = async (
     // Verify user still exists and is active
     const user = await Employee.findById(decoded.id).select('+password');
     if (!user || !user.isActive) {
-      res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(401).json({ error: true, message: '無效或過期的權杖' });
       return;
     }
 
@@ -45,24 +45,24 @@ export const authenticateToken = async (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ error: 'Invalid token' });
+      res.status(401).json({ error: true, message: '無效的權杖' });
       return;
     }
-    res.status(500).json({ error: 'Authentication error' });
+    res.status(500).json({ error: true, message: '認證錯誤' });
   }
 };
 
 export const requireRole = (roles: string | string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: true, message: '需要身分驗證' });
       return;
     }
 
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
-    
+
     if (!allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
+      res.status(403).json({ error: true, message: '權限不足' });
       return;
     }
 

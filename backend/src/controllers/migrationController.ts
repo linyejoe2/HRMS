@@ -7,8 +7,8 @@ export class MigrationController {
     const result = await migrationService.migrateEmployeesFromAccess();
     
     res.status(200).json({
-      success: true,
-      message: 'Migration completed',
+      error: false,
+      message: '資料遷移完成',
       data: result
     });
   });
@@ -17,7 +17,8 @@ export class MigrationController {
     const count = await migrationService.getAccessEmployeeCount();
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已成功取得員工數量',
       data: { count }
     });
   });
@@ -26,7 +27,8 @@ export class MigrationController {
     const isConnected = await migrationService.testAccessConnection();
     
     res.status(200).json({
-      success: true,
+      error: false,
+      message: '已測試連線',
       data: { connected: isConnected }
     });
   });

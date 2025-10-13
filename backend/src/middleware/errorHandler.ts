@@ -36,18 +36,17 @@ export const errorHandler = (
     message = Object.values((error as any).errors).map((err: any) => err.message).join(', ');
   } else if (error.name === 'CastError') {
     statusCode = 400;
-    message = 'Invalid ID format';
+    message = '無效的 ID 格式';
   } else if ((error as any).code === 11000) {
     statusCode = 400;
     const field = Object.keys((error as any).keyValue)[0];
-    message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
+    message = `${field} 已存在`;
   }
 
   res.status(statusCode).json({
     error: true,
-    success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    data: process.env.NODE_ENV === 'development' ? { stack: error.stack } : null
   });
 };
 
