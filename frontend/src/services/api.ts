@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest } from '../types';
+import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
@@ -24,7 +25,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      if (!window.location.href.includes("/login")) {
+        toast.error("登入逾時，請重新登入。")
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -73,7 +77,10 @@ aiServiceAPI.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      if (!window.location.href.includes("/login")) {
+        toast.error("登入逾時，請重新登入。")
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

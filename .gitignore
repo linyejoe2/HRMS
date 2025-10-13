@@ -63,3 +63,4 @@ env.bak/
 venv.bak/
 */.venv/*
 data/
+data/Employee.csv

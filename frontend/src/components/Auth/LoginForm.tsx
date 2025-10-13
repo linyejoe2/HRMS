@@ -27,8 +27,10 @@ const LoginForm: React.FC = () => {
   const onSubmit = async (data: AuthRequest) => {
     try {
       await login(data);
+      console.log("1")
       navigate('/attendance');
     } catch (error) {
+      console.log("2")
       // Error is handled by AuthContext
     }
   };

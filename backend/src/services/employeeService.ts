@@ -33,14 +33,14 @@ export class EmployeeService {
   async updateEmployee(id: string, updateData: Partial<IEmployee>): Promise<IEmployee | null> {
     const employee = await Employee.findByIdAndUpdate(id, updateData, { new: true });
     
-    if (employee && (updateData.name || updateData.department || updateData.empID2)) {
+    if (employee && (updateData.name || updateData.department || updateData.cardID)) {
       await Attendance.updateMany(
         { empID: employee.empID },
         {
           $set: {
             ...(updateData.name && { employeeName: employee.name }),
             ...(updateData.department && { department: employee.department }),
-            ...(updateData.empID2 && { empID2: employee.empID2 })
+            ...(updateData.cardID && { cardID: employee.cardID })
           }
         }
       );

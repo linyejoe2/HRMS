@@ -96,7 +96,7 @@ export class AttendanceService {
           
           if (!attendance) {
             attendance = new Attendance({
-              empID2: employee?.empID2,
+              cardID: employee?.cardID,
               empID: parsed.empID,
               employeeName: employee?.name,
               department: employee?.department,
@@ -105,7 +105,7 @@ export class AttendanceService {
           } else {
             // Update existing attendance record with latest employee data
             if (employee) {
-              attendance.empID2 = employee.empID2;
+              attendance.cardID = employee.cardID;
               attendance.employeeName = employee.name;
               attendance.department = employee.department;
             }

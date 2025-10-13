@@ -3,7 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface IEmployee extends Document {
   name: string;
   empID: string; // Employee ID
-  empID2: string; // Original ID from Access DB
+  cardID: string; // Original ID from Access DB
   password?: string; // Hashed password for new system
   isActive: boolean;
   role: 'admin' | 'hr' | 'employee' | 'manager';
@@ -34,7 +34,7 @@ const EmployeeSchema = new Schema<IEmployee>({
     required: true,
     unique: true
   },
-  empID2: {
+  cardID: {
     type: String,
     required: true,
     unique: true
