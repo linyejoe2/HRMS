@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('成功登入!');
     } catch (error: any) {
       console.error('Login failed:', error);
-      const message = error.response?.data?.error || 'Login failed';
+      const message = error.response?.data?.message || 'Login failed';
       toast.error(message);
       throw error;
     } finally {
@@ -81,10 +81,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       localStorage.setItem('auth_token', token);
       setUser(employee);
-      toast.success('Account created successfully!');
+      toast.success(response.data.message);
     } catch (error: any) {
       console.error('Registration failed:', error);
-      const message = error.response?.data?.error || 'Registration failed';
+      const message = error.response?.data?.message || 'Registration failed';
       toast.error(message);
       throw error;
     } finally {
@@ -101,11 +101,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const changePassword = async (passwordData: ChangePasswordRequest) => {
     try {
       setLoading(true);
-      await authAPI.changePassword(passwordData);
-      toast.success('Password changed successfully');
+      const res = await authAPI.changePassword(passwordData);
+      toast.success(res.data.message);
     } catch (error: any) {
       console.error('Change password failed:', error);
-      const message = error.response?.data?.error || 'Failed to change password';
+      const message = error.response?.data?.message || 'Failed to change password';
       toast.error(message);
       throw error;
     } finally {
@@ -117,11 +117,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.updateProfile(profileData);
-      setUser(response.data.user);
-      toast.success('Profile updated successfully');
+      setUser(response.data.data.employee);
+      toast.success(response.data.message);
     } catch (error: any) {
       console.error('Update profile failed:', error);
-      const message = error.response?.data?.error || 'Failed to update profile';
+      const message = error.response?.data?.message || 'Failed to update profile';
       toast.error(message);
       throw error;
     } finally {

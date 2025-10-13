@@ -64,12 +64,12 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
+  error: boolean;
+  message: string;
   data: {
-    employee: User,
-    token: string
-  },
-  message: string,
-  success: boolean
+    employee: User;
+    token: string;
+  };
 }
 
 export interface Conversation {
@@ -162,7 +162,8 @@ export interface AttendanceRecord {
 }
 
 export interface AttendanceResponse {
-  success: boolean;
+  error: boolean;
+  message: string;
   data: {
     date: string;
     count: number;

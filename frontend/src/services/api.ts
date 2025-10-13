@@ -50,7 +50,7 @@ export const authAPI = {
   changePassword: (passwordData: ChangePasswordRequest): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/auth/change-password', passwordData),
   
-  updateProfile: (profileData: UpdateProfileRequest): Promise<AxiosResponse<{ user: User }>> =>
+  updateProfile: (profileData: UpdateProfileRequest): Promise<AxiosResponse<{ data: {employee: User }, message: string}>> =>
     api.put('/auth/profile', profileData),
 };
 
@@ -214,7 +214,7 @@ export const documentAPI = {
 };
 
 export const attendanceAPI = {
-  scanNow: (): Promise<AxiosResponse<{success: boolean, message: string, data: { processed: number, updated: number, imported: number;}}>>=> api.post(`/attendance/scan/now`),
+  scanNow: (): Promise<AxiosResponse<{error: boolean, message: string, data: { processed: number, updated: number, imported: number;}}>>=> api.post(`/attendance/scan/now`),
 
   // Import attendance data for a specific date (admin/hr only)
   importByDate: (date: string): Promise<AxiosResponse<{ imported: number; errors: string[] }>> =>
@@ -243,61 +243,61 @@ export const attendanceAPI = {
 
 export const employeeAPI = {
   // Get all employees (with pagination)
-  getAll: (page: number = 1, limit: number = 20, department?: string): Promise<AxiosResponse<{ data:{ employees: Employee[], total: number, pages: number }}>> =>
+  getAll: (page: number = 1, limit: number = 20, department?: string): Promise<AxiosResponse<{ error: boolean, message: string, data:{ employees: Employee[], total: number, pages: number }}>> =>
     api.get(`/employees?page=${page}&limit=${limit}${department ? `&department=${department}` : ''}`),
   
   // Search employees
-  search: (query: string): Promise<AxiosResponse<{ employees: Employee[] }>> =>
+  search: (query: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employees: Employee[] } }>> =>
     api.get(`/employees/search?q=${encodeURIComponent(query)}`),
-  
+
   // Get single employee
-  getById: (id: string): Promise<AxiosResponse<{ employee: Employee }>> =>
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
     api.get(`/employees/${id}`),
-  
+
   // Create employee (HR/Admin only)
-  create: (employeeData: Partial<Employee>): Promise<AxiosResponse<{ employee: Employee }>> =>
+  create: (employeeData: Partial<Employee>): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
     api.post('/employees', employeeData),
-  
+
   // Update employee (HR/Admin only)
-  update: (id: string, employeeData: Partial<Employee>): Promise<AxiosResponse<{ employee: Employee }>> =>
+  update: (id: string, employeeData: Partial<Employee>): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
     api.put(`/employees/${id}`, employeeData),
-  
+
   // Delete/deactivate employee (Admin only)
-  delete: (id: string): Promise<AxiosResponse<{ message: string }>> =>
+  delete: (id: string): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
     api.delete(`/employees/${id}`)
 };
 
 export const leaveAPI = {
   // Create leave request
-  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.post('/leave/create', leaveData),
 
   // Get my leave requests
-  getMy: (): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+  getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
     api.get('/leave/my'),
 
   // Get all leave requests (HR/Admin only)
-  getAll: (status?: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+  getAll: (status?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
     api.get(`/leave/all${status ? `?status=${status}` : ''}`),
 
   // Get leave request by ID
-  getById: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.get(`/leave/${id}`),
 
   // Approve leave request (HR/Admin only)
-  approve: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.put(`/leave/${id}/approve`),
 
   // Reject leave request (HR/Admin only)
-  reject: (id: string, reason: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.put(`/leave/${id}/reject`, { reason }),
 
   // Cancel leave request
-  cancel: (id: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest, message: string }>> =>
+  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.put(`/leave/${id}/cancel`),
 
   // Get cancelled leave requests (HR/Admin only)
-  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ success: boolean, data: LeaveRequest[], message: string }>> =>
+  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
     api.get(`/leave/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
 };
 

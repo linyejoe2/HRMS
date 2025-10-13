@@ -102,19 +102,19 @@ export class AuthService {
     
     if (!employee) {
       console.log("Can't find employee")
-      throw new APIError('Invalid employee ID or password', 401);
+      throw new APIError('帳號或密碼錯誤', 401);
     }
 
     // Check if employee has registered (has a password)
     if (!employee.password) {
-      throw new APIError('Please register first to set up your account', 400);
+      throw new APIError('請先註冊', 400);
     }
 
     // Validate password
     const isValidPassword = await bcrypt.compare(password, employee.password);
     if (!isValidPassword) {
       console.log("Invalid password")
-      throw new APIError('Invalid employee ID or password', 401);
+      throw new APIError('帳號或密碼錯誤', 401);
     }
 
     // Update last login

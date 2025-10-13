@@ -10,7 +10,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface ParsedRecord {
-  empID: string;
+  cardID: string;
   date: Date;
   time: Date;
   status: string; // D000 = in, D900 = out
@@ -48,7 +48,7 @@ export class AttendanceService {
       const time = dayjs.tz(`${year}-${month}-${day} ${hour}:${minute}`, 'YYYY-MM-DD HH:mm', 'Asia/Taipei').toDate();
       
       return {
-        empID: empID,
+        cardID: empID,
         date: date,
         time: time,
         status: `D${statusCode}`,
@@ -84,20 +84,19 @@ export class AttendanceService {
         
         try {
           // Find employee info
-          const employee = await Employee.findOne({ empID: parsed.empID });
+          const employee = await Employee.findOne({ cardID: parsed.cardID });
           
           // Find or create attendance record for this employee and date
           // const dateStr = parsed.date.toISOString().split('T')[0];
           // console.log(dateStr)
           let attendance = await Attendance.findOne({
-            empID: parsed.empID,
+            cardID: parsed.cardID,
             date: parsed.date
           });
           
           if (!attendance) {
             attendance = new Attendance({
-              cardID: employee?.cardID,
-              empID: parsed.empID,
+              cardID: parsed.cardID,
               employeeName: employee?.name,
               department: employee?.department,
               date: parsed.date
@@ -157,7 +156,7 @@ export class AttendanceService {
           imported++;
           
         } catch (error) {
-          errors.push(`Error processing record ${parsed.empID}: ${error}`);
+          errors.push(`Error processing record ${parsed.cardID}: ${error}`);
           console.error(`Error processing record:`, error);
         }
       }

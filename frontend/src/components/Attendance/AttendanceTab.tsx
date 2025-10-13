@@ -27,6 +27,7 @@ const AttendanceTab: React.FC = () => {
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
+    return date.toLocaleDateString('zh-TW')
     return date.toISOString().split('T')[0];
   };
 
@@ -76,8 +77,8 @@ const AttendanceTab: React.FC = () => {
     try {
       const res = await attendanceAPI.scanNow()
 
-      if (!res.data.success) {
-        toast.error('無法更新資料');
+      if (res.data.error) {
+        toast.error(res.data.message || '無法更新資料');
         console.log("error:")
         console.log(JSON.stringify(res.data))
         return;
@@ -92,7 +93,7 @@ const AttendanceTab: React.FC = () => {
         toast.warn(`掃描了 ${processed} 個檔案，但沒有新的資料需要更新。`);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || '更新出勤資料失敗');
+      toast.error(err.response?.data?.message || '更新出勤資料失敗');
     } finally {
       setImporting(false);
     }
@@ -141,11 +142,11 @@ const AttendanceTab: React.FC = () => {
   // DataGrid column definitions
   const columns: GridColDef[] = [
     {
-      field: 'empID',
+      field: 'cardID',
       headerName: '員工編號',
       // width: 120,
       flex: 1,
-      valueGetter: (_, row) => row.empID || '-'
+      valueGetter: (_, row) => row.cardID || '-'
     },
     {
       field: 'employeeName',

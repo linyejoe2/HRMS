@@ -68,7 +68,7 @@ const EmployeeManagement: React.FC = () => {
       setTotal(response.data.data.total || 0);
       setTotalPages(response.data.data.pages || 1);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || '載入員工資料失敗');
+      toast.error(err.response?.data?.message || '載入員工資料失敗');
       setEmployees([]);
     } finally {
       setLoading(false);
@@ -85,12 +85,12 @@ const EmployeeManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await employeeAPI.search(searchQuery);
-      setEmployees(response.data.employees || []);
-      setTotal(response.data.employees?.length || 0);
+      setEmployees(response.data.data.employees || []);
+      setTotal(response.data.data.employees?.length || 0);
       setTotalPages(1);
       setPage(1);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || '搜尋員工失敗');
+      toast.error(err.response?.data?.message || '搜尋員工失敗');
       setEmployees([]);
     } finally {
       setLoading(false);
