@@ -7,7 +7,9 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Grid
+  Grid,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -24,6 +26,7 @@ const AttendanceTab: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -136,8 +139,9 @@ const AttendanceTab: React.FC = () => {
     setEndDate(today.toISOString().split('T')[0]);
   };
 
-  // Check if user has admin/hr permissions (based on the user level system)
-  const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR; // 0=LAWYER/Admin, 1=CO_LAWYER/HR
+  // Check if user has admin/hr/manager permissions
+  const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
+  const isAdminOrHrOrManager = isAdminOrHr || user?.role === UserLevel.MANAGER;
 
   // DataGrid column definitions
   const columns: GridColDef[] = [
@@ -249,7 +253,7 @@ const AttendanceTab: React.FC = () => {
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid item xs={12} md={5}>
+              <Grid item xs={12} md={6}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Button
                     size="small"
@@ -290,9 +294,21 @@ const AttendanceTab: React.FC = () => {
                     {importing ? '更新中...' : '更新資料'}
                   </Button>
                   )}
+                  {isAdminOrHrOrManager && (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={showOnlyMyRecords}
+                        onChange={(e) => setShowOnlyMyRecords(e.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label="只看自己"
+                  />
+                  )}
                 </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2}>
                 <Typography variant="body2" color="text.secondary">
                   {startDate && endDate ? `${startDate} 至 ${endDate} 出勤記錄` : '請選擇日期範圍'}
                 </Typography>
@@ -318,10 +334,12 @@ const AttendanceTab: React.FC = () => {
 
             <Box sx={{ width: '100%' }}>
               <DataGrid
-                rows={attendanceRecords.map((record, index) => ({
-                  id: record._id || index,
-                  ...record
-                }))}
+                rows={attendanceRecords
+                  .filter(record => !showOnlyMyRecords || record.cardID === user?.cardID)
+                  .map((record, index) => ({
+                    id: record._id || index,
+                    ...record
+                  }))}
                 columns={columns}
                 initialState={{
                   pagination: {

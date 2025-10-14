@@ -1,7 +1,7 @@
 export interface User {
   name: string;
   empID: string; // Employee ID
-  empID2: string; // Original ID from Access DB
+  cardID: string; // Original ID from Access DB
   role: UserLevel;
   lastLogin: string;
 }
@@ -144,8 +144,7 @@ export interface UpdateProfileRequest {
 
 export interface AttendanceRecord {
   _id: string;
-  empID2: string;
-  empID?: string;
+  cardID: string;
   employeeName?: string;
   department?: string;
   date: string;

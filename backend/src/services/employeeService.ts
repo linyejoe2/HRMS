@@ -140,14 +140,14 @@ export class AuthService {
 
   async register(empID: string, password: string, email?: string): Promise<{ token: string; employee: Partial<IEmployee> }> {
     // Find existing employee record from Access DB migration
-    const existingEmployee = await Employee.findOne({ empID });
+    const existingEmployee = await Employee.findOne({ empID }).select('+password');
     
     if (!existingEmployee) {
-      throw new APIError('Employee ID not found in the system. Please contact HR.', 404);
+      throw new APIError('沒有找到這個員工編號，請聯繫管理員。', 404);
     }
 
     if (existingEmployee.password) {
-      throw new APIError('Employee already registered. Please login instead.', 400);
+      throw new APIError('使用者已經註冊了，請前往登入。', 400);
     }
 
     // Hash password
