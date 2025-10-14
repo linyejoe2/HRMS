@@ -14,7 +14,8 @@ export interface IAttendance extends Document {
   clockOutStatus?: string; // Clock out status
   
   // Calculated fields
-  workDuration?: number; // Total work hours
+  workDuration?: number; // Total work minute
+  lateMinute?: number;
   isLate?: boolean; // Is late for work
   isEarlyLeave?: boolean;
   isAbsent?: boolean; // Is absent
@@ -61,9 +62,12 @@ const AttendanceSchema = new Schema<IAttendance>({
     type: Date
   },
   clockOutStatus: {
-    type: String,
+    type: String
   },
   workDuration: {
+    type: Number
+  },
+  lateMinute: {
     type: Number
   },
   isLate: {
