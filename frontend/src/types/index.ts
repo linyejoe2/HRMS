@@ -10,7 +10,7 @@ export interface Employee {
   _id?: string;
   name: string;
   empID: string;
-  empID2: string;
+  cardID: string;
   isActive: boolean;
   role: UserLevel;
   lastLogin?: string;

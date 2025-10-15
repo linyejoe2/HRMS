@@ -6,7 +6,7 @@ import { isToday } from '@/utility';
 interface StatusChipProps {
   log: {
     empID: string; // Mapped employee ID (A029, etc.)
-    empID2?: string; // 8-digit employee ID from access system
+    cardID?: string; // 8-digit employee ID from access system
     employeeName?: string; // Employee name from Employee collection
     department?: string; // Department from Employee collection
     date: string; // Attendance string (YYYY-MM-DD)

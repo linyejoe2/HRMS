@@ -88,7 +88,7 @@ export class EmployeeService {
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { empID: { $regex: query, $options: 'i' } },
-        { empID2: { $regex: query, $options: 'i' } },
+        { cardID: { $regex: query, $options: 'i' } },
         { department: { $regex: query, $options: 'i' } }
       ]
     }).select('-password').limit(20);

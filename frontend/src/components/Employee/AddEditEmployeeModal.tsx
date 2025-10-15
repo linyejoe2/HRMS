@@ -46,7 +46,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     empID: '',
-    empID2: '',
+    cardID: '',
     department: '',
     role: UserLevel.EMPLOYEE,
     isActive: true,
@@ -148,7 +148,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       setFormData({
         name: employee.name || '',
         empID: employee.empID || '',
-        empID2: employee.empID2 || '',
+        cardID: employee.cardID || '',
         department: employee.department || '',
         role: employee.role || UserLevel.EMPLOYEE,
         isActive: employee.isActive ?? true,
@@ -159,7 +159,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       setFormData({
         name: '',
         empID: '',
-        empID2: '',
+        cardID: '',
         department: '',
         role: UserLevel.EMPLOYEE,
         isActive: true,
@@ -195,8 +195,8 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       newErrors.empID = '員工編號只能包含英文字母和數字';
     }
 
-    if (!formData.empID2.trim()) {
-      newErrors.empID2 = '請輸入原始編號';
+    if (!formData.cardID.trim()) {
+      newErrors.cardID = '請輸入門禁卡號';
     }
 
     if (!formData.department) {
@@ -223,7 +223,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const payload: any = {
         name: formData.name.trim(),
         empID: formData.empID.trim(),
-        empID2: formData.empID2.trim(),
+        cardID: formData.cardID.trim(),
         department: formData.department,
         role: formData.role,
         isActive: formData.isActive
@@ -317,12 +317,12 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="原始編號"
+                label="門禁卡號"
                 required
-                value={formData.empID2}
-                onChange={(e) => handleInputChange('empID2', e.target.value)}
-                error={!!errors.empID2}
-                helperText={errors.empID2 || '原打卡系統編號'}
+                value={formData.cardID}
+                onChange={(e) => handleInputChange('cardID', e.target.value)}
+                error={!!errors.cardID}
+                helperText={errors.cardID || '原打卡系統編號'}
                 disabled={loading}
               />
             </Grid>
