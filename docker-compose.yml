@@ -28,6 +28,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./release.zip:/etc/nginx/html/public/release.zip
     depends_on:
       - backend
       - frontend
