@@ -2,14 +2,18 @@ import * as cron from 'node-cron';
 import { fileScanService } from './fileScanService';
 import { Leave } from '../models/Leave';
 import { Employee } from '../models/Employee';
+import { Attendance } from '../models/Attendance';
 import { calcWarkingDurent } from '../utility';
+import dayjs from 'dayjs';
 
 export class CronService {
-  private scanJob: cron.ScheduledTask | null = null;
-  private sickLeaveJob: cron.ScheduledTask | null = null;
+  private attendanceFileScanJob: cron.ScheduledTask | null = null;
+  private createAttendanceJob: cron.ScheduledTask | null = null;
+  private leaveDaysTrackingJob: cron.ScheduledTask | null = null;
 
   private isScanning = false;
   private isUpdatingSickLeave = false;
+  private isAutoCreateAttendance = false;
 
   /**
    * Start the automated file scanning cron job
@@ -18,19 +22,19 @@ export class CronService {
   startFileScanning(): void {
     // console.log('File scanning cron job start running');
 
-    // this.scanJob = cron.schedule('*/5 * * * *', async () => {
+    // this.attendanceFileScanJob = cron.schedule('*/5 * * * *', async () => {
       
     //     console.warn('⏳ Skipping file scan - test');
     // })
     // return;
 
-    if (this.scanJob) {
-      console.log('File scanning cron job is already running');
+    if (this.attendanceFileScanJob) {
+      console.log('attendanceFileScanJob is already running');
       return;
     }
 
     // Run every 5 minutes: */5 * * * *
-    this.scanJob = cron.schedule('*/5 * * * *', async () => {
+    this.attendanceFileScanJob = cron.schedule('*/30 * * * *', async () => {
       if (this.isScanning) {
         console.warn('⏳ Skipping file scan - previous job still running');
         return;
@@ -39,7 +43,7 @@ export class CronService {
       this.isScanning = true;
       const startTime = Date.now();
 
-      console.log('🔄 Starting automated attendance file scan...');
+      console.log('▶️ Starting attendanceFileScanJob  at ', dayjs(startTime).locale("tw").format('YYYY/MM/DD HH:mm'))
 
       try {
         const result = await fileScanService.scanDataFolder();
@@ -59,7 +63,7 @@ export class CronService {
       }
     });
 
-    this.scanJob!.start();
+    this.attendanceFileScanJob!.start();
     console.log('🤖 Automated file scanning started - runs every 5 minutes');
   }
 
@@ -67,9 +71,9 @@ export class CronService {
    * Stop the automated file scanning cron job
    */
   stopFileScanning(): void {
-    if (this.scanJob) {
-      this.scanJob.stop();
-      this.scanJob = null;
+    if (this.attendanceFileScanJob) {
+      this.attendanceFileScanJob.stop();
+      this.attendanceFileScanJob = null;
       console.log('🛑 Automated file scanning stopped');
     } else {
       console.log('File scanning cron job is not running');
@@ -80,7 +84,7 @@ export class CronService {
    * Check if the file scanning job is running
    */
   isFileScanningRunning(): boolean {
-    return this.scanJob !== null;
+    return this.attendanceFileScanJob !== null;
   }
 
   /**
@@ -109,17 +113,116 @@ export class CronService {
   }
 
   /**
+   * Start auto attendance data creation job
+   * Running every day at 01:00 AM
+   */
+  startAutoCreateAttendance(): void {
+    if (this.createAttendanceJob) {
+      console.warn('Auto Create Attendance job is already running.');
+      return;
+    }
+
+    this.createAttendanceJob = cron.schedule('0 1 * * *', async () => {
+      if (this.isAutoCreateAttendance) {
+        console.warn('⏳ Skipping file scan - previous job still running');
+        return;
+      }
+
+      this.isAutoCreateAttendance = true;
+      const startTime = Date.now();
+
+      console.log('▶️ Starting createAttendanceJob at ', dayjs(startTime).locale("tw").format('YYYY/MM/DD HH:mm'));
+
+      try {
+        await this.createAttendance()
+      } catch (error) {
+        console.error('❌ Error during automated file scan:', error);
+      } finally {
+        this.isAutoCreateAttendance = false;
+      }
+    });
+
+    this.createAttendanceJob!.start();
+    console.log('🤖 Automated file scanning started - runs every 5 minutes');
+  }
+
+  async createAttendance(): Promise<{
+    date: Date;
+    employeeCount: number;
+    createdCount: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let createdCount = 0;
+
+    try {
+      // Get current date (set to start of day for consistency)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Get all active employees
+      const employees = await Employee.find({ isActive: true });
+      const employeeCount = employees.length;
+
+      // Process each employee
+      for (const employee of employees) {
+        try {
+          // Check if attendance record already exists for this employee and date
+          const existingAttendance = await Attendance.findOne({
+            cardID: employee.cardID,
+            date: today
+          });
+
+          if (!existingAttendance) {
+            // Create new attendance record
+            const attendance = new Attendance({
+              empID: employee.empID,
+              cardID: employee.cardID,
+              employeeName: employee.name,
+              department: employee.department,
+              date: today,
+              isAbsent: true // Default to absent until clock-in data is processed
+            });
+
+            await attendance.save();
+            createdCount++;
+          }
+        } catch (error) {
+          errors.push(`Error creating attendance for employee ${employee.empID} (${employee.name}): ${error}`);
+        }
+      }
+
+      console.log(`✅ Created ${createdCount} attendance records out of ${employeeCount} employees`);
+
+      return {
+        date: today,
+        employeeCount,
+        createdCount,
+        errors
+      };
+    } catch (error) {
+      errors.push(`General error in createAttendance: ${error}`);
+      return {
+        date: new Date(),
+        employeeCount: 0,
+        createdCount,
+        errors
+      };
+    }
+  }
+
+  /**
    * Start the leave tracking cron job
    * Runs daily at 00:00
    */
   startLeaveTracking(): void {
-    if (this.sickLeaveJob) {
+    if (this.leaveDaysTrackingJob) {
       console.log('Leave tracking cron job is already running');
       return;
     }
 
     // Run daily at midnight: 0 0 * * *
-    this.sickLeaveJob = cron.schedule('0 0 * * *', async () => {
+    this.leaveDaysTrackingJob = cron.schedule('0 0 * * *', async () => {
       if (this.isUpdatingSickLeave) {
         console.warn('⏳ Skipping leave tracking update - previous job still running');
         return;
@@ -128,7 +231,7 @@ export class CronService {
       this.isUpdatingSickLeave = true;
       const startTime = Date.now();
 
-      console.log('🔄 Starting leave tracking update...');
+      console.log('▶️ Starting leaveDaysTrackingJob at ', dayjs(startTime).locale("tw").format('YYYY/MM/DD HH:mm'));
 
       try {
         const result = await this.updateLeaveTracking();
@@ -148,7 +251,7 @@ export class CronService {
       }
     });
 
-    this.sickLeaveJob.start();
+    this.leaveDaysTrackingJob.start();
     console.log('🤖 Leave tracking started - runs daily at midnight');
   }
 
@@ -156,9 +259,9 @@ export class CronService {
    * Stop the leave tracking cron job
    */
   stopLeaveTracking(): void {
-    if (this.sickLeaveJob) {
-      this.sickLeaveJob.stop();
-      this.sickLeaveJob = null;
+    if (this.leaveDaysTrackingJob) {
+      this.leaveDaysTrackingJob.stop();
+      this.leaveDaysTrackingJob = null;
       console.log('🛑 Leave tracking stopped');
     } else {
       console.log('Leave tracking cron job is not running');
@@ -169,7 +272,7 @@ export class CronService {
    * Check if the leave tracking job is running
    */
   isLeaveTrackingRunning(): boolean {
-    return this.sickLeaveJob !== null;
+    return this.leaveDaysTrackingJob !== null;
   }
 
   /**
@@ -299,6 +402,21 @@ export class CronService {
     console.log('🔄 Manual leave tracking triggered...');
     const result = await this.updateLeaveTracking();
     console.log(`✅ Manual leave tracking completed - Updated ${result.updatedLeaves} leaves, ${result.updatedEmployees} employees`);
+    return result;
+  }
+
+  /**
+   * Run attendance creation immediately (manual trigger)
+   */
+  async runCreateAttendanceNow(): Promise<{
+    date: Date;
+    employeeCount: number;
+    createdCount: number;
+    errors: string[];
+  }> {
+    console.log('🔄 Manual attendance creation triggered...');
+    const result = await this.createAttendance();
+    console.log(`✅ Manual attendance creation completed - Created ${result.createdCount} records for ${result.employeeCount} employees`);
     return result;
   }
 }

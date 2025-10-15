@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { attendanceController } from '../controllers';
 import { authenticateToken, requireRole } from '../middleware';
 import rateLimit from 'express-rate-limit';
+import { cronService } from '../services';
 
 const router = Router();
 
@@ -12,9 +13,13 @@ const attendanceLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+router.use(attendanceLimiter);
+
+router.get('/create-attendance-record', async (_, res) => {
+  res.status(200).json(await cronService.runCreateAttendanceNow())
+});
 
 // All routes require authentication
-router.use(attendanceLimiter);
 router.use(authenticateToken);
 
 // HR/Admin only routes
