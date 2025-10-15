@@ -199,9 +199,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       newErrors.cardID = '請輸入門禁卡號';
     }
 
-    if (!formData.department) {
-      newErrors.department = '請選擇部門';
-    }
+    // if (!formData.department) {
+    //   newErrors.department = '請選擇部門';
+    // }
 
     // Validate salary if provided
     if (formData.salary && isNaN(Number(formData.salary))) {
@@ -322,13 +322,13 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                 value={formData.cardID}
                 onChange={(e) => handleInputChange('cardID', e.target.value)}
                 error={!!errors.cardID}
-                helperText={errors.cardID || '原打卡系統編號'}
+                helperText={errors.cardID || '換卡時更改'}
                 disabled={loading}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required error={!!errors.department}>
+              <FormControl fullWidth error={!!errors.department}>
                 <InputLabel>部門</InputLabel>
                 <Select
                   value={formData.department}
