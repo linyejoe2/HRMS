@@ -30,6 +30,7 @@ export class FileScanService {
       let files = fs.readdirSync(this.dataFolderPath);
       files = files.filter(file => file.endsWith('saveData.txt'));
       files = files.filter(file => file.startsWith('001'));
+      files = files.filter(file => file.includes('2025'));
 
       console.log(`Found ${files.length} saveData.txt files`);
 

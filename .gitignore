@@ -64,3 +64,4 @@ venv.bak/
 */.venv/*
 data/
 data/Employee.csv
+7za.exe

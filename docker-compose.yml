@@ -59,7 +59,7 @@ services:
       - hrms-network
     restart: unless-stopped
     volumes:
-      - ./data:/app/data
+      - ${DATA}:/app/data
     logging:
       driver: json-file
       options:
