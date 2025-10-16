@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import { Counter } from './Counter';
 
 export interface ILeave extends Document {
+  sequenceNumber: number;
   empID: string;
   name: string;
   department: string;
@@ -17,13 +18,16 @@ export interface ILeave extends Document {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
-  sequenceNumber: number;
   pastYear: number; // Track leave aging: 0=current, 1=past 1 year, 2=past 2 years, 3=past 3+ years
   createdAt: Date;
   updatedAt: Date;
 }
 
 const leaveSchema = new Schema<ILeave>({
+  sequenceNumber: {
+    type: Number,
+    unique: true
+  },
   empID: {
     type: String,
     required: true,
@@ -84,10 +88,6 @@ const leaveSchema = new Schema<ILeave>({
   },
   approvedBy: {
     type: String
-  },
-  sequenceNumber: {
-    type: Number,
-    unique: true
   },
   pastYear: {
     type: Number,
