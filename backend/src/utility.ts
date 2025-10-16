@@ -1,6 +1,6 @@
-// version 0.0.3
+// version 0.0.4
 // by Randy Lin
-// 2025/09/26
+// 2025/10/16
 
 /**
  * need to install these depandancy
@@ -19,6 +19,22 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
+
+/**
+ * Checks if a given date falls on a weekend (Saturday or Sunday) in Taiwan.
+ *
+ * @param {string | Date | number | dayjs.Dayjs} date - The date to check. Can be a string, Date object, timestamp, or Dayjs object.
+ * @returns {boolean} Returns `true` if the date is a Saturday or Sunday, otherwise `false`.
+ *
+ * @example
+ * isWeekend("2025-10-18"); // true (Saturday)
+ * isWeekend(new Date("2025-10-19")); // true (Sunday)
+ * isWeekend(dayjs("2025-10-20")); // false (Monday)
+ */
+export function isWeekend(date: string | Date | number | dayjs.Dayjs): boolean {
+  const day = dayjs(date).locale("zh-tw").day();
+  return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+}
 
 
 /**

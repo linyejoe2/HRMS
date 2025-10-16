@@ -19,7 +19,10 @@ export interface IAttendance extends Document {
   isLate?: boolean; // Is late for work
   isEarlyLeave?: boolean;
   isAbsent?: boolean; // Is absent
-  
+
+  // Leave tracking
+  leaves?: number[]; // Array of leave sequenceNumbers for this attendance record
+
   // Audit fields
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +84,10 @@ const AttendanceSchema = new Schema<IAttendance>({
   isAbsent: {
     type: Boolean,
     default: false
+  },
+  leaves: {
+    type: [Number],
+    default: []
   }
 }, {
   timestamps: true

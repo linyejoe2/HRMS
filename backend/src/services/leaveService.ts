@@ -1,6 +1,6 @@
-import { Leave, ILeave, Employee } from '../models';
+import { Leave, ILeave, Employee, Attendance } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { calcWarkingDurent } from '../utility';
+import { calcWarkingDurent, isWeekend } from '../utility';
 
 export class LeaveService {
   static async checkLeaveRequestDidntRepeat(leave: ILeave): Promise<boolean> {
@@ -147,7 +147,79 @@ export class LeaveService {
     leave.status = 'approved';
     leave.approvedBy = approvedBy;
 
-    return await leave.save();
+    const savedLeave = await leave.save();
+
+    // Update related attendance records with leave sequenceNumber
+    await this.updateAttendanceRecordsForLeave(leave);
+
+    return savedLeave;
+  }
+
+  /**
+   * Update attendance records for a leave period
+   * Creates missing records and adds leave sequenceNumber to leaves array
+   */
+  private static async updateAttendanceRecordsForLeave(leave: ILeave): Promise<void> {
+    const startDate = new Date(leave.leaveStart);
+    const endDate = new Date(leave.leaveEnd);
+
+    // Normalize to start of day for comparison
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    // Get employee details for creating attendance records
+    const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
+    if (!employee) {
+      throw new APIError('Employee not found', 404);
+    }
+
+    // Generate all dates in the leave period
+    const dates: Date[] = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Process each date
+    for (const date of dates) {
+      if (isWeekend(date)) {
+        continue;
+      }
+
+      // Try to find existing attendance record
+      let attendance = await Attendance.findOne({
+        empID: leave.empID,
+        date: {
+          $gte: new Date(date.setHours(0, 0, 0, 0)),
+          $lt: new Date(date.setHours(23, 59, 59, 999))
+        }
+      });
+
+      if (attendance) {
+        // Update existing record: add sequenceNumber to leaves array if not already present
+        if (!attendance.leaves) {
+          attendance.leaves = [];
+        }
+
+        if (!attendance.leaves.includes(leave.sequenceNumber)) {
+          attendance.leaves.push(leave.sequenceNumber);
+          await attendance.save();
+        }
+      } else {
+        // Create new attendance record
+        attendance = new Attendance({
+          empID: leave.empID,
+          cardID: employee.cardID,
+          employeeName: employee.name,
+          department: employee.department,
+          date: new Date(date),
+          leaves: [leave.sequenceNumber],
+          isAbsent: false // Mark as not absent since it's approved leave
+        });
+        await attendance.save();
+      }
+    }
   }
 
   static async rejectLeaveRequest(leaveId: string, rejectionReason: string, rejectedBy: string): Promise<ILeave> {

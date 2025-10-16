@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { toDayjs, toSeparatVariable, calcWarkingDurent } from '../utility';
+import { toDayjs, toSeparatVariable, calcWarkingDurent, isWeekend } from '../utility';
 import { Employee } from '../models/Employee';
 import { APIError } from './errorHandler';
 import { AuthRequest } from '../middleware/auth';
@@ -17,6 +17,12 @@ export const validateLeaveRule = async (req: AuthRequest, res: Response, next: N
     const leaveEndObject = toSeparatVariable(leaveEnd)
     const leaveStartDayjs = toDayjs(leaveStart)
     const leaveEndDayjs = toDayjs(leaveEnd)
+
+    if (isWeekend(leaveStart)) 
+      return res.status(400).json({ error: true, message: "不得開始於假日" });
+
+    if (isWeekend(leaveEnd)) 
+      return res.status(400).json({ error: true, message: "不得結束於假日" });
 
     if (leaveEndDayjs.isBefore(leaveStartDayjs))
       return res.status(400).json({ error: true, message: "結束時間早於開始時間" });
