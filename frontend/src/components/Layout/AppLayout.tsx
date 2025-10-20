@@ -27,6 +27,7 @@ import {
   Group as EmployeeIcon,
   RequestQuote as LeaveIcon,
   Assignment as ApprovalIcon,
+  AccessTime as PostClockIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -101,6 +102,13 @@ const AppLayout: React.FC = () => {
       text: '請假申請',
       icon: <LeaveIcon />,
       path: '/leave/ask'
+    });
+
+    // Add PostClock Request for all users
+    baseItems.push({
+      text: '補卡申請',
+      icon: <PostClockIcon />,
+      path: '/postclock'
     });
 
     // Add Employee Management for HR and Admin only

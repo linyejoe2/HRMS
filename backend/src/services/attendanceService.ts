@@ -129,7 +129,7 @@ export class AttendanceService {
           
           // Calculate work hours if both times are available
           if (attendance.clockInTime && attendance.clockOutTime) {
-            const workDurationObj = this.calcWorkDuration(attendance.clockInTime, attendance.clockOutTime);
+            const workDurationObj = calcWorkDuration(attendance.clockInTime, attendance.clockOutTime);
             console.log("workDurationObj")
             console.log(JSON.stringify(workDurationObj))
             
@@ -332,65 +332,65 @@ export class AttendanceService {
       averageWorkHours
     };
   }
+}
 
-  calcWorkDuration(inTime: Date, outTime: Date): {
-    duration: number, // minute
-    lateMinute: number,
-    pastLunchBreak: boolean,
-    isLate: boolean,
-    isEarlyLeave: boolean
-  } {
-    // Transform to dayjs with Taipei timezone
-    const inTimeDayjs = dayjs(inTime).tz('Asia/Taipei');
-    const outTimeDayjs = dayjs(outTime).tz('Asia/Taipei');
-    
-    // Define standard times
-    const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
-    const standardEnd = inTimeDayjs.clone().hour(17).minute(20).second(0);
-    const lunchStart = inTimeDayjs.clone().hour(12).minute(0).second(0);
-    const lunchEnd = inTimeDayjs.clone().hour(13).minute(0).second(0);
-    const flexibleStart = inTimeDayjs.clone().hour(9).minute(30).second(0);
-    
-    // Check if late (after 08:30)
-    let isLate = inTimeDayjs.isAfter(standardStart);
-    
-    // Check if early leave (before 17:20)
-    const isEarlyLeave = outTimeDayjs.isBefore(standardEnd);
-    
-    // Check if past lunch break (in before 12:00 and out after 13:00)
-    const pastLunchBreak = inTimeDayjs.isBefore(lunchStart) && outTimeDayjs.isAfter(lunchEnd);
-    
-    // Calculate duration in minutes
-    let duration = outTimeDayjs.diff(inTimeDayjs, 'minute');
-    
-    // Subtract lunch break if applicable
-    if (pastLunchBreak) {
-      duration -= 60;
-    }
-    
-    // If duration > 470 minutes (7h 50m) and in before 09:30, not considered late
-    if (duration >= 470 && inTimeDayjs.isBefore(flexibleStart)) {
-      isLate = false;
-    }
-    
-    // Calculate late minutes
-    // lateMinute = (inTime - 08:30) - (outTime - 18:20)
-    const inLateMinutes = Math.max(0, inTimeDayjs.diff(standardStart, 'minute'));
-    const outEarlyMinutes = Math.max(0, standardEnd.diff(outTimeDayjs, 'minute'));
-    let lateMinute = inLateMinutes - outEarlyMinutes;
-    
-    if (lateMinute < 0) {
-      lateMinute = 0;
-    }
-    
-    return {
-      duration,
-      lateMinute,
-      pastLunchBreak,
-      isLate,
-      isEarlyLeave
-    };
+export function calcWorkDuration(inTime: Date, outTime: Date): {
+  duration: number, // minute
+  lateMinute: number,
+  pastLunchBreak: boolean,
+  isLate: boolean,
+  isEarlyLeave: boolean
+} {
+  // Transform to dayjs with Taipei timezone
+  const inTimeDayjs = dayjs(inTime).tz('Asia/Taipei');
+  const outTimeDayjs = dayjs(outTime).tz('Asia/Taipei');
+  
+  // Define standard times
+  const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
+  const standardEnd = inTimeDayjs.clone().hour(17).minute(20).second(0);
+  const lunchStart = inTimeDayjs.clone().hour(12).minute(0).second(0);
+  const lunchEnd = inTimeDayjs.clone().hour(13).minute(0).second(0);
+  const flexibleStart = inTimeDayjs.clone().hour(9).minute(30).second(0);
+  
+  // Check if late (after 08:30)
+  let isLate = inTimeDayjs.isAfter(standardStart);
+  
+  // Check if early leave (before 17:20)
+  const isEarlyLeave = outTimeDayjs.isBefore(standardEnd);
+  
+  // Check if past lunch break (in before 12:00 and out after 13:00)
+  const pastLunchBreak = inTimeDayjs.isBefore(lunchStart) && outTimeDayjs.isAfter(lunchEnd);
+  
+  // Calculate duration in minutes
+  let duration = outTimeDayjs.diff(inTimeDayjs, 'minute');
+  
+  // Subtract lunch break if applicable
+  if (pastLunchBreak) {
+    duration -= 60;
   }
+  
+  // If duration > 470 minutes (7h 50m) and in before 09:30, not considered late
+  if (duration >= 470 && inTimeDayjs.isBefore(flexibleStart)) {
+    isLate = false;
+  }
+  
+  // Calculate late minutes
+  // lateMinute = (inTime - 08:30) - (outTime - 18:20)
+  const inLateMinutes = Math.max(0, inTimeDayjs.diff(standardStart, 'minute'));
+  const outEarlyMinutes = Math.max(0, standardEnd.diff(outTimeDayjs, 'minute'));
+  let lateMinute = inLateMinutes - outEarlyMinutes;
+  
+  if (lateMinute < 0) {
+    lateMinute = 0;
+  }
+  
+  return {
+    duration,
+    lateMinute,
+    pastLunchBreak,
+    isLate,
+    isEarlyLeave
+  };
 }
 
 export const attendanceService = new AttendanceService();

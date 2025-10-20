@@ -22,6 +22,9 @@ export interface IAttendance extends Document {
   // Leave tracking
   leaves?: number[]; // Array of leave sequenceNumbers for this attendance record
 
+  // PostClock tracking
+  postclocks?: number[]; // Array of postclock sequenceNumbers for this attendance record
+
   // Audit fields
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +84,10 @@ const AttendanceSchema = new Schema<IAttendance>({
     default: false
   },
   leaves: {
+    type: [Number],
+    default: []
+  },
+  postclocks: {
     type: [Number],
     default: []
   }

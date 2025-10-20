@@ -177,3 +177,24 @@ export interface AttendanceSummary {
   lateEmployees: number;
   averageWorkHours: number;
 }
+
+export interface PostClockRequestForm {
+  date: string; // Date for the clock correction
+  time: string; // Time to be recorded
+  clockType: 'in' | 'out'; // Clock in or out
+  reason: string;
+  supportingInfo?: string; // File path or URL
+}
+
+export interface PostClockRequest extends PostClockRequestForm {
+  _id?: string; // MongoDB ID
+  name: string; // from table employee
+  department: string; // from table employee
+  empID: string; // from table employee
+  status: 'created' | 'approved' | 'rejected' | 'cancel';
+  rejectionReason?: string;
+  approvedBy?: string;
+  sequenceNumber: number; // auto-increment sequence number
+  createdAt?: string;
+  updatedAt?: string;
+}

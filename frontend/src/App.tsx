@@ -10,6 +10,7 @@ import AttendanceTab from './components/Attendance/AttendanceTab';
 import EmployeeManagement from './components/Employee/EmployeeManagement';
 import AskLeaveTab from './components/Leave/AskLeaveTab';
 import ApproveLeaveTab from './components/Leave/ApproveLeaveTab';
+import PostClockTab from './components/Leave/PostClockTab';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -85,6 +86,7 @@ const App: React.FC = () => {
         <Route path="employees" element={<EmployeeManagement />} />
         <Route path="leave/ask" element={<AskLeaveTab />} />
         <Route path="leave/approve" element={<ApproveLeaveTab />} />
+        <Route path="postclock" element={<PostClockTab />} />
         <Route path="settings" element={<SettingsTab />} />
       </Route>
       

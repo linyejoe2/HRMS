@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -314,3 +314,51 @@ export const approveLeaveRequest = leaveAPI.approve;
 export const rejectLeaveRequest = leaveAPI.reject;
 export const cancelLeaveRequest = leaveAPI.cancel;
 export const getCancelledLeaveRequests = leaveAPI.getCancelled;
+
+export const postClockAPI = {
+  // Create postclock request
+  create: (postClockData: PostClockRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.post('/postclock/create', postClockData),
+
+  // Get my postclock requests
+  getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
+    api.get('/postclock/my'),
+
+  // Get all postclock requests (HR/Admin only)
+  getAll: (status?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
+    api.get(`/postclock/all${status ? `?status=${status}` : ''}`),
+
+  // Get postclock request by ID
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.get(`/postclock/${id}`),
+
+  // Get postclock request by sequence number
+  getBySequenceNumber: (sequenceNumber: number): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.get(`/postclock/sequence/${sequenceNumber}`),
+
+  // Approve postclock request (HR/Admin only)
+  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/approve`),
+
+  // Reject postclock request (HR/Admin only)
+  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/reject`, { reason }),
+
+  // Cancel postclock request
+  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/cancel`),
+
+  // Get cancelled postclock requests (HR/Admin only)
+  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
+    api.get(`/postclock/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+};
+
+// Convenience functions for postclock operations
+export const createPostClockRequest = postClockAPI.create;
+export const getMyPostClockRequests = postClockAPI.getMy;
+export const getAllPostClockRequests = postClockAPI.getAll;
+export const getPostClockRequestById = postClockAPI.getById;
+export const approvePostClockRequest = postClockAPI.approve;
+export const rejectPostClockRequest = postClockAPI.reject;
+export const cancelPostClockRequest = postClockAPI.cancel;
+export const getCancelledPostClockRequests = postClockAPI.getCancelled;
