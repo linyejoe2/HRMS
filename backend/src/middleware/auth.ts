@@ -27,13 +27,16 @@ export const authenticateToken = async (
     }
 
     const decoded = jwt.verify(token, config.jwtSecret) as any;
-    
+
     // Verify user still exists and is active
     const user = await Employee.findById(decoded.id).select('+password');
     if (!user || !user.isActive) {
       res.status(401).json({ error: true, message: '無效或過期的權杖' });
       return;
     }
+
+    // Update lastLogin timestamp on every authenticated request
+    await Employee.findByIdAndUpdate(decoded.id, { lastLogin: new Date() });
 
     req.user = {
       id: (user._id as any).toString(),
