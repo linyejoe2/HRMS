@@ -105,3 +105,14 @@ export const getCancelLeaveRequests = asyncHandler(async (req: AuthRequest, res:
     data: leaves
   });
 });
+
+export const getLeaveRequestBySequenceNumber = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { sequenceNumber } = req.params;
+  const leave = await LeaveService.getLeaveRequestBySequenceNumber(Number(sequenceNumber));
+
+  res.json({
+    error: false,
+    message: '成功取得請假紀錄',
+    data: leave
+  });
+});

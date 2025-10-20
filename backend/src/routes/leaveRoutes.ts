@@ -7,7 +7,8 @@ import {
   rejectLeaveRequest,
   getLeaveRequestById,
   cancelLeaveRequest,
-  getCancelLeaveRequests
+  getCancelLeaveRequests,
+  getLeaveRequestBySequenceNumber
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -20,6 +21,8 @@ router.post('/create', authenticateToken, validateLeaveRequest, validateLeaveRul
 router.get('/my', authenticateToken, getMyLeaveRequests);
 
 router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllLeaveRequests);
+
+router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 
 router.get('/:id', authenticateToken, getLeaveRequestById);
 

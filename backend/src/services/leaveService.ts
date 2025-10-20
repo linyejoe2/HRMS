@@ -189,11 +189,8 @@ export class LeaveService {
 
       // Try to find existing attendance record
       let attendance = await Attendance.findOne({
-        empID: leave.empID,
-        date: {
-          $gte: new Date(date.setHours(0, 0, 0, 0)),
-          $lt: new Date(date.setHours(23, 59, 59, 999))
-        }
+        cardID: employee.cardID,
+        date: date
       });
 
       if (attendance) {
@@ -209,11 +206,10 @@ export class LeaveService {
       } else {
         // Create new attendance record
         attendance = new Attendance({
-          empID: leave.empID,
           cardID: employee.cardID,
           employeeName: employee.name,
           department: employee.department,
-          date: new Date(date),
+          date: date,
           leaves: [leave.sequenceNumber],
           isAbsent: false // Mark as not absent since it's approved leave
         });
@@ -274,5 +270,14 @@ export class LeaveService {
       : { status: 'cancel' };
 
     return await Leave.find(query).sort({ createdAt: -1 });
+  }
+
+  static async getLeaveRequestBySequenceNumber(sequenceNumber: number): Promise<ILeave> {
+    const leave = await Leave.findOne({ sequenceNumber });
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+
+    return leave;
   }
 }

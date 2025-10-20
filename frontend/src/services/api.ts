@@ -284,6 +284,10 @@ export const leaveAPI = {
   getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.get(`/leave/${id}`),
 
+  // Get leave request by sequence number
+  getBySequenceNumber: (sequenceNumber: number): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.get(`/leave/sequence/${sequenceNumber}`),
+
   // Approve leave request (HR/Admin only)
   approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.put(`/leave/${id}/approve`),
