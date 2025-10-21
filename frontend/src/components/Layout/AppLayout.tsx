@@ -17,6 +17,7 @@ import {
   MenuItem,
   useMediaQuery,
   useTheme,
+  Collapse,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -28,6 +29,8 @@ import {
   RequestQuote as LeaveIcon,
   Assignment as ApprovalIcon,
   AccessTime as PostClockIcon,
+  ExpandLess,
+  ExpandMore,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,6 +41,7 @@ const DRAWER_WIDTH = 280;
 const AppLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
+  const [approvalMenuOpen, setApprovalMenuOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -92,8 +96,15 @@ const AppLayout: React.FC = () => {
   };
 
   // Get menu items based on user role
-  const getMenuItems = () => {
-    const baseItems = [
+  interface MenuItem {
+    text: string;
+    icon: React.ReactElement;
+    path?: string;
+    subItems?: { text: string; path: string }[];
+  }
+
+  const getMenuItems = (): MenuItem[] => {
+    const baseItems: MenuItem[] = [
       { text: '出勤管理', icon: <AttendanceIcon />, path: '/attendance' },
     ];
 
@@ -113,13 +124,17 @@ const AppLayout: React.FC = () => {
 
     // Add Employee Management for HR and Admin only
     if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
-      // Add Leave Approval for HR and Admin only
+      // Add Approval Center with sub-items for HR and Admin only
       baseItems.push({
-        text: '請假審核',
+        text: '審核中心',
         icon: <ApprovalIcon />,
-        path: '/leave/approve'
+        path: '/leave/approve?tab=leave',
+        subItems: [
+          { text: '請假審核', path: '/leave/approve?tab=leave' },
+          { text: '補卡審核', path: '/leave/approve?tab=postclock' },
+        ]
       });
-      
+
       baseItems.push({
         text: '員工管理',
         icon: <EmployeeIcon />,
@@ -133,6 +148,10 @@ const AppLayout: React.FC = () => {
   };
 
   const menuItems = getMenuItems();
+
+  const handleApprovalMenuToggle = () => {
+    setApprovalMenuOpen(!approvalMenuOpen);
+  };
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -162,35 +181,78 @@ const AppLayout: React.FC = () => {
       )}
       
       <Divider />
-      
+
       {/* Navigation Menu */}
       <List sx={{ flexGrow: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => {
-                navigate(item.path);
-                if (isMobile) {
-                  setDrawerOpen(false);
-                }
-              }}
-              sx={{
-                '&.Mui-selected': {
-                  bgcolor: theme.palette.primary.main + '20',
-                  '& .MuiListItemIcon-root': {
-                    color: theme.palette.primary.main,
+          <React.Fragment key={item.text}>
+            <ListItem disablePadding>
+              <ListItemButton
+                selected={item.path ? location.pathname === item.path : false}
+                onClick={() => {
+                  if (item.path) {
+                    navigate(item.path);
+                    if (isMobile) {
+                      setDrawerOpen(false);
+                    }
+                  }
+                  
+                  if (item.subItems) {
+                    handleApprovalMenuToggle();
+                  }
+                }}
+                sx={{
+                  '&.Mui-selected': {
+                    bgcolor: theme.palette.primary.main + '20',
+                    '& .MuiListItemIcon-root': {
+                      color: theme.palette.primary.main,
+                    },
+                    '& .MuiListItemText-primary': {
+                      fontWeight: 'bold',
+                    },
                   },
-                  '& .MuiListItemText-primary': {
-                    fontWeight: 'bold',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
+                }}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+                {item.subItems && (
+                  <IconButton
+                    edge="end"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Prevent parent onClick
+                      handleApprovalMenuToggle(); // 🔁 Toggle submenu
+                    }}
+                  >
+                    {approvalMenuOpen ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                )}
+              </ListItemButton>
+            </ListItem>
+
+            {/* Render sub-items if they exist */}
+            {item.subItems && (
+              <Collapse in={approvalMenuOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.subItems.map((subItem) => (
+                    <ListItemButton
+                      key={subItem.text}
+                      sx={{ pl: 4 }}
+                      selected={location.pathname + location.search === subItem.path}
+                      onClick={() => {
+                        navigate(subItem.path);
+                        if (isMobile) {
+                          setDrawerOpen(false);
+                        }
+                      }}
+                    >
+                      <ListItemText primary={subItem.text} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+          </React.Fragment>
         ))}
       </List>
     </Box>

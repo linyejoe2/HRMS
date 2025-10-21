@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
   Tabs,
   Tab
 } from '@mui/material';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApproveLeaveList from './ApproveLeaveList';
 import ApprovePostClockList from './ApprovePostClockList';
 
@@ -42,10 +43,36 @@ function a11yProps(index: number) {
 }
 
 const ApproveLeaveTab: React.FC = () => {
-  const [tabValue, setTabValue] = useState(0);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const tabParam = searchParams.get('tab');
+
+  // Map tab parameter to index
+  const getTabIndex = (tab: string | null): number => {
+    switch (tab) {
+      case 'leave':
+        return 0;
+      case 'postclock':
+        return 1;
+      case 'travel':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  const [tabValue, setTabValue] = useState(getTabIndex(tabParam));
+
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    setTabValue(getTabIndex(tabParam));
+  }, [tabParam]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    // Update URL parameter
+    const tabNames = ['leave', 'postclock', 'travel'];
+    navigate(`/leave/approve?tab=${tabNames[newValue]}`, { replace: true });
   };
 
   return (
