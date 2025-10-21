@@ -24,11 +24,12 @@ import {
   Settings as SettingsIcon,
   Person as PersonIcon,
   Logout as LogoutIcon,
-  Schedule as AttendanceIcon,
+  EventNote as AttendanceIcon,
   Group as EmployeeIcon,
-  RequestQuote as LeaveIcon,
+  BeachAccess as LeaveIcon,
   Assignment as ApprovalIcon,
-  AccessTime as PostClockIcon,
+  EditCalendar as PostClockIcon,
+  Work as BusinessTripIcon,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
@@ -120,6 +121,12 @@ const AppLayout: React.FC = () => {
       text: '補卡申請',
       icon: <PostClockIcon />,
       path: '/postclock'
+    });
+
+    baseItems.push({
+      text: '出差申請',
+      icon: <BusinessTripIcon />,
+      path: '/business-trip'
     });
 
     // Add Employee Management for HR and Admin only
