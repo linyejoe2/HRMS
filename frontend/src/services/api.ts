@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -362,3 +362,51 @@ export const approvePostClockRequest = postClockAPI.approve;
 export const rejectPostClockRequest = postClockAPI.reject;
 export const cancelPostClockRequest = postClockAPI.cancel;
 export const getCancelledPostClockRequests = postClockAPI.getCancelled;
+
+export const businessTripAPI = {
+  // Create business trip request
+  create: (businessTripData: BusinessTripRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.post('/businesstrip/create', businessTripData),
+
+  // Get my business trip requests
+  getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>
+    api.get('/businesstrip/my'),
+
+  // Get all business trip requests (HR/Admin only)
+  getAll: (status?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>
+    api.get(`/businesstrip/all${status ? `?status=${status}` : ''}`),
+
+  // Get business trip request by ID
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.get(`/businesstrip/${id}`),
+
+  // Get business trip request by sequence number
+  getBySequenceNumber: (sequenceNumber: number): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.get(`/businesstrip/sequence/${sequenceNumber}`),
+
+  // Approve business trip request (HR/Admin only)
+  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/approve`),
+
+  // Reject business trip request (HR/Admin only)
+  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/reject`, { reason }),
+
+  // Cancel business trip request
+  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/cancel`),
+
+  // Get cancelled business trip requests (HR/Admin only)
+  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>
+    api.get(`/businesstrip/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+};
+
+// Convenience functions for business trip operations
+export const createBusinessTripRequest = businessTripAPI.create;
+export const getMyBusinessTripRequests = businessTripAPI.getMy;
+export const getAllBusinessTripRequests = businessTripAPI.getAll;
+export const getBusinessTripRequestById = businessTripAPI.getById;
+export const approveBusinessTripRequest = businessTripAPI.approve;
+export const rejectBusinessTripRequest = businessTripAPI.reject;
+export const cancelBusinessTripRequest = businessTripAPI.cancel;
+export const getCancelledBusinessTripRequests = businessTripAPI.getCancelled;

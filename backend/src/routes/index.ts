@@ -5,6 +5,7 @@ import migrationRoutes from './migrationRoutes';
 import attendanceRoutes from './attendanceRoutes';
 import leaveRoutes from './leaveRoutes';
 import postClockRoutes from './postClockRoutes';
+import businessTripRoutes from './businessTripRoutes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/migration', migrationRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/leave', leaveRoutes);
 router.use('/postclock', postClockRoutes);
+router.use('/businesstrip', businessTripRoutes);
 
 export default router;

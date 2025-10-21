@@ -8,6 +8,7 @@ import {
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApproveLeaveList from './ApproveLeaveList';
 import ApprovePostClockList from './ApprovePostClockList';
+import ApproveBusinessTripList from './ApproveBusinessTripList';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -85,7 +86,7 @@ const ApproveLeaveTab: React.FC = () => {
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="審核類型">
           <Tab label="請假審核" {...a11yProps(0)} />
           <Tab label="補卡審核" {...a11yProps(1)} />
-          <Tab label="出差審核" {...a11yProps(2)} disabled />
+          <Tab label="出差審核" {...a11yProps(2)} />
         </Tabs>
       </Box>
 
@@ -96,9 +97,7 @@ const ApproveLeaveTab: React.FC = () => {
         <ApprovePostClockList />
       </TabPanel>
       <TabPanel value={tabValue} index={2}>
-        <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-          <Typography>出差審核功能即將推出...</Typography>
-        </Box>
+        <ApproveBusinessTripList />
       </TabPanel>
     </Box>
   );

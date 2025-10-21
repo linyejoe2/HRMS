@@ -198,3 +198,26 @@ export interface PostClockRequest extends PostClockRequestForm {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface BusinessTripRequestForm {
+  destination: string; // Destination location
+  purpose: string; // Purpose of the trip
+  tripStart: string; // Start date and time
+  tripEnd: string; // End date and time
+  transportation?: string; // Mode of transportation
+  estimatedCost?: number; // Estimated cost
+  notes?: string; // Additional notes
+}
+
+export interface BusinessTripRequest extends BusinessTripRequestForm {
+  _id?: string; // MongoDB ID
+  name: string; // from table employee
+  department: string; // from table employee
+  empID: string; // from table employee
+  status: 'created' | 'approved' | 'rejected' | 'cancel';
+  rejectionReason?: string;
+  approvedBy?: string;
+  sequenceNumber: number; // auto-increment sequence number
+  createdAt?: string;
+  updatedAt?: string;
+}
