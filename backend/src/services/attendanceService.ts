@@ -116,15 +116,21 @@ export class AttendanceService {
           
           // Update attendance based on status
           if (parsed.status === 'D000') {
-            // Clock in
-            attendance.clockInRawRecord = parsed.rawRecord;
-            attendance.clockInTime = parsed.time;
-            attendance.clockInStatus = parsed.status;
+            // Clock in - only update if this is earlier than existing clock-in time
+            // This ensures we keep the first entry when someone goes into office multiple times
+            if (!attendance.clockInTime || parsed.time < attendance.clockInTime) {
+              attendance.clockInRawRecord = parsed.rawRecord;
+              attendance.clockInTime = parsed.time;
+              attendance.clockInStatus = parsed.status;
+            }
           } else if (parsed.status === 'D900') {
-            // Clock out
-            attendance.clockOutRawRecord = parsed.rawRecord;
-            attendance.clockOutTime = parsed.time;
-            attendance.clockOutStatus = parsed.status;
+            // Clock out - only update if this is later than existing clock-out time
+            // This ensures we keep the last exit when someone leaves multiple times
+            if (!attendance.clockOutTime || parsed.time > attendance.clockOutTime) {
+              attendance.clockOutRawRecord = parsed.rawRecord;
+              attendance.clockOutTime = parsed.time;
+              attendance.clockOutStatus = parsed.status;
+            }
           }
           
           // Calculate work hours if both times are available
