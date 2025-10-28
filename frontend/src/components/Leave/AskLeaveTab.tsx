@@ -19,7 +19,7 @@ import LeaveRequestModal from './LeaveRequestModal';
 import { getMyLeaveRequests, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import { generateLeaveRequestDocx } from '../../utils/docxGenerator';
-import InputDialog from '../common/InputDialog';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -65,11 +65,11 @@ const AskLeaveTab: React.FC = () => {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async (reason: string) => {
+  const handleCancelConfirm = async () => {
     if (!selectedRequest) return;
 
     try {
-      await cancelLeaveRequest(selectedRequest._id!, reason);
+      await cancelLeaveRequest(selectedRequest._id!, "");
       toast.success('請假申請已取消');
       fetchLeaveRequests(); // Refresh the list
     } catch (error) {
@@ -194,7 +194,7 @@ const AskLeaveTab: React.FC = () => {
         );
 
         // Allow cancel from created, approved, and rejected states
-        if (params.row.status !== 'cancel') {
+        if (params.row.status == 'created') {
           actions.push(
             <GridActionsCellItem
               icon={
@@ -287,38 +287,15 @@ const AskLeaveTab: React.FC = () => {
         onClose={handleModalClose}
       />
 
-      <InputDialog
+      <ConfirmationModal
         open={cancelDialogOpen}
         onClose={() => setCancelDialogOpen(false)}
         onConfirm={handleCancelConfirm}
         title="確認取消請假申請"
-        label="取消原因"
-        placeholder="請說明取消原因..."
+        message="您確定要取消這個請假申請嗎？此操作無法復原。"
         confirmText="確認取消"
         cancelText="保持申請"
         confirmColor="error"
-        required={true}
-        detailsContent={
-          selectedRequest && (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                請假類型: {selectedRequest.leaveType}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                請假時間: {new Date(selectedRequest.leaveStart).toLocaleDateString('zh-TW')}
-                至 {new Date(selectedRequest.leaveEnd).toLocaleDateString('zh-TW')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                當前狀態: {getStatusChip(selectedRequest.status)}
-              </Typography>
-              <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-                {selectedRequest.status === 'approved' && '注意：此請假已核准，取消將撤銷核准狀態'}
-                {selectedRequest.status === 'rejected' && '注意：此請假已拒絕'}
-                {selectedRequest.status === 'created' && '此操作無法復原'}
-              </Typography>
-            </Box>
-          )
-        }
       />
     </Box>
   );
