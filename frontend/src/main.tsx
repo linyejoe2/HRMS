@@ -10,6 +10,10 @@ import App from './App';
 import { theme } from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 
+// Display version information
+const VERSION = 'v25.10.28.1327';
+console.log(`%c HRMS Frontend ${VERSION} `, 'background: #1976d2; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 60px;');
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

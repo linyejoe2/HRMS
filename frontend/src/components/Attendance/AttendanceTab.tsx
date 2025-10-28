@@ -147,7 +147,7 @@ const AttendanceTab: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'cardID',
-      headerName: '員工編號',
+      headerName: '卡號',
       // width: 120,
       flex: 1,
       valueGetter: (_, row) => row.cardID || '-'
