@@ -5,17 +5,10 @@ import {
   Card,
   CardContent,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
-  IconButton,
   Tooltip
 } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams, GridActionsCellItem } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   GetApp as DownloadIcon,
@@ -102,6 +95,121 @@ const AskLeaveTab: React.FC = () => {
     }
   };
 
+  // DataGrid column definitions
+  const columns: GridColDef[] = [
+    {
+      field: 'sequenceNumber',
+      headerName: '編號',
+      flex: 1,
+      valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`
+    },
+    {
+      field: 'leaveType',
+      headerName: '請假類型',
+      flex: 1,
+    },
+    {
+      field: 'requestDate',
+      headerName: '申請日期',
+      flex: 1,
+      valueGetter: (_, row) => `${row.YY}/${row.mm}/${row.DD}`
+    },
+    {
+      field: 'leaveStart',
+      headerName: '請假開始',
+      flex: 1.5,
+      valueGetter: (_, row) => new Date(row.leaveStart).toLocaleString('zh-TW')
+    },
+    {
+      field: 'leaveEnd',
+      headerName: '請假結束',
+      flex: 1.5,
+      valueGetter: (_, row) => new Date(row.leaveEnd).toLocaleString('zh-TW')
+    },
+    {
+      field: 'reason',
+      headerName: '請假理由',
+      flex: 1.5,
+    },
+    {
+      field: 'duration',
+      headerName: '請假時數',
+      flex: 1,
+      valueGetter: (_, row) => `${row.hour}小時${row.minutes}分鐘`
+    },
+    {
+      field: 'status',
+      headerName: '狀態',
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => getStatusChip(params.row.status),
+    },
+    {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 1.5,
+      valueGetter: (_, row) => row.rejectionReason ?? ""
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: '操作',
+      flex: 1,
+      sortable: false,
+      filterable: false,
+      // renderCell: (params: GridRenderCellParams) => (
+      //   <Box sx={{ display: 'flex', gap: 1 }}>
+      //     <GridActionsCellItem
+      //       icon={
+      //         <Tooltip title="下載請假單">
+      //           <DownloadIcon />
+      //         </Tooltip>
+      //       }
+      //       label="下載請假單"
+      //       onClick={() => handleDownload(params.row)}
+      //     />
+      //     {params.row.status === 'created' && (
+      // <GridActionsCellItem
+      //   icon={
+      //     <Tooltip title="取消申請">
+      //       <DeleteIcon />
+      //     </Tooltip>
+      //   }
+      //   label="取消申請"
+      //   onClick={() => handleCancelClick(params.row._id ?? "")}
+      // />
+      //     )}
+      //   </Box>
+      // ),
+      getActions: (params: GridRowParams) => {
+        const actions = [];
+        actions.push(
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="下載請假單">
+                <DownloadIcon />
+              </Tooltip>
+            }
+            label="下載請假單"
+            onClick={() => handleDownload(params.row)}
+          />)
+        if (params.row.status === 'created') {
+          actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="取消申請">
+                  <DeleteIcon />
+                </Tooltip>
+              }
+              label="取消申請"
+              onClick={() => handleCancelClick(params.row._id ?? "")}
+            />
+          );
+        }
+        return actions;
+      }
+    },
+  ];
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -119,89 +227,55 @@ const AskLeaveTab: React.FC = () => {
 
       <Card>
         <CardContent>
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>編號</TableCell>
-                  <TableCell>請假類型</TableCell>
-                  <TableCell>申請日期</TableCell>
-                  <TableCell>請假開始</TableCell>
-                  <TableCell>請假結束</TableCell>
-                  <TableCell>請假理由</TableCell>
-                  <TableCell>請假時數</TableCell>
-                  <TableCell>狀態</TableCell>
-                  <TableCell>說明</TableCell>
-                  <TableCell>操作</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      載入中...
-                    </TableCell>
-                  </TableRow>
-                ) : leaveRequests.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      尚無請假申請
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  leaveRequests.map((request) => (
-                    <TableRow key={request._id}>
-                      <TableCell>#{request.sequenceNumber || 'N/A'}</TableCell>
-                      <TableCell>{request.leaveType}</TableCell>
-                      <TableCell>
-                        {request.YY}/{request.mm}/{request.DD}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(request.leaveStart).toLocaleString('zh-TW')}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(request.leaveEnd).toLocaleString('zh-TW')}
-                      </TableCell>
-                      <TableCell>
-                        {request.reason}
-                      </TableCell>
-                      <TableCell>
-                        {request.hour}小時{request.minutes}分鐘
-                      </TableCell>
-                      <TableCell>
-                        {getStatusChip(request.status)}
-                      </TableCell>
-                      <TableCell>
-                        {request.rejectionReason ?? ""}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Tooltip title="下載請假單">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDownload(request)}
-                            >
-                              <DownloadIcon />
-                            </IconButton>
-                          </Tooltip>
-                          {request.status === 'created' && (
-                            <Tooltip title="取消申請">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleCancelClick(request._id ?? "")}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Typography variant="h6" gutterBottom>
+            請假記錄 ({leaveRequests.length} 筆)
+          </Typography>
+
+          <Box sx={{ width: '100%' }}>
+            <DataGrid
+              rows={leaveRequests.map((request, index) => ({
+                id: request._id || index,
+                ...request
+              }))}
+              columns={columns}
+              initialState={{
+                pagination: {
+                  paginationModel: { page: 0, pageSize: 25 },
+                },
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+              checkboxSelection={false}
+              disableRowSelectionOnClick
+              loading={loading}
+              sx={{
+                '& .MuiDataGrid-cell': {
+                  borderRight: 1,
+                  borderColor: 'divider',
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'action.hover',
+                  borderBottom: 2,
+                  borderColor: 'divider',
+                },
+              }}
+              slots={{
+                noRowsOverlay: () => (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                    }}
+                  >
+                    <Typography color="text.secondary">
+                      {loading ? '載入中...' : '尚無請假申請'}
+                    </Typography>
+                  </Box>
+                ),
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 
