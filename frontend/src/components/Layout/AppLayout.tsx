@@ -291,7 +291,7 @@ const AppLayout: React.FC = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            台龍電子人資系統
+            臺龍電子人資系統
           </Typography>
           
           {user && (

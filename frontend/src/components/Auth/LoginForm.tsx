@@ -48,7 +48,7 @@ const LoginForm: React.FC = () => {
         <Card sx={{ width: '100%', maxWidth: 400 }}>
           <CardContent sx={{ p: 4 }}>
             <Typography component="h1" variant="h4" align="center" gutterBottom>
-              台龍電子人資系統
+              臺龍電子人資系統
             </Typography>
             <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
               登入
