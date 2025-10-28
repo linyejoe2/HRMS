@@ -173,7 +173,7 @@ export class PostClockService {
     return postClock;
   }
 
-  static async cancelPostClockRequest(postClockId: string, cancelledBy: string): Promise<IPostClock> {
+  static async cancelPostClockRequest(postClockId: string, cancelledBy: string, reason?: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
       throw new APIError('PostClock request not found', 404);
@@ -183,14 +183,70 @@ export class PostClockService {
       throw new APIError('PostClock request already cancelled', 400);
     }
 
+    // Allow cancelling from any state (created, approved, rejected) with reason
+    // Update attendance records if cancelling an approved postclock
     if (postClock.status === 'approved') {
-      throw new APIError('Cannot cancel approved postclock request', 400);
+      await this.removeAttendanceRecordForPostClock(postClock);
     }
 
     postClock.status = 'cancel';
     postClock.approvedBy = cancelledBy;
+    if (reason) {
+      postClock.rejectionReason = reason; // Reuse rejectionReason field for cancel reason
+    }
 
     return await postClock.save();
+  }
+
+  /**
+   * Remove attendance record for a cancelled postclock request
+   * Removes postclock sequenceNumber from postclocks array and resets clock time
+   */
+  private static async removeAttendanceRecordForPostClock(postClock: IPostClock): Promise<void> {
+    const date = new Date(postClock.date);
+    date.setHours(0, 0, 0, 0);
+
+    const employee = await Employee.findOne({ empID: postClock.empID, isActive: true });
+    if (!employee) {
+      return;
+    }
+
+    const attendance = await Attendance.findOne({
+      cardID: employee.cardID,
+      date: date
+    });
+
+    if (attendance && attendance.postclocks) {
+      // Remove sequenceNumber from postclocks array
+      attendance.postclocks = attendance.postclocks.filter(seq => seq !== postClock.sequenceNumber);
+
+      // Reset clock time if it was set by this postclock
+      if (postClock.clockType === 'in' && attendance.clockInStatus === '補卡') {
+        attendance.clockInTime = undefined;
+        attendance.clockInStatus = undefined;
+      } else if (postClock.clockType === 'out' && attendance.clockOutStatus === '補卡') {
+        attendance.clockOutTime = undefined;
+        attendance.clockOutStatus = undefined;
+      }
+
+      // Recalculate work duration
+      if (attendance.clockInTime && attendance.clockOutTime) {
+        const workDurationObj = calcWorkDuration(attendance.clockInTime, attendance.clockOutTime);
+        attendance.workDuration = workDurationObj.duration;
+        attendance.lateMinute = workDurationObj.lateMinute;
+        attendance.isLate = workDurationObj.isLate;
+        attendance.isEarlyLeave = workDurationObj.isEarlyLeave;
+      } else {
+        attendance.workDuration = undefined;
+      }
+
+      // Check if absent
+      if (!attendance.clockInTime || !attendance.clockOutTime) {
+        attendance.isAbsent = true;
+      }
+
+      await attendance.save();
+    }
   }
 
   static async getCancelPostClockRequests(employeeID?: string): Promise<IPostClock[]> {

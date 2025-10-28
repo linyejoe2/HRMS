@@ -5,16 +5,11 @@ import {
   CardContent,
   Chip,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
   InputAdornment,
-  Typography
+  Typography,
+  TextField
 } from '@mui/material';
 import {
   Check as ApproveIcon,
@@ -26,17 +21,16 @@ import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
 import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
-import ConfirmationModal from '../common/ConfirmationModal';
+import InputDialog from '../common/InputDialog';
 
 const ApproveLeaveList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
-  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
-  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
   const [searchSequence, setSearchSequence] = useState<string>('');
 
   const fetchLeaveRequests = async (status?: string) => {
@@ -56,15 +50,23 @@ const ApproveLeaveList: React.FC = () => {
     fetchLeaveRequests(statusFilter || undefined);
   }, [statusFilter]);
 
-  const handleApprove = async (requestId: string) => {
+  const handleApproveClick = (request: LeaveRequest) => {
+    setSelectedRequest(request);
+    setApproveDialogOpen(true);
+  };
+
+  const handleApproveConfirm = async (_: string) => {
+    if (!selectedRequest) return;
+
     try {
-      await approveLeaveRequest(requestId);
+      await approveLeaveRequest(selectedRequest._id!);
       toast.success('請假申請已核准');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error approving leave request:', error);
       const message = error.response?.data?.message || '核准失敗';
       toast.error(message);
+      throw error;
     }
   };
 
@@ -73,50 +75,38 @@ const ApproveLeaveList: React.FC = () => {
     setRejectDialogOpen(true);
   };
 
-  const handleRejectConfirm = async () => {
-    if (!selectedRequest || !rejectReason.trim()) {
-      toast.error('請填寫拒絕原因');
-      return;
-    }
+  const handleRejectConfirm = async (reason: string) => {
+    if (!selectedRequest) return;
 
     try {
-      await rejectLeaveRequest(selectedRequest._id!, rejectReason);
+      await rejectLeaveRequest(selectedRequest._id!, reason);
       toast.success('請假申請已拒絕');
-      setRejectDialogOpen(false);
-      setSelectedRequest(null);
-      setRejectReason('');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error rejecting leave request:', error);
       const message = error.response?.data?.message || '拒絕失敗';
       toast.error(message);
+      throw error;
     }
   };
 
-  const handleRejectCancel = () => {
-    setRejectDialogOpen(false);
-    setSelectedRequest(null);
-    setRejectReason('');
+  const handleCancelClick = (request: LeaveRequest) => {
+    setSelectedRequest(request);
+    setCancelDialogOpen(true);
   };
 
-  const handleCancelClick = (leaveId: string) => {
-    setSelectedLeaveId(leaveId);
-    setCancelConfirmOpen(true);
-  };
-
-  const handleCancelConfirm = async () => {
-    if (!selectedLeaveId) return;
+  const handleCancelConfirm = async (reason: string) => {
+    if (!selectedRequest) return;
 
     try {
-      await cancelLeaveRequest(selectedLeaveId);
+      await cancelLeaveRequest(selectedRequest._id!, reason);
       toast.success('請假申請已抽單');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error cancelling leave request:', error);
       const message = error.response?.data?.message || '抽單失敗';
       toast.error(message);
-    } finally {
-      setSelectedLeaveId(null);
+      throw error;
     }
   };
 
@@ -238,7 +228,7 @@ const ApproveLeaveList: React.FC = () => {
                 </Tooltip>
               }
               label="核准"
-              onClick={() => handleApprove(params.row._id)}
+              onClick={() => handleApproveClick(params.row)}
             />,
             <GridActionsCellItem
               icon={
@@ -256,7 +246,22 @@ const ApproveLeaveList: React.FC = () => {
                 </Tooltip>
               }
               label="抽單"
-              onClick={() => handleCancelClick(params.row._id)}
+              onClick={() => handleCancelClick(params.row)}
+            />
+          );
+        }
+
+        // Allow cancel from approved/rejected states
+        if (params.row.status === 'approved' || params.row.status === 'rejected') {
+          actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="抽單">
+                  <DeleteIcon color="warning" />
+                </Tooltip>
+              }
+              label="抽單"
+              onClick={() => handleCancelClick(params.row)}
             />
           );
         }
@@ -353,19 +358,54 @@ const ApproveLeaveList: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Approve Confirmation Dialog */}
+      <InputDialog
+        open={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        onConfirm={handleApproveConfirm}
+        title="確認核准請假申請"
+        label="備註（選填）"
+        placeholder="可填寫備註資訊..."
+        confirmText="確認核准"
+        cancelText="取消"
+        confirmColor="success"
+        required={false}
+        detailsContent={
+          selectedRequest && (
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                員工: {selectedRequest.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                請假類型: {selectedRequest.leaveType}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                請假時間: {new Date(selectedRequest.leaveStart).toLocaleDateString('zh-TW')}
+                至 {new Date(selectedRequest.leaveEnd).toLocaleDateString('zh-TW')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                請假時數: {selectedRequest.hour}小時{selectedRequest.minutes}分鐘
+              </Typography>
+            </Box>
+          )
+        }
+      />
+
       {/* Reject Dialog */}
-      <Dialog
+      <InputDialog
         open={rejectDialogOpen}
-        onClose={handleRejectCancel}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          拒絕請假申請
-        </DialogTitle>
-        <DialogContent>
-          {selectedRequest && (
-            <Box sx={{ mb: 2 }}>
+        onClose={() => setRejectDialogOpen(false)}
+        onConfirm={handleRejectConfirm}
+        title="拒絕請假申請"
+        label="拒絕原因"
+        placeholder="請說明拒絕此請假申請的原因..."
+        confirmText="確認拒絕"
+        cancelText="取消"
+        confirmColor="error"
+        required={true}
+        detailsContent={
+          selectedRequest && (
+            <Box>
               <Typography variant="body2" color="text.secondary">
                 員工: {selectedRequest.name}
               </Typography>
@@ -377,42 +417,41 @@ const ApproveLeaveList: React.FC = () => {
                 至 {new Date(selectedRequest.leaveEnd).toLocaleDateString('zh-TW')}
               </Typography>
             </Box>
-          )}
-          <TextField
-            label="拒絕原因"
-            multiline
-            rows={4}
-            fullWidth
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="請說明拒絕此請假申請的原因..."
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleRejectCancel}>
-            取消
-          </Button>
-          <Button
-            onClick={handleRejectConfirm}
-            variant="contained"
-            color="error"
-            disabled={!rejectReason.trim()}
-          >
-            確認拒絕
-          </Button>
-        </DialogActions>
-      </Dialog>
+          )
+        }
+      />
 
-      <ConfirmationModal
-        open={cancelConfirmOpen}
-        onClose={() => setCancelConfirmOpen(false)}
+      {/* Cancel Dialog */}
+      <InputDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
         onConfirm={handleCancelConfirm}
         title="確認抽單"
-        message="您確定要抽掉這個請假申請嗎？"
+        label="抽單原因"
+        placeholder="請說明抽單原因..."
         confirmText="確認抽單"
         cancelText="取消"
         confirmColor="warning"
+        required={true}
+        detailsContent={
+          selectedRequest && (
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                員工: {selectedRequest.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                請假類型: {selectedRequest.leaveType}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                當前狀態: {getStatusChip(selectedRequest.status)}
+              </Typography>
+              <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                {selectedRequest.status === 'approved' && '注意：此請假已核准，抽單將撤銷核准狀態'}
+                {selectedRequest.status === 'rejected' && '注意：此請假已拒絕，抽單將移除此記錄'}
+              </Typography>
+            </Box>
+          )
+        }
       />
     </Box>
   );

@@ -297,8 +297,8 @@ export const leaveAPI = {
     api.put(`/leave/${id}/reject`, { reason }),
 
   // Cancel leave request
-  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
-    api.put(`/leave/${id}/cancel`),
+  cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.put(`/leave/${id}/cancel`, reason ? { reason } : {}),
 
   // Get cancelled leave requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
@@ -345,8 +345,8 @@ export const postClockAPI = {
     api.put(`/postclock/${id}/reject`, { reason }),
 
   // Cancel postclock request
-  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
-    api.put(`/postclock/${id}/cancel`),
+  cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/cancel`, reason ? { reason } : {}),
 
   // Get cancelled postclock requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
@@ -393,8 +393,8 @@ export const businessTripAPI = {
     api.put(`/businesstrip/${id}/reject`, { reason }),
 
   // Cancel business trip request
-  cancel: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
-    api.put(`/businesstrip/${id}/cancel`),
+  cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/cancel`, reason ? { reason } : {}),
 
   // Get cancelled business trip requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>

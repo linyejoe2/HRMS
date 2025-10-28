@@ -96,7 +96,7 @@ export class BusinessTripService {
     return businessTrip;
   }
 
-  static async cancelBusinessTripRequest(businessTripId: string, cancelledBy: string): Promise<IBusinessTrip> {
+  static async cancelBusinessTripRequest(businessTripId: string, cancelledBy: string, reason?: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {
       throw new APIError('Business trip request not found', 404);
@@ -106,12 +106,12 @@ export class BusinessTripService {
       throw new APIError('Business trip request already cancelled', 400);
     }
 
-    if (businessTrip.status === 'approved') {
-      throw new APIError('Cannot cancel approved business trip request', 400);
-    }
-
+    // Allow cancelling from any state (created, approved, rejected) with reason
     businessTrip.status = 'cancel';
     businessTrip.approvedBy = cancelledBy;
+    if (reason) {
+      businessTrip.rejectionReason = reason; // Reuse rejectionReason field for cancel reason
+    }
 
     return await businessTrip.save();
   }

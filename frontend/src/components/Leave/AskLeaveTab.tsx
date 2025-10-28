@@ -19,14 +19,14 @@ import LeaveRequestModal from './LeaveRequestModal';
 import { getMyLeaveRequests, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import { generateLeaveRequestDocx } from '../../utils/docxGenerator';
-import ConfirmationModal from '../common/ConfirmationModal';
+import InputDialog from '../common/InputDialog';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
-  const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -60,23 +60,22 @@ const AskLeaveTab: React.FC = () => {
     }
   };
 
-  const handleCancelClick = (leaveId: string) => {
-    setSelectedLeaveId(leaveId);
-    setCancelConfirmOpen(true);
+  const handleCancelClick = (request: LeaveRequest) => {
+    setSelectedRequest(request);
+    setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async () => {
-    if (!selectedLeaveId) return;
+  const handleCancelConfirm = async (reason: string) => {
+    if (!selectedRequest) return;
 
     try {
-      await cancelLeaveRequest(selectedLeaveId);
+      await cancelLeaveRequest(selectedRequest._id!, reason);
       toast.success('請假申請已取消');
       fetchLeaveRequests(); // Refresh the list
     } catch (error) {
       console.error('Error cancelling leave request:', error);
       toast.error('取消失敗: ' + (error as any)?.response?.data?.message || '未知錯誤');
-    } finally {
-      setSelectedLeaveId(null);
+      throw error;
     }
   };
 
@@ -191,8 +190,11 @@ const AskLeaveTab: React.FC = () => {
             }
             label="下載請假單"
             onClick={() => handleDownload(params.row)}
-          />)
-        if (params.row.status === 'created') {
+          />
+        );
+
+        // Allow cancel from created, approved, and rejected states
+        if (params.row.status !== 'cancel') {
           actions.push(
             <GridActionsCellItem
               icon={
@@ -201,10 +203,11 @@ const AskLeaveTab: React.FC = () => {
                 </Tooltip>
               }
               label="取消申請"
-              onClick={() => handleCancelClick(params.row._id ?? "")}
+              onClick={() => handleCancelClick(params.row)}
             />
           );
         }
+
         return actions;
       }
     },
@@ -284,15 +287,38 @@ const AskLeaveTab: React.FC = () => {
         onClose={handleModalClose}
       />
 
-      <ConfirmationModal
-        open={cancelConfirmOpen}
-        onClose={() => setCancelConfirmOpen(false)}
+      <InputDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
         onConfirm={handleCancelConfirm}
         title="確認取消請假申請"
-        message="您確定要取消這個請假申請嗎？此操作無法復原。"
+        label="取消原因"
+        placeholder="請說明取消原因..."
         confirmText="確認取消"
         cancelText="保持申請"
         confirmColor="error"
+        required={true}
+        detailsContent={
+          selectedRequest && (
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                請假類型: {selectedRequest.leaveType}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                請假時間: {new Date(selectedRequest.leaveStart).toLocaleDateString('zh-TW')}
+                至 {new Date(selectedRequest.leaveEnd).toLocaleDateString('zh-TW')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                當前狀態: {getStatusChip(selectedRequest.status)}
+              </Typography>
+              <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                {selectedRequest.status === 'approved' && '注意：此請假已核准，取消將撤銷核准狀態'}
+                {selectedRequest.status === 'rejected' && '注意：此請假已拒絕'}
+                {selectedRequest.status === 'created' && '此操作無法復原'}
+              </Typography>
+            </Box>
+          )
+        }
       />
     </Box>
   );

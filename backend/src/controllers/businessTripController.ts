@@ -81,9 +81,10 @@ export const getBusinessTripRequestById = asyncHandler(async (req: AuthRequest, 
 
 export const cancelBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body;
   const cancelledBy = req.user!.empID;
 
-  const businessTrip = await BusinessTripService.cancelBusinessTripRequest(id, cancelledBy);
+  const businessTrip = await BusinessTripService.cancelBusinessTripRequest(id, cancelledBy, reason);
 
   res.status(200).json({
     error: false,

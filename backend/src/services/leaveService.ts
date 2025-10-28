@@ -244,7 +244,7 @@ export class LeaveService {
     return leave;
   }
 
-  static async cancelLeaveRequest(leaveId: string, cancelledBy: string): Promise<ILeave> {
+  static async cancelLeaveRequest(leaveId: string, cancelledBy: string, reason?: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
@@ -254,14 +254,77 @@ export class LeaveService {
       throw new APIError('Leave request already cancelled', 400);
     }
 
+    // Allow cancelling from any state (created, approved, rejected) with reason
+    // Update attendance records if cancelling an approved leave
     if (leave.status === 'approved') {
-      throw new APIError('Cannot cancel approved leave request', 400);
+      await this.removeAttendanceRecordsForLeave(leave);
+
+      // Reverse sick leave counters if applicable
+      if (leave.leaveType === '普通傷病假' || leave.leaveType === '普通傷病假(住院)') {
+        const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
+        if (employee) {
+          const timeDiff = calcWarkingDurent(leave.leaveStart.toISOString(), leave.leaveEnd.toISOString());
+          const leaveDays = Math.ceil(timeDiff.durent / (8 * 60));
+
+          if (leave.leaveType === '普通傷病假') {
+            employee.sickLeaveDaysInThePastYear = Math.max(0, employee.sickLeaveDaysInThePastYear - leaveDays);
+          } else if (leave.leaveType === '普通傷病假(住院)') {
+            employee.sickLeaveDaysInHospitalInThePastYear = Math.max(0, employee.sickLeaveDaysInHospitalInThePastYear - leaveDays);
+          }
+
+          await employee.save();
+        }
+      }
     }
 
     leave.status = 'cancel';
     leave.approvedBy = cancelledBy;
+    if (reason) {
+      leave.rejectionReason = reason; // Reuse rejectionReason field for cancel reason
+    }
 
     return await leave.save();
+  }
+
+  /**
+   * Remove attendance records for a cancelled leave period
+   * Removes leave sequenceNumber from leaves array
+   */
+  private static async removeAttendanceRecordsForLeave(leave: ILeave): Promise<void> {
+    const startDate = new Date(leave.leaveStart);
+    const endDate = new Date(leave.leaveEnd);
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
+    if (!employee) {
+      return;
+    }
+
+    const dates: Date[] = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    for (const date of dates) {
+      if (isWeekend(date)) {
+        continue;
+      }
+
+      const attendance = await Attendance.findOne({
+        cardID: employee.cardID,
+        date: date
+      });
+
+      if (attendance && attendance.leaves) {
+        // Remove sequenceNumber from leaves array
+        attendance.leaves = attendance.leaves.filter(seq => seq !== leave.sequenceNumber);
+        await attendance.save();
+      }
+    }
   }
 
   static async getCancelLeaveRequests(employeeID?: string): Promise<ILeave[]> {

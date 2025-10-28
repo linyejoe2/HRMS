@@ -84,9 +84,10 @@ export const getLeaveRequestById = asyncHandler(async (req: AuthRequest, res: Re
 
 export const cancelLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body;
   const cancelledBy = req.user!.empID;
 
-  const leave = await LeaveService.cancelLeaveRequest(id, cancelledBy);
+  const leave = await LeaveService.cancelLeaveRequest(id, cancelledBy, reason);
 
   res.json({
     error: false,

@@ -81,9 +81,10 @@ export const getPostClockRequestById = asyncHandler(async (req: AuthRequest, res
 
 export const cancelPostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body;
   const cancelledBy = req.user!.empID;
 
-  const postClock = await PostClockService.cancelPostClockRequest(id, cancelledBy);
+  const postClock = await PostClockService.cancelPostClockRequest(id, cancelledBy, reason);
 
   res.status(200).json({
     error: false,
