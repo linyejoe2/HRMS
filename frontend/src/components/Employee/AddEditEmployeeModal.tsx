@@ -63,17 +63,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   const [sensitiveData, setSensitiveData] = useState<Employee | null>(null);
 
   // Department options
+  // 管理部、業務部、研發課、財務部、稽核室、總經理室
   const departments = [
-    '資訊部',
-    '人資部',
+    '管理部',
+    '研發課',
     '財務部',
     '業務部',
-    '行政部',
-    '研發部',
-    '製造部',
-    '品管部',
-    '採購部',
-    '法務部'
+    '稽核室',
+    '總經理室',
+    // '製造部',
+    // '品管部',
+    // '採購部',
+    // '法務部'
   ];
 
   // Role options
