@@ -62,7 +62,10 @@ ENV/
 env.bak/
 venv.bak/
 */.venv/*
+
+# Custom
 data/
 data/Employee.csv
 7za.exe
 release.zip
+~$*

@@ -10,7 +10,8 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  GetApp as DownloadIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { PostClockRequest } from '../../types';
@@ -18,6 +19,7 @@ import { getMyPostClockRequests, cancelPostClockRequest } from '../../services/a
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import PostClockRequestModal from './PostClockRequestModal';
+import { generatePostClockRequestDocx } from '../../utils/docxGenerator';
 
 const PostClockTab: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);
@@ -46,6 +48,16 @@ const PostClockTab: React.FC = () => {
   const handleModalClose = () => {
     setIsModalOpen(false);
     fetchPostClockRequests();
+  };
+
+  const handleDownload = async (request: PostClockRequest) => {
+    try {
+      await generatePostClockRequestDocx(request);
+      toast.success('補卡申請單下載成功');
+    } catch (error) {
+      console.error('Error downloading postclock request:', error);
+      toast.error('下載失敗: ' + (error as Error).message);
+    }
   };
 
   const handleCancelClick = (postClockId: string) => {
@@ -162,6 +174,18 @@ const PostClockTab: React.FC = () => {
       flex: 1,
       getActions: (params) => {
         const actions = [];
+
+        actions.push(
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="下載補卡申請單">
+                <DownloadIcon />
+              </Tooltip>
+            }
+            label="下載補卡申請單"
+            onClick={() => handleDownload(params.row)}
+          />
+        );
 
         if (params.row.status === 'created') {
           actions.push(

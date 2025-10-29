@@ -165,7 +165,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'applicationDate',
       headerName: '申請日期',
       flex: 1,
-      valueGetter: (_, row) => `${row.YY}/${row.mm}/${row.DD}`,
+      valueGetter: (_, row) => `${row.YYYY}/${row.mm}/${row.DD}`,
       sortable: true
     },
     {

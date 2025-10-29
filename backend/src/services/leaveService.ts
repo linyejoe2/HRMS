@@ -70,7 +70,7 @@ export class LeaveService {
     console.log(minutes)
 
     const createdDate = new Date();
-    const YY = String(createdDate.getFullYear()).slice(-2);
+    const YYYY = String(createdDate.getFullYear());
     const mm = String(createdDate.getMonth() + 1).padStart(2, '0');
     const DD = String(createdDate.getDate()).padStart(2, '0');
 
@@ -82,7 +82,7 @@ export class LeaveService {
       reason: leaveData.reason,
       leaveStart,
       leaveEnd,
-      YY,
+      YYYY,
       mm,
       DD,
       hour: String(hours),

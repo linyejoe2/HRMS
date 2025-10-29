@@ -10,7 +10,8 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  GetApp as DownloadIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
@@ -18,6 +19,7 @@ import { getMyBusinessTripRequests, cancelBusinessTripRequest } from '../../serv
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import BusinessTripRequestModal from './BusinessTripRequestModal';
+import { generateBusinessTripRequestDocx } from '../../utils/docxGenerator';
 
 const BusinessTripTab: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);
@@ -46,6 +48,16 @@ const BusinessTripTab: React.FC = () => {
   const handleModalClose = () => {
     setIsModalOpen(false);
     fetchBusinessTripRequests();
+  };
+
+  const handleDownload = async (request: BusinessTripRequest) => {
+    try {
+      await generateBusinessTripRequestDocx(request);
+      toast.success('出差申請單下載成功');
+    } catch (error) {
+      console.error('Error downloading business trip request:', error);
+      toast.error('下載失敗: ' + (error as Error).message);
+    }
   };
 
   const handleCancelClick = (tripId: string) => {
@@ -170,6 +182,18 @@ const BusinessTripTab: React.FC = () => {
       flex: 1,
       getActions: (params) => {
         const actions = [];
+
+        actions.push(
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="下載出差申請單">
+                <DownloadIcon />
+              </Tooltip>
+            }
+            label="下載出差申請單"
+            onClick={() => handleDownload(params.row)}
+          />
+        );
 
         if (params.row.status === 'created') {
           actions.push(

@@ -77,7 +77,7 @@ cd frontend && npm install && npm run dev
   status: 'created'|'approved'|'rejected';
   rejectionReason?: string;
   approvedBy?: string;
-  YY: string; // Application year
+  YYYY: string; // Application year
   mm: string; // Application month
   DD: string; // Application day
   hour: string;

@@ -33,7 +33,7 @@ export interface LeaveRequest extends LeaveRequestForm {
   name: string; // from table employee
   department: string; // from table employee
   empID: string; // from table employee
-  YY: string; // the date that create this request
+  YYYY: string; // the date that create this request
   mm: string; // the date that create this request
   DD: string; // the date that create this request
   hour: string; // calc by leaveStart and leaveEnd

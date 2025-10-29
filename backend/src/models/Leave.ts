@@ -10,7 +10,7 @@ export interface ILeave extends Document {
   reason: string;
   leaveStart: Date;
   leaveEnd: Date;
-  YY: string;
+  YYYY: string;
   mm: string;
   DD: string;
   hour: string;
@@ -57,7 +57,7 @@ const leaveSchema = new Schema<ILeave>({
     type: Date,
     required: true
   },
-  YY: {
+  YYYY: {
     type: String,
     required: true
   },
