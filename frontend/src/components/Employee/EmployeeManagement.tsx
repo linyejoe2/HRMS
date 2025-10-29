@@ -27,6 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import PersonIcon from '@mui/icons-material/Person';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { employeeAPI } from '../../services/api';
 import { Employee, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,6 +54,11 @@ const EmployeeManagement: React.FC = () => {
     employee: Employee | null;
     action: 'activate' | 'deactivate';
   }>({ open: false, employee: null, action: 'deactivate' });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    employee: Employee | null;
+  }>({ open: false, employee: null });
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
 
   const limit = 100;
 
@@ -166,19 +172,55 @@ const EmployeeManagement: React.FC = () => {
 
     try {
       if (confirmDialog.action === 'deactivate') {
-        await employeeAPI.delete(confirmDialog.employee._id!);
+        await employeeAPI.update(confirmDialog.employee._id!, { isActive: false });
         toast.success('員工已停用');
       } else {
         // For reactivation, we update the employee with isActive: true
         await employeeAPI.update(confirmDialog.employee._id!, { isActive: true });
         toast.success('員工已重新啟用');
       }
-      
+
       setConfirmDialog({ open: false, employee: null, action: 'deactivate' });
       loadEmployees(page);
     } catch (err: any) {
       toast.error(err.response?.data?.error || '操作失敗');
     }
+  };
+
+  // Handle delete employee click
+  const handleDeleteClick = (employee: Employee) => {
+    setDeleteDialog({
+      open: true,
+      employee
+    });
+    setDeleteConfirmName('');
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.employee) return;
+
+    // Validate name confirmation
+    if (deleteConfirmName !== deleteDialog.employee.name) {
+      toast.error('輸入的姓名不正確');
+      return;
+    }
+
+    try {
+      await employeeAPI.delete(deleteDialog.employee._id!);
+      toast.success('員工已刪除');
+      setDeleteDialog({ open: false, employee: null });
+      setDeleteConfirmName('');
+      loadEmployees(page);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || '刪除失敗');
+    }
+  };
+
+  // Handle close delete dialog
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false, employee: null });
+    setDeleteConfirmName('');
   };
 
   // Get role display text
@@ -374,6 +416,16 @@ const EmployeeManagement: React.FC = () => {
                             {employee.isActive ? <PersonOffIcon /> : <PersonIcon />}
                           </IconButton>
                         </Tooltip>
+                        <Tooltip title="刪除員工">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteClick(employee)}
+                            disabled={loading || user?.role !== UserLevel.ADMIN}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -416,7 +468,7 @@ const EmployeeManagement: React.FC = () => {
             確認{confirmDialog.action === 'deactivate' ? '停用' : '啟用'}員工
           </Typography>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            確定要{confirmDialog.action === 'deactivate' ? '停用' : '啟用'}員工 
+            確定要{confirmDialog.action === 'deactivate' ? '停用' : '啟用'}員工
             <strong>{confirmDialog.employee?.name}</strong> ({confirmDialog.employee?.empID}) 嗎？
             {confirmDialog.action === 'deactivate' && (
               <>
@@ -439,6 +491,52 @@ const EmployeeManagement: React.FC = () => {
               onClick={handleConfirmAction}
             >
               確認{confirmDialog.action === 'deactivate' ? '停用' : '啟用'}
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom color="error">
+            刪除員工
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            您即將刪除員工 <strong>{deleteDialog.employee?.name}</strong> ({deleteDialog.employee?.empID})
+          </Typography>
+          <Typography variant="body2" color="error" sx={{ mb: 3 }}>
+            警告：此操作無法復原！刪除後該員工的所有資料將永久移除。
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            請輸入員工姓名 <strong>{deleteDialog.employee?.name}</strong> 以確認刪除：
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="請輸入員工姓名"
+            value={deleteConfirmName}
+            onChange={(e) => setDeleteConfirmName(e.target.value)}
+            sx={{ mb: 3 }}
+            autoFocus
+          />
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              onClick={handleCloseDeleteDialog}
+            >
+              取消
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleConfirmDelete}
+              disabled={deleteConfirmName !== deleteDialog.employee?.name}
+            >
+              確認刪除
             </Button>
           </Box>
         </Box>

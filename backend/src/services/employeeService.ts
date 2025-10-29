@@ -50,7 +50,7 @@ export class EmployeeService {
   }
 
   async deleteEmployee(id: string): Promise<boolean> {
-    const result = await Employee.findByIdAndUpdate(id, { isActive: false });
+    const result = await Employee.findByIdAndDelete(id);
     return !!result;
   }
 
