@@ -185,7 +185,7 @@ const AskLeaveTab: React.FC = () => {
           <GridActionsCellItem
             icon={
               <Tooltip title="下載請假單">
-                <DownloadIcon />
+                <DownloadIcon color='primary' />
               </Tooltip>
             }
             label="下載請假單"
@@ -199,11 +199,22 @@ const AskLeaveTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="取消申請">
-                  <DeleteIcon />
+                  <DeleteIcon color="error" />
                 </Tooltip>
               }
               label="取消申請"
               onClick={() => handleCancelClick(params.row)}
+            />
+          );
+        } else {
+          actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="請聯繫管理部">
+                    <DeleteIcon color="disabled" />
+                </Tooltip>
+              }
+              label="取消申請"
             />
           );
         }

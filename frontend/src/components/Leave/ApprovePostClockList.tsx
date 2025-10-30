@@ -280,6 +280,22 @@ const ApprovePostClockList: React.FC = () => {
           actions.push(
             <GridActionsCellItem
               icon={
+                <Tooltip title="核准">
+                  <ApproveIcon color="disabled" />
+                </Tooltip>
+              }
+              label="核准"
+            />,
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="拒絕">
+                  <RejectIcon color="disabled" />
+                </Tooltip>
+              }
+              label="拒絕"
+            />,
+            <GridActionsCellItem
+              icon={
                 <Tooltip title="抽單">
                   <DeleteIcon color="warning" />
                 </Tooltip>
@@ -300,7 +316,7 @@ const ApprovePostClockList: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{
           "&:last-child": {
-              p: 2
+            p: 2
           }
         }}>
           <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
