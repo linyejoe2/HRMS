@@ -7,8 +7,8 @@ import {
 } from '@mui/material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApproveLeaveList from './ApproveLeaveList';
-import ApprovePostClockList from './ApprovePostClockList';
-import ApproveBusinessTripList from './ApproveBusinessTripList';
+import ApprovePostClockList from '../PostClock/ApprovePostClockList';
+import ApproveBusinessTripList from '../BusinessTrip/ApproveBusinessTripList';
 
 interface TabPanelProps {
   children?: React.ReactNode;

@@ -2,7 +2,7 @@
 import React, { ReactElement, useState } from 'react';
 import { Chip } from '@mui/material';
 import { isToday } from '@/utility';
-import LeaveDetailsModal from './LeaveDetailsModal';
+import LeaveDetailsModal from '../Leave/LeaveDetailsModal';
 
 interface StatusChipProps {
   log: {

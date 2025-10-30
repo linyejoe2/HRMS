@@ -10,8 +10,8 @@ import AttendanceTab from './components/Attendance/AttendanceTab';
 import EmployeeManagement from './components/Employee/EmployeeManagement';
 import AskLeaveTab from './components/Leave/AskLeaveTab';
 import ApproveLeaveTab from './components/Leave/ApproveLeaveTab';
-import PostClockTab from './components/Leave/PostClockTab';
-import BusinessTripTab from './components/Leave/BusinessTripTab';
+import PostClockTab from './components/PostClock/PostClockTab';
+import BusinessTripTab from './components/BusinessTrip/BusinessTripTab';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();

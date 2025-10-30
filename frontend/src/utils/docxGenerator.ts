@@ -151,7 +151,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
 export const generateBusinessTripRequestDocx = async (businessTripRequest: BusinessTripRequest): Promise<void> => {
   try {
     // Load the template file from public directory
-    const templateUrl = '/templates/bussinessTripRequest.docx';
+    const templateUrl = '/templates/businessTripRequest.docx';
     const response = await fetch(templateUrl);
 
     if (!response.ok) {
