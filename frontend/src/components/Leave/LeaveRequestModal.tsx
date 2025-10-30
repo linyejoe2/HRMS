@@ -20,6 +20,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { LeaveRequestForm } from '../../types';
 import { createLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
+import FileUploadField from '../common/FileUploadField';
+import { useFileUpload } from '../../hooks/useFileUpload';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -46,6 +48,7 @@ const leaveTypes = [
 
 const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const { files, setFiles, clearFiles } = useFileUpload();
 
   const {
     control,
@@ -64,9 +67,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
   const onSubmit = async (data: LeaveRequestForm) => {
     try {
       setLoading(true);
-      await createLeaveRequest(data);
+      const submitData: LeaveRequestForm = {
+        ...data,
+        supportingInfo: files.length > 0 ? files : undefined
+      };
+      await createLeaveRequest(submitData);
       toast.success('請假申請已成功送出');
       reset();
+      clearFiles();
       onClose();
     } catch (error: any) {
       console.error('Error creating leave request:', error);
@@ -80,6 +88,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
   const handleClose = () => {
     if (!loading) {
       reset();
+      clearFiles();
       onClose();
     }
   };
@@ -196,6 +205,16 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                       }}
                     />
                   )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <FileUploadField
+                  files={files}
+                  onFilesChange={setFiles}
+                  label="佐證資料 (選填)"
+                  helperText="可上傳多個檔案作為請假證明"
+                  disabled={loading}
                 />
               </Grid>
             </Grid>

@@ -19,6 +19,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { BusinessTripRequestForm } from '../../types';
 import { createBusinessTripRequest } from '../../services/api';
 import { toast } from 'react-toastify';
+import FileUploadField from '../common/FileUploadField';
+import { useFileUpload } from '../../hooks/useFileUpload';
 
 interface BusinessTripRequestModalProps {
   open: boolean;
@@ -27,6 +29,7 @@ interface BusinessTripRequestModalProps {
 
 const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const { files, setFiles, clearFiles } = useFileUpload();
 
   const {
     control,
@@ -71,12 +74,14 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
         tripEnd: endDate.toISOString(),
         transportation: data.transportation,
         estimatedCost: data.estimatedCost,
-        notes: data.notes
+        notes: data.notes,
+        supportingInfo: files.length > 0 ? files : undefined
       };
 
       await createBusinessTripRequest(submitData);
       toast.success('出差申請已成功送出');
       reset();
+      clearFiles();
       onClose();
     } catch (error: any) {
       console.error('Error creating business trip request:', error);
@@ -90,6 +95,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
   const handleClose = () => {
     if (!loading) {
       reset();
+      clearFiles();
       onClose();
     }
   };
@@ -221,6 +227,16 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                       required
                     />
                   )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <FileUploadField
+                  files={files}
+                  onFilesChange={setFiles}
+                  label="相關資料 (選填)"
+                  helperText="可上傳多個檔案作為出差證明"
+                  disabled={loading}
                 />
               </Grid>
 

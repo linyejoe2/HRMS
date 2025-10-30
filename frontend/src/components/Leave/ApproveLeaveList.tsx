@@ -15,13 +15,17 @@ import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
 import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
+import FilePreviewDialog from '../common/FilePreviewDialog';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
 
 const ApproveLeaveList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -32,6 +36,8 @@ const ApproveLeaveList: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
   const [searchSequence, setSearchSequence] = useState<string>('');
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -192,7 +198,7 @@ const ApproveLeaveList: React.FC = () => {
     {
       field: 'reason',
       headerName: '原因',
-      flex: 4,
+      flex: 3,
       renderCell: (params) => (
         <Tooltip title={params.value}>
           <span>
@@ -202,6 +208,33 @@ const ApproveLeaveList: React.FC = () => {
           </span>
         </Tooltip>
       ),
+      sortable: false
+    },
+    {
+      field: 'supportingInfo',
+      headerName: '佐證資料',
+      flex: 1,
+      renderCell: (params) => {
+        const files = params.value as string[] | undefined;
+        if (!files || files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        );
+      },
       sortable: false
     },
     {
@@ -468,6 +501,14 @@ const ApproveLeaveList: React.FC = () => {
             </Box>
           )
         }
+      />
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="請假佐證資料"
       />
     </Box>
   );

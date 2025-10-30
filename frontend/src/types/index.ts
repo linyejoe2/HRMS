@@ -26,18 +26,24 @@ export interface LeaveRequestForm {
   reason: string;
   leaveStart: string; // use timedate choose components
   leaveEnd: string; // use timedate choose components
+  supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
 }
 
-export interface LeaveRequest extends LeaveRequestForm {
+export interface LeaveRequest {
   _id?: string; // MongoDB ID
   name: string; // from table employee
   department: string; // from table employee
   empID: string; // from table employee
+  leaveType: string;
+  reason: string;
+  leaveStart: string;
+  leaveEnd: string;
   YYYY: string; // the date that create this request
   mm: string; // the date that create this request
   DD: string; // the date that create this request
   hour: string; // calc by leaveStart and leaveEnd
   minutes: string; // calc by leaveStart and leaveEnd
+  supportingInfo?: string[]; // Array of file paths/URLs - 佐證資料
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
@@ -212,13 +218,22 @@ export interface BusinessTripRequestForm {
   transportation?: string; // Mode of transportation
   estimatedCost?: number; // Estimated cost
   notes?: string; // Additional notes
+  supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 相關資料
 }
 
-export interface BusinessTripRequest extends BusinessTripRequestForm {
+export interface BusinessTripRequest {
   _id?: string; // MongoDB ID
   name: string; // from table employee
   department: string; // from table employee
   empID: string; // from table employee
+  destination: string;
+  purpose: string;
+  tripStart: string;
+  tripEnd: string;
+  transportation?: string;
+  estimatedCost?: number;
+  notes?: string;
+  supportingInfo?: string[]; // Array of file paths/URLs - 相關資料
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;

@@ -9,9 +9,7 @@ import {
   MenuItem,
   Grid,
   Typography,
-  CircularProgress,
-  Box,
-  Chip
+  CircularProgress
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -23,8 +21,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { PostClockRequestForm } from '../../types';
 import { createPostClockRequest } from '../../services/api';
 import { toast } from 'react-toastify';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import DeleteIcon from '@mui/icons-material/Delete';
+import FileUploadField from '../common/FileUploadField';
+import { useFileUpload } from '../../hooks/useFileUpload';
 
 interface PostClockRequestModalProps {
   open: boolean;
@@ -33,7 +31,7 @@ interface PostClockRequestModalProps {
 
 const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const { files, setFiles, clearFiles } = useFileUpload();
 
   const {
     control,
@@ -51,27 +49,6 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       timeObj: null
     }
   });
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = event.target.files;
-    if (selectedFiles) {
-      const fileArray = Array.from(selectedFiles);
-      const validFiles = fileArray.filter(file => {
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf',
-                           'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        if (!validTypes.includes(file.type)) {
-          toast.error(`檔案 ${file.name} 格式不支援，只接受 jpg, png, pdf, doc, docx`);
-          return false;
-        }
-        return true;
-      });
-      setFiles(prev => [...prev, ...validFiles]);
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
 
   const onSubmit = async (data: PostClockRequestForm & { dateObj: Dayjs | null, timeObj: Dayjs | null }) => {
     try {
@@ -97,7 +74,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       await createPostClockRequest(submitData);
       toast.success('補卡申請已成功送出');
       reset();
-      setFiles([]);
+      clearFiles();
       onClose();
     } catch (error: any) {
       console.error('Error creating postclock request:', error);
@@ -111,7 +88,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
   const handleClose = () => {
     if (!loading) {
       reset();
-      setFiles([]);
+      clearFiles();
       onClose();
     }
   };
@@ -231,43 +208,13 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
               </Grid>
 
               <Grid item xs={12}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                    佐證資料 (選填)
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<AttachFileIcon />}
-                    fullWidth
-                    sx={{ mb: 2 }}
-                  >
-                    上傳檔案 (jpg, png, pdf, doc, docx)
-                    <input
-                      type="file"
-                      hidden
-                      multiple
-                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                      onChange={handleFileChange}
-                    />
-                  </Button>
-                  {files.length > 0 && (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {files.map((file, index) => (
-                        <Chip
-                          key={index}
-                          label={file.name}
-                          onDelete={() => handleRemoveFile(index)}
-                          deleteIcon={<DeleteIcon />}
-                          sx={{ maxWidth: '100%' }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    可上傳多個檔案作為補卡證明
-                  </Typography>
-                </Box>
+                <FileUploadField
+                  files={files}
+                  onFilesChange={setFiles}
+                  label="佐證資料 (選填)"
+                  helperText="可上傳多個檔案作為補卡證明"
+                  disabled={loading}
+                />
               </Grid>
             </Grid>
           </DialogContent>

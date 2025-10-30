@@ -13,6 +13,7 @@ export interface IBusinessTrip extends Document {
   transportation?: string; // Mode of transportation
   estimatedCost?: number; // Estimated cost
   notes?: string; // Additional notes
+  supportingInfo?: string[]; // Array of file paths or URLs to supporting documents (相關資料)
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
@@ -63,6 +64,9 @@ const businessTripSchema = new Schema<IBusinessTrip>({
   },
   notes: {
     type: String
+  },
+  supportingInfo: {
+    type: [String]
   },
   status: {
     type: String,

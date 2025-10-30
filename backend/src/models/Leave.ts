@@ -15,6 +15,7 @@ export interface ILeave extends Document {
   DD: string;
   hour: string;
   minutes: string;
+  supportingInfo?: string[]; // Array of file paths or URLs to supporting documents (佐證資料)
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
@@ -76,6 +77,9 @@ const leaveSchema = new Schema<ILeave>({
   minutes: {
     type: String,
     required: true
+  },
+  supportingInfo: {
+    type: [String]
   },
   status: {
     type: String,

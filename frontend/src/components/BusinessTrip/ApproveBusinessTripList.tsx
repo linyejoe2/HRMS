@@ -15,13 +15,17 @@ import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
 import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
+import FilePreviewDialog from '../common/FilePreviewDialog';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
 
 const ApproveBusinessTripList: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);
@@ -32,6 +36,8 @@ const ApproveBusinessTripList: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<BusinessTripRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
   const [searchSequence, setSearchSequence] = useState<string>('');
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchBusinessTripRequests = async (status?: string) => {
     try {
@@ -203,6 +209,33 @@ const ApproveBusinessTripList: React.FC = () => {
     //   valueGetter: (_, row) => row.estimatedCost ? `NT$ ${row.estimatedCost.toLocaleString()}` : '-',
     //   sortable: true
     // },
+    {
+      field: 'supportingInfo',
+      headerName: '相關資料',
+      flex: 1,
+      renderCell: (params) => {
+        const files = params.value as string[] | undefined;
+        if (!files || files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        );
+      },
+      sortable: false
+    },
     {
       field: 'status',
       headerName: '狀態',
@@ -471,6 +504,14 @@ const ApproveBusinessTripList: React.FC = () => {
             </Box>
           )
         }
+      />
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="出差相關資料"
       />
     </Box>
   );
