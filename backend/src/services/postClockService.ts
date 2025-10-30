@@ -9,7 +9,7 @@ export class PostClockService {
     time: string;
     clockType: 'in' | 'out';
     reason: string;
-    supportingInfo?: string;
+    supportingInfo?: string[];
   }): Promise<IPostClock> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {

@@ -61,6 +61,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA}:/app/data
+      - ./backend/uploads:/app/uploads
     logging:
       driver: json-file
       options:

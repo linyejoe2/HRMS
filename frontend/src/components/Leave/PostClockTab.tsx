@@ -6,12 +6,15 @@ import {
   CardContent,
   Typography,
   Chip,
-  Tooltip
+  Tooltip,
+  IconButton,
+  Badge
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  GetApp as DownloadIcon
+  GetApp as DownloadIcon,
+  Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { PostClockRequest } from '../../types';
@@ -20,6 +23,7 @@ import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import PostClockRequestModal from './PostClockRequestModal';
 import { generatePostClockRequestDocx } from '../../utils/docxGenerator';
+import FilePreviewDialog from '../common/FilePreviewDialog';
 
 const PostClockTab: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);
@@ -27,6 +31,8 @@ const PostClockTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [selectedPostClockId, setSelectedPostClockId] = useState<string | null>(null);
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchPostClockRequests = async () => {
     try {
@@ -168,6 +174,33 @@ const PostClockTab: React.FC = () => {
       sortable: false
     },
     {
+      field: 'supportingInfo',
+      headerName: '佐證資料',
+      flex: 0.8,
+      renderCell: (params) => {
+        const files = params.value as string[] | undefined;
+        if (!files || files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        );
+      },
+      sortable: false
+    },
+    {
       field: 'actions',
       type: 'actions',
       headerName: '操作',
@@ -179,7 +212,7 @@ const PostClockTab: React.FC = () => {
           <GridActionsCellItem
             icon={
               <Tooltip title="下載補卡申請單">
-                <DownloadIcon />
+                <DownloadIcon color='primary' />
               </Tooltip>
             }
             label="下載補卡申請單"
@@ -192,7 +225,7 @@ const PostClockTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="取消申請">
-                  <DeleteIcon />
+                  <DeleteIcon color="error"/>
                 </Tooltip>
               }
               label="取消申請"
@@ -272,6 +305,13 @@ const PostClockTab: React.FC = () => {
         confirmText="確認取消"
         cancelText="保持申請"
         confirmColor="error"
+      />
+
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="補卡佐證資料"
       />
     </Box>
   );

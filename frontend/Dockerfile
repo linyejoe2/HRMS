@@ -12,8 +12,6 @@ RUN npm i
 COPY . .
 
 # Build the app
-ARG VITE_API_URL=http://localhost:5002
-ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Production stage

@@ -7,6 +7,13 @@ export const createPostClockRequest = asyncHandler(async (req: AuthRequest, res:
   const empID = req.user!.empID;
   const postClockData = req.body;
 
+  // Handle uploaded files
+  const files = req.files as Express.Multer.File[];
+  if (files && files.length > 0) {
+    // Store relative paths to the files
+    postClockData.supportingInfo = files.map(file => `/uploads/postclock/${file.filename}`);
+  }
+
   const postClock = await PostClockService.createPostClockRequest(empID, postClockData);
 
   res.status(201).json({

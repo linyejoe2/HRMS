@@ -317,8 +317,25 @@ export const getCancelledLeaveRequests = leaveAPI.getCancelled;
 
 export const postClockAPI = {
   // Create postclock request
-  create: (postClockData: PostClockRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
-    api.post('/postclock/create', postClockData),
+  create: (postClockData: PostClockRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+    const formData = new FormData();
+    formData.append('date', postClockData.date);
+    formData.append('time', postClockData.time);
+    formData.append('clockType', postClockData.clockType);
+    formData.append('reason', postClockData.reason);
+
+    if (postClockData.supportingInfo && postClockData.supportingInfo.length > 0) {
+      postClockData.supportingInfo.forEach((file) => {
+        formData.append('supportingInfo', file);
+      });
+    }
+
+    return api.post('/postclock/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
   // Get my postclock requests
   getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>

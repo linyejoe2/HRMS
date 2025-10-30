@@ -9,19 +9,23 @@ import {
   ToggleButtonGroup,
   InputAdornment,
   Typography,
-  TextField
+  TextField,
+  IconButton,
+  Badge
 } from '@mui/material';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { PostClockRequest } from '../../types';
 import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
+import FilePreviewDialog from '../common/FilePreviewDialog';
 
 const ApprovePostClockList: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);
@@ -32,6 +36,8 @@ const ApprovePostClockList: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<PostClockRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
   const [searchSequence, setSearchSequence] = useState<string>('');
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
     try {
@@ -198,18 +204,28 @@ const ApprovePostClockList: React.FC = () => {
     {
       field: 'supportingInfo',
       headerName: '佐證資料',
-      flex: 2,
-      renderCell: (params) => (
-        params.value ? (
-          <Tooltip title={params.value}>
-            <span>
-              {params.value?.length > 20
-                ? `${params.value.substring(0, 20)}...`
-                : params.value}
-            </span>
+      flex: 1,
+      renderCell: (params) => {
+        const files = params.value as string[] | undefined;
+        if (!files || files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon />
+              </Badge>
+            </IconButton>
           </Tooltip>
-        ) : ''
-      ),
+        );
+      },
       sortable: false
     },
     {
@@ -461,6 +477,14 @@ const ApprovePostClockList: React.FC = () => {
             </Box>
           )
         }
+      />
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="補卡佐證資料"
       />
     </Box>
   );

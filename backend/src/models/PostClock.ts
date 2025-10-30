@@ -10,7 +10,7 @@ export interface IPostClock extends Document {
   time: Date; // The time to be recorded
   clockType: 'in' | 'out'; // Clock in or out
   reason: string;
-  supportingInfo?: string; // File path or URL to supporting document
+  supportingInfo?: string[]; // Array of file paths or URLs to supporting documents
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
@@ -55,7 +55,7 @@ const postClockSchema = new Schema<IPostClock>({
     required: true
   },
   supportingInfo: {
-    type: String
+    type: [String]
   },
   status: {
     type: String,

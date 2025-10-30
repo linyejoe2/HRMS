@@ -11,10 +11,11 @@ import {
   getPostClockRequestBySequenceNumber
 } from '../controllers/postClockController';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { uploadPostClockFiles } from '../middleware/upload';
 
 const router = Router();
 
-router.post('/create', authenticateToken, createPostClockRequest);
+router.post('/create', authenticateToken, uploadPostClockFiles.array('supportingInfo', 10), createPostClockRequest);
 
 router.get('/my', authenticateToken, getMyPostClockRequests);
 

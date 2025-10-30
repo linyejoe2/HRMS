@@ -115,11 +115,6 @@ src/
 - Absolute imports support with `@/*` path mapping
 - JSX support with React 18 automatic runtime
 
-**API Base URL Configuration**:
-- Uses `VITE_API_URL` environment variable
-- Fallback to `http://localhost:8002` for local development
-- All API requests prefixed with `/api/`
-
 ### Error Handling Patterns
 
 **API Error Handling**:

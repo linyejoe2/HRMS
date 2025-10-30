@@ -183,14 +183,19 @@ export interface PostClockRequestForm {
   time: string; // Time to be recorded
   clockType: 'in' | 'out'; // Clock in or out
   reason: string;
-  supportingInfo?: string; // File path or URL
+  supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf)
 }
 
-export interface PostClockRequest extends PostClockRequestForm {
+export interface PostClockRequest {
   _id?: string; // MongoDB ID
   name: string; // from table employee
   department: string; // from table employee
   empID: string; // from table employee
+  date: string; // Date for the clock correction
+  time: string; // Time to be recorded
+  clockType: 'in' | 'out'; // Clock in or out
+  reason: string;
+  supportingInfo?: string[]; // Array of file paths/URLs
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
