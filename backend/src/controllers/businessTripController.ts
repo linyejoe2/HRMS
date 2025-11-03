@@ -7,6 +7,13 @@ export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   const empID = req.user!.empID;
   const businessTripData = req.body;
 
+  // Handle uploaded files
+  const files = req.files as Express.Multer.File[];
+  if (files && files.length > 0) {
+    // Store relative paths to the files
+    businessTripData.supportingInfo = files.map(file => `/uploads/businesstrip/${file.filename}`);
+  }
+
   const businessTrip = await BusinessTripService.createBusinessTripRequest(empID, businessTripData);
 
   res.status(201).json({

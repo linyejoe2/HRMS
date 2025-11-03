@@ -1,13 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)",
-      "Bash(dir:*)",
-      "*",
-      "Bash(move PostClockTab.tsx ..PostClock )",
-      "Bash(move PostClockRequestModal.tsx ..PostClock )",
-      "Bash(*)",
-      "Bash(move ApprovePostClockList.tsx ..PostClock)"
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

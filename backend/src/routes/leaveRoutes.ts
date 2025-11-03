@@ -13,10 +13,11 @@ import {
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
 import { validateLeaveRule } from '../middleware/leaveRule';
+import { uploadLeaveFiles } from '../middleware/upload';
 
 const router = Router();
 
-router.post('/create', authenticateToken, validateLeaveRequest, validateLeaveRule, createLeaveRequest);
+router.post('/create', authenticateToken, uploadLeaveFiles.array('supportingInfo', 10), validateLeaveRequest, validateLeaveRule, createLeaveRequest);
 
 router.get('/my', authenticateToken, getMyLeaveRequests);
 

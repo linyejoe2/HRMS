@@ -11,10 +11,11 @@ import {
   getBusinessTripRequestBySequenceNumber
 } from '../controllers/businessTripController';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { uploadBusinessTripFiles } from '../middleware/upload';
 
 const router = Router();
 
-router.post('/create', authenticateToken, createBusinessTripRequest);
+router.post('/create', authenticateToken, uploadBusinessTripFiles.array('supportingInfo', 10), createBusinessTripRequest);
 
 router.get('/my', authenticateToken, getMyBusinessTripRequests);
 

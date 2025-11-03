@@ -269,8 +269,25 @@ export const employeeAPI = {
 
 export const leaveAPI = {
   // Create leave request
-  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
-    api.post('/leave/create', leaveData),
+  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+    const formData = new FormData();
+    formData.append('leaveType', leaveData.leaveType);
+    formData.append('reason', leaveData.reason);
+    formData.append('leaveStart', leaveData.leaveStart);
+    formData.append('leaveEnd', leaveData.leaveEnd);
+
+    if (leaveData.supportingInfo && leaveData.supportingInfo.length > 0) {
+      leaveData.supportingInfo.forEach((file) => {
+        formData.append('supportingInfo', file);
+      });
+    }
+
+    return api.post('/leave/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
   // Get my leave requests
   getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
@@ -382,8 +399,35 @@ export const getCancelledPostClockRequests = postClockAPI.getCancelled;
 
 export const businessTripAPI = {
   // Create business trip request
-  create: (businessTripData: BusinessTripRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
-    api.post('/businesstrip/create', businessTripData),
+  create: (businessTripData: BusinessTripRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+    const formData = new FormData();
+    formData.append('destination', businessTripData.destination);
+    formData.append('purpose', businessTripData.purpose);
+    formData.append('tripStart', businessTripData.tripStart);
+    formData.append('tripEnd', businessTripData.tripEnd);
+
+    if (businessTripData.transportation) {
+      formData.append('transportation', businessTripData.transportation);
+    }
+    if (businessTripData.estimatedCost !== undefined) {
+      formData.append('estimatedCost', businessTripData.estimatedCost.toString());
+    }
+    if (businessTripData.notes) {
+      formData.append('notes', businessTripData.notes);
+    }
+
+    if (businessTripData.supportingInfo && businessTripData.supportingInfo.length > 0) {
+      businessTripData.supportingInfo.forEach((file) => {
+        formData.append('supportingInfo', file);
+      });
+    }
+
+    return api.post('/businesstrip/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
   // Get my business trip requests
   getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>

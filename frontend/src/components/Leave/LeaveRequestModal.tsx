@@ -54,15 +54,18 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors }
   } = useForm<LeaveRequestForm>({
     defaultValues: {
       leaveType: '',
       reason: '',
-      leaveStart: '',
-      leaveEnd: ''
+      leaveStart: dayjs().hour(8).minute(30).second(0).toISOString(),
+      leaveEnd: dayjs().hour(17).minute(20).second(0).toISOString()
     }
   });
+
+  const leaveStart = watch('leaveStart');
 
   const onSubmit = async (data: LeaveRequestForm) => {
     try {
@@ -166,7 +169,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                   render={({ field: { onChange, value } }) => (
                     <DateTimePicker
                       label="請假開始時間"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}
@@ -191,10 +194,11 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                   render={({ field: { onChange, value } }) => (
                     <DateTimePicker
                       label="請假結束時間"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}
+                      minDateTime={leaveStart ? dayjs(leaveStart) : undefined}
                       slotProps={{
                         textField: {
                           fullWidth: true,

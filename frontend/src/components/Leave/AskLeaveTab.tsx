@@ -12,7 +12,8 @@ import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams, GridActionsC
 import {
   Add as AddIcon,
   GetApp as DownloadIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { LeaveRequest } from '../../types';
 import LeaveRequestModal from './LeaveRequestModal';
@@ -20,6 +21,9 @@ import { getMyLeaveRequests, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import { generateLeaveRequestDocx } from '../../utils/docxGenerator';
 import ConfirmationModal from '../common/ConfirmationModal';
+import FilePreviewDialog from '../common/FilePreviewDialog';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -27,6 +31,8 @@ const AskLeaveTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -135,6 +141,33 @@ const AskLeaveTab: React.FC = () => {
       headerName: '請假時數',
       flex: 1,
       valueGetter: (_, row) => `${row.hour}小時${row.minutes}分鐘`
+    },
+    {
+      field: 'supportingInfo',
+      headerName: '佐證資料',
+      flex: 1,
+      renderCell: (params) => {
+        const files = params.value as string[] | undefined;
+        if (!files || files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        );
+      },
+      sortable: false
     },
     {
       field: 'status',
@@ -307,6 +340,14 @@ const AskLeaveTab: React.FC = () => {
         confirmText="確認取消"
         cancelText="保持申請"
         confirmColor="error"
+      />
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="請假佐證資料"
       />
     </Box>
   );

@@ -10,6 +10,7 @@ export class BusinessTripService {
     transportation?: string;
     estimatedCost?: number;
     notes?: string;
+    supportingInfo?: string[];
   }): Promise<IBusinessTrip> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -35,6 +36,7 @@ export class BusinessTripService {
       transportation: businessTripData.transportation,
       estimatedCost: businessTripData.estimatedCost,
       notes: businessTripData.notes,
+      supportingInfo: businessTripData.supportingInfo,
       status: 'created'
     });
 

@@ -41,8 +41,8 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
     defaultValues: {
       destination: '',
       purpose: '',
-      tripStart: '',
-      tripEnd: '',
+      tripStart: dayjs().hour(8).minute(30).second(0).toISOString(),
+      tripEnd: dayjs().hour(17).minute(20).second(0).toISOString(),
       transportation: '',
       estimatedCost: undefined,
       notes: '',
@@ -150,7 +150,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                       fullWidth
                       error={!!errors.transportation}
                       helperText={errors.transportation?.message}
-                      placeholder="例如：高鐵、飛機、自駕..."
+                      placeholder="例如：搭捷運、搭高鐵、開車..."
                     />
                   )}
                 />
@@ -164,7 +164,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                   render={({ field: { onChange, value } }) => (
                     <DateTimePicker
                       label="出發時間"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}
@@ -190,7 +190,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                   render={({ field: { onChange, value } }) => (
                     <DateTimePicker
                       label="返回時間"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}

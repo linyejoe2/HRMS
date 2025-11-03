@@ -8,12 +8,21 @@ export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
   const { leaveType, reason, leaveStart, leaveEnd } = req.body;
   const empID = req.user!.empID;
 
-  const leave = await LeaveService.createLeaveRequest(empID, {
+  const leaveData: any = {
     leaveType,
     reason,
     leaveStart,
     leaveEnd
-  });
+  };
+
+  // Handle uploaded files
+  const files = req.files as Express.Multer.File[];
+  if (files && files.length > 0) {
+    // Store relative paths to the files
+    leaveData.supportingInfo = files.map(file => `/uploads/leave/${file.filename}`);
+  }
+
+  const leave = await LeaveService.createLeaveRequest(empID, leaveData);
 
   res.status(201).json({
     error: false,

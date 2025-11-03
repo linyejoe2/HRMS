@@ -40,8 +40,8 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
     formState: { errors }
   } = useForm<PostClockRequestForm & { dateObj: Dayjs | null, timeObj: Dayjs | null }>({
     defaultValues: {
-      date: '',
-      time: '',
+      date: dayjs().toISOString(),
+      time: dayjs().hour(8).minute(30).second(0).toISOString(),
       clockType: 'in',
       reason: '',
       supportingInfo: undefined,
@@ -121,7 +121,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   render={({ field: { onChange, value } }) => (
                     <DatePicker
                       label="補卡日期"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}
@@ -146,7 +146,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   render={({ field: { onChange, value } }) => (
                     <TimePicker
                       label="補卡時間"
-                      value={value ? dayjs(value) : null}
+                      value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
                       }}

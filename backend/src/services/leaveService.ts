@@ -51,6 +51,7 @@ export class LeaveService {
     reason: string;
     leaveStart: string;
     leaveEnd: string;
+    supportingInfo?: string[];
   }): Promise<ILeave> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -87,6 +88,7 @@ export class LeaveService {
       DD,
       hour: String(hours),
       minutes: String(minutes),
+      supportingInfo: leaveData.supportingInfo,
       status: 'created'
     });
 
