@@ -118,7 +118,7 @@ const AppLayout: React.FC = () => {
 
     // Add PostClock Request for all users
     baseItems.push({
-      text: '補卡申請',
+      text: '補單申請',
       icon: <PostClockIcon />,
       path: '/postclock'
     });

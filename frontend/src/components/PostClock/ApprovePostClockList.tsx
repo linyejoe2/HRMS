@@ -46,7 +46,7 @@ const ApprovePostClockList: React.FC = () => {
       setPostClockRequests(response.data.data);
     } catch (error) {
       console.error('Error fetching postclock requests:', error);
-      toast.error('無法載入補卡申請');
+      toast.error('無法載入補單申請');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ const ApprovePostClockList: React.FC = () => {
 
     try {
       await approvePostClockRequest(selectedRequest._id!);
-      toast.success('補卡申請已核准');
+      toast.success('補單申請已核准');
       fetchPostClockRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error approving postclock request:', error);
@@ -86,7 +86,7 @@ const ApprovePostClockList: React.FC = () => {
 
     try {
       await rejectPostClockRequest(selectedRequest._id!, reason);
-      toast.success('補卡申請已拒絕');
+      toast.success('補單申請已拒絕');
       fetchPostClockRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error rejecting postclock request:', error);
@@ -106,7 +106,7 @@ const ApprovePostClockList: React.FC = () => {
 
     try {
       await cancelPostClockRequest(selectedRequest._id!, reason);
-      toast.success('補卡申請已抽單');
+      toast.success('補單申請已抽單');
       fetchPostClockRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error cancelling postclock request:', error);
@@ -379,8 +379,8 @@ const ApprovePostClockList: React.FC = () => {
               disableRowSelectionOnClick
               localeText={{
                 noRowsLabel: statusFilter
-                  ? `目前沒有${statusFilter === 'created' ? '待審核' : statusFilter === 'approved' ? '已核准' : '已拒絕'}的補卡申請`
-                  : '沒有補卡申請資料',
+                  ? `目前沒有${statusFilter === 'created' ? '待審核' : statusFilter === 'approved' ? '已核准' : '已拒絕'}的補單申請`
+                  : '沒有補單申請資料',
                 toolbarDensity: '密度',
                 toolbarDensityLabel: '密度',
                 toolbarDensityCompact: '緊密',
@@ -403,7 +403,7 @@ const ApprovePostClockList: React.FC = () => {
         open={approveDialogOpen}
         onClose={() => setApproveDialogOpen(false)}
         onConfirm={handleApproveConfirm}
-        title="確認核准補卡申請"
+        title="確認核准補單申請"
         label="備註（選填）"
         placeholder="可填寫備註資訊..."
         confirmText="確認核准"
@@ -435,9 +435,9 @@ const ApprovePostClockList: React.FC = () => {
         open={rejectDialogOpen}
         onClose={() => setRejectDialogOpen(false)}
         onConfirm={handleRejectConfirm}
-        title="拒絕補卡申請"
+        title="拒絕補單申請"
         label="拒絕原因"
-        placeholder="請說明拒絕此補卡申請的原因..."
+        placeholder="請說明拒絕此補單申請的原因..."
         confirmText="確認拒絕"
         cancelText="取消"
         confirmColor="error"

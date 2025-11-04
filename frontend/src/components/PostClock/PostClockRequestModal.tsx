@@ -72,13 +72,13 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       };
 
       await createPostClockRequest(submitData);
-      toast.success('補卡申請已成功送出');
+      toast.success('補單申請已成功送出');
       reset();
       clearFiles();
       onClose();
     } catch (error: any) {
       console.error('Error creating postclock request:', error);
-      const message = error.response?.data?.message || '建立補卡申請失敗';
+      const message = error.response?.data?.message || '建立補單申請失敗';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            建立補卡申請
+            建立補單申請
           </Typography>
         </DialogTitle>
 

@@ -306,12 +306,13 @@ const EmployeeManagement: React.FC = () => {
                 onChange={(e) => setSelectedDepartment(e.target.value)}
                 SelectProps={{ native: true }}
               >
-                <option value="">全部部門</option>
-                <option value="資訊部">資訊部</option>
-                <option value="人資部">人資部</option>
+                <option value="">所有部門</option>
+                <option value="管理部">管理部</option>
+                <option value="研發課">研發課</option>
                 <option value="財務部">財務部</option>
                 <option value="業務部">業務部</option>
-                <option value="行政部">行政部</option>
+                <option value="稽核室">稽核室</option>
+                <option value="總經理室">總經理室</option>
               </TextField>
             </Grid>
             <Grid item xs={12} md={3}>

@@ -18,7 +18,7 @@ export const createPostClockRequest = asyncHandler(async (req: AuthRequest, res:
 
   res.status(201).json({
     error: false,
-    message: '補卡申請已建立',
+    message: '補單申請已建立',
     data: postClock
   });
 });
@@ -30,7 +30,7 @@ export const getMyPostClockRequests = asyncHandler(async (req: AuthRequest, res:
 
   res.status(200).json({
     error: false,
-    message: '成功取得補卡申請',
+    message: '成功取得補單申請',
     data: postClocks
   });
 });
@@ -42,7 +42,7 @@ export const getAllPostClockRequests = asyncHandler(async (req: AuthRequest, res
 
   res.status(200).json({
     error: false,
-    message: '成功取得所有補卡申請',
+    message: '成功取得所有補單申請',
     data: postClocks
   });
 });
@@ -55,7 +55,7 @@ export const approvePostClockRequest = asyncHandler(async (req: AuthRequest, res
 
   res.status(200).json({
     error: false,
-    message: '補卡申請已核准',
+    message: '補單申請已核准',
     data: postClock
   });
 });
@@ -69,7 +69,7 @@ export const rejectPostClockRequest = asyncHandler(async (req: AuthRequest, res:
 
   res.status(200).json({
     error: false,
-    message: '補卡申請已拒絕',
+    message: '補單申請已拒絕',
     data: postClock
   });
 });
@@ -81,7 +81,7 @@ export const getPostClockRequestById = asyncHandler(async (req: AuthRequest, res
 
   res.status(200).json({
     error: false,
-    message: '成功取得補卡申請',
+    message: '成功取得補單申請',
     data: postClock
   });
 });
@@ -95,7 +95,7 @@ export const cancelPostClockRequest = asyncHandler(async (req: AuthRequest, res:
 
   res.status(200).json({
     error: false,
-    message: '補卡申請已取消',
+    message: '補單申請已取消',
     data: postClock
   });
 });
@@ -107,7 +107,7 @@ export const getCancelPostClockRequests = asyncHandler(async (req: AuthRequest, 
 
   res.status(200).json({
     error: false,
-    message: '成功取得已取消的補卡申請',
+    message: '成功取得已取消的補單申請',
     data: postClocks
   });
 });
@@ -119,7 +119,7 @@ export const getPostClockRequestBySequenceNumber = asyncHandler(async (req: Auth
 
   res.status(200).json({
     error: false,
-    message: '成功取得補卡申請',
+    message: '成功取得補單申請',
     data: postClock
   });
 });

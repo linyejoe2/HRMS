@@ -86,14 +86,14 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     const response = await fetch(templateUrl);
 
     if (!response.ok) {
-      throw new Error(`無法載入補卡申請範本 (HTTP ${response.status})`);
+      throw new Error(`無法載入補單申請範本 (HTTP ${response.status})`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
 
     // Check if we got a valid arrayBuffer
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      throw new Error('補卡申請範本文件為空或無法讀取');
+      throw new Error('補單申請範本文件為空或無法讀取');
     }
 
     console.log('Template file size:', arrayBuffer.byteLength, 'bytes');
@@ -119,7 +119,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
       doc.render();
     } catch (error) {
       console.error('DOCX 渲染錯誤：', error);
-      throw new Error('補卡申請範本處理失敗，請檢查範本格式');
+      throw new Error('補單申請範本處理失敗，請檢查範本格式');
     }
 
     // Generate the document
@@ -143,7 +143,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     URL.revokeObjectURL(link.href);
 
   } catch (error) {
-    console.error('生成補卡申請失敗：', error);
+    console.error('生成補單申請失敗：', error);
     throw error;
   }
 };

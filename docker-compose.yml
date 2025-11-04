@@ -72,6 +72,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # platforms:
+      #   - "linux/amd64"
     container_name: HRMS-frontend
     expose:
       - "${FRONTEND_PORT}:80"

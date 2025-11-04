@@ -41,7 +41,7 @@ const PostClockTab: React.FC = () => {
       setPostClockRequests(response.data.data);
     } catch (error) {
       console.error('Error fetching postclock requests:', error);
-      toast.error('無法載入補卡申請');
+      toast.error('無法載入補單申請');
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ const PostClockTab: React.FC = () => {
   const handleDownload = async (request: PostClockRequest) => {
     try {
       await generatePostClockRequestDocx(request);
-      toast.success('補卡申請單下載成功');
+      toast.success('補單申請單下載成功');
     } catch (error) {
       console.error('Error downloading postclock request:', error);
       toast.error('下載失敗: ' + (error as Error).message);
@@ -76,7 +76,7 @@ const PostClockTab: React.FC = () => {
 
     try {
       await cancelPostClockRequest(selectedPostClockId);
-      toast.success('補卡申請已取消');
+      toast.success('補單申請已取消');
       fetchPostClockRequests();
     } catch (error: any) {
       console.error('Error cancelling postclock request:', error);
@@ -211,11 +211,11 @@ const PostClockTab: React.FC = () => {
         actions.push(
           <GridActionsCellItem
             icon={
-              <Tooltip title="下載補卡申請單">
+              <Tooltip title="下載補單申請單">
                 <DownloadIcon color='primary' />
               </Tooltip>
             }
-            label="下載補卡申請單"
+            label="下載補單申請單"
             onClick={() => handleDownload(params.row)}
           />
         );
@@ -254,14 +254,14 @@ const PostClockTab: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight="bold">
-          補卡申請
+          補單申請
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setIsModalOpen(true)}
         >
-          建立補卡申請
+          建立補單申請
         </Button>
       </Box>
 
@@ -284,7 +284,7 @@ const PostClockTab: React.FC = () => {
               }}
               disableRowSelectionOnClick
               localeText={{
-                noRowsLabel: '尚無補卡申請',
+                noRowsLabel: '尚無補單申請',
                 toolbarDensity: '密度',
                 toolbarDensityLabel: '密度',
                 toolbarDensityCompact: '緊密',
@@ -311,8 +311,8 @@ const PostClockTab: React.FC = () => {
         open={cancelConfirmOpen}
         onClose={() => setCancelConfirmOpen(false)}
         onConfirm={handleCancelConfirm}
-        title="確認取消補卡申請"
-        message="您確定要取消這個補卡申請嗎？此操作無法復原。"
+        title="確認取消補單申請"
+        message="您確定要取消這個補單申請嗎？此操作無法復原。"
         confirmText="確認取消"
         cancelText="保持申請"
         confirmColor="error"
