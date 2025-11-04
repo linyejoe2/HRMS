@@ -31,19 +31,15 @@ const startServer = async (): Promise<void> => {
       // Start automated attendance file scanning
       // cronService.startFileScanning();
       cronService.startFileScanning();
-
-      // Start leave tracking for sick leave rules
-      cronService.startLeaveTracking();
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
+
       // Stop cron jobs
       cronService.stopFileScanning();
-      cronService.stopLeaveTracking();
-      
+
       server.close(() => {
         console.log('HTTP server closed');
         process.exit(0);

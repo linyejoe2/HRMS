@@ -12,12 +12,6 @@ export interface IEmployee extends Document {
   hireDate?: Date; // 入職日期
   salary?: number; // 薪水
 
-  // Sick leave tracking fields
-  sickLeaveDaysInThePastYear: number; // 普通傷病假 - 過去1年累計天數
-  sickLeaveDaysInHospitalInThePastYear: number; // 住院傷病假 - 過去1年累計天數
-  sickLeaveDaysInThePastTwoYear: number; // 住院傷病假 - 1-2年前累計天數
-  sickLeaveDaysPriorToThePastTwoYear: number; // 住院傷病假 - 2年前以上累計天數
-
   // Audit fields
   createdAt: Date;
   updatedAt: Date;
@@ -65,22 +59,6 @@ const EmployeeSchema = new Schema<IEmployee>({
   salary: {
     type: Number,
     select: false // Don't include salary in queries by default for security
-  },
-  sickLeaveDaysInThePastYear: {
-    type: Number,
-    default: 0
-  },
-  sickLeaveDaysInHospitalInThePastYear: {
-    type: Number,
-    default: 0
-  },
-  sickLeaveDaysInThePastTwoYear: {
-    type: Number,
-    default: 0
-  },
-  sickLeaveDaysPriorToThePastTwoYear: {
-    type: Number,
-    default: 0
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
