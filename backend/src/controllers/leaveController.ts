@@ -126,3 +126,27 @@ export const getLeaveRequestBySequenceNumber = asyncHandler(async (req: AuthRequ
     data: leave
   });
 });
+
+export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { timeStart, timeEnd, leaveType, status } = req.body;
+
+  if (!timeStart || !timeEnd) {
+    return res.status(400).json({
+      error: true,
+      message: 'timeStart 和 timeEnd 為必填欄位'
+    });
+  }
+
+  const leaves = await LeaveService.queryLeaveRequests({
+    timeStart,
+    timeEnd,
+    leaveType,
+    status
+  });
+
+  res.json({
+    error: false,
+    message: '成功查詢請假紀錄',
+    data: leaves
+  });
+});

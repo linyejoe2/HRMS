@@ -8,7 +8,8 @@ import {
   getLeaveRequestById,
   cancelLeaveRequest,
   getCancelLeaveRequests,
-  getLeaveRequestBySequenceNumber
+  getLeaveRequestBySequenceNumber,
+  queryLeaveRequests
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -34,5 +35,7 @@ router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), rejec
 router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 
 router.get('/cancelled/all', authenticateToken, requireRole(['hr', 'admin']), getCancelLeaveRequests);
+
+router.post('/query', authenticateToken, queryLeaveRequests);
 
 export default router;

@@ -308,4 +308,49 @@ export class LeaveService {
 
     return leave;
   }
+
+  static async queryLeaveRequests(queryParams: {
+    timeStart: string;
+    timeEnd: string;
+    leaveType?: string;
+    status?: string;
+  }): Promise<ILeave[]> {
+    const { timeStart, timeEnd, leaveType, status } = queryParams;
+
+    // Build query object
+    const query: any = {
+      $or: [
+        // leaveStart is within the time range
+        {
+          leaveStart: {
+            $gte: new Date(timeStart),
+            $lte: new Date(timeEnd)
+          }
+        },
+        // leaveEnd is within the time range
+        {
+          leaveEnd: {
+            $gte: new Date(timeStart),
+            $lte: new Date(timeEnd)
+          }
+        },
+        // The leave spans across the entire time range
+        {
+          leaveStart: { $lte: new Date(timeStart) },
+          leaveEnd: { $gte: new Date(timeEnd) }
+        }
+      ]
+    };
+
+    // Add optional filters
+    if (leaveType) {
+      query.leaveType = leaveType;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    return await Leave.find(query).sort({ leaveStart: -1 });
+  }
 }
