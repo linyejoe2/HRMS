@@ -24,6 +24,8 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
+import RemainingLeaveLabels from './RemainingLeaveLabels';
+import LeaveTypeDetailsDialog from './LeaveTypeDetailsDialog';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -33,6 +35,9 @@ const AskLeaveTab: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [leaveDetailsDialogOpen, setLeaveDetailsDialogOpen] = useState(false);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
+  const [selectedLeaveTypeLeaves, setSelectedLeaveTypeLeaves] = useState<LeaveRequest[]>([]);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -83,6 +88,12 @@ const AskLeaveTab: React.FC = () => {
       toast.error('取消失敗: ' + (error as any)?.response?.data?.message || '未知錯誤');
       throw error;
     }
+  };
+
+  const handleLabelClick = (leaveType: string, leaves: LeaveRequest[]) => {
+    setSelectedLeaveType(leaveType);
+    setSelectedLeaveTypeLeaves(leaves);
+    setLeaveDetailsDialogOpen(true);
   };
 
   const getStatusChip = (status: string) => {
@@ -272,6 +283,9 @@ const AskLeaveTab: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Remaining Leave Labels */}
+      <RemainingLeaveLabels onLabelClick={handleLabelClick} />
+
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -348,6 +362,14 @@ const AskLeaveTab: React.FC = () => {
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
         title="請假佐證資料"
+      />
+
+      {/* Leave Type Details Dialog */}
+      <LeaveTypeDetailsDialog
+        open={leaveDetailsDialogOpen}
+        onClose={() => setLeaveDetailsDialogOpen(false)}
+        leaveType={selectedLeaveType}
+        leaves={selectedLeaveTypeLeaves}
       />
     </Box>
   );

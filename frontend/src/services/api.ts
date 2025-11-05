@@ -319,7 +319,16 @@ export const leaveAPI = {
 
   // Get cancelled leave requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
-    api.get(`/leave/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+    api.get(`/leave/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`),
+
+  // Query leave requests by time range and filters
+  query: (queryParams: {
+    timeStart: string;
+    timeEnd: string;
+    leaveType?: string;
+    status?: string;
+  }): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
+    api.post('/leave/query', queryParams)
 };
 
 // Convenience functions for leave operations
@@ -331,6 +340,7 @@ export const approveLeaveRequest = leaveAPI.approve;
 export const rejectLeaveRequest = leaveAPI.reject;
 export const cancelLeaveRequest = leaveAPI.cancel;
 export const getCancelledLeaveRequests = leaveAPI.getCancelled;
+export const queryLeaveRequests = leaveAPI.query;
 
 export const postClockAPI = {
   // Create postclock request

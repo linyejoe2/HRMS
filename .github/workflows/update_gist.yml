@@ -1,0 +1,34 @@
+name: Update Gist
+
+on:
+  push:
+    branches:
+      - master   # 只有 push 到 master 才觸發
+
+jobs:
+  update-gist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone Gist
+        run: |
+          git clone https://x-access-token:${{ secrets.GIST_TOKEN }}@gist.github.com/f9be7f2dc832d15e1d6388ee0cae4d15.git gist-repo
+
+      - name: Copy updated file
+        run: |
+          cp backend/src/utility.ts gist-repo/utility.ts
+
+      - name: Commit and push to Gist
+        run: |
+          cd gist-repo
+          git add utility.ts
+          git commit -m "Update utility.ts from repo" || echo "No changes to commit"
+          git push
