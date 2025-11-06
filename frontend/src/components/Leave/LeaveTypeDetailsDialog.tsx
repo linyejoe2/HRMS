@@ -90,7 +90,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
 
     // Calculate special leave days at next anniversary
     let daysAtNextAnniversary = 0;
-    if (yearsAtNextAnniversary < 1) {
+    if (yearsAtNextAnniversary === 1) {
       // Check if 6 months milestone is next
       const sixMonthsDate = new Date(hireDateObj);
       sixMonthsDate.setMonth(hireDateObj.getMonth() + 6);
@@ -101,8 +101,6 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           days: 3
         };
       }
-      return null;
-    } else if (yearsAtNextAnniversary === 1) {
       daysAtNextAnniversary = 7;
     } else if (yearsAtNextAnniversary === 2) {
       daysAtNextAnniversary = 10;
@@ -174,10 +172,10 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           {nextSpecialLeave && (
             <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="body2" color="primary" fontWeight="bold">
-                下次特休可使用日期：{nextSpecialLeave.date}
+                下次特休增加日期：{nextSpecialLeave.date}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                屆時將可使用 {nextSpecialLeave.days} 天特休
+                屆時將增加 {nextSpecialLeave.days} 天特休
               </Typography>
               <Typography variant="body2" fontWeight="bold">
                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
