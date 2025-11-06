@@ -17,12 +17,14 @@ import {
   Chip
 } from '@mui/material';
 import { LeaveRequest } from '../../types';
+import { toTaipeiDate } from '@/utility';
 
 interface LeaveTypeDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   leaveType: string;
   leaves: LeaveRequest[];
+  hireDate?: Date;
 }
 
 const getLeaveRule = (leaveType: string): string => {
@@ -55,7 +57,8 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   open,
   onClose,
   leaveType,
-  leaves
+  leaves,
+  hireDate
 }) => {
   // Calculate total used time
   const totalUsedMinutes = leaves.reduce((total, leave) => {
@@ -67,6 +70,58 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   const totalHours = Math.floor(totalUsedMinutes / 60);
   const totalMinutes = totalUsedMinutes % 60;
   const totalDays = (totalUsedMinutes / (8 * 60)).toFixed(2);
+
+  // Calculate next special leave availability (only for 特別休假)
+  const calculateNextSpecialLeave = (hireDate: Date): { date: string; days: number } | null => {
+    const now = new Date();
+    const hireDateObj = new Date(hireDate);
+
+    // Find next anniversary
+    let nextAnniversary = new Date(hireDateObj);
+    nextAnniversary.setFullYear(now.getFullYear());
+
+    // If this year's anniversary has passed, use next year's
+    if (nextAnniversary <= now) {
+      nextAnniversary.setFullYear(now.getFullYear() + 1);
+    }
+
+    // Calculate years of service at next anniversary
+    const yearsAtNextAnniversary = nextAnniversary.getFullYear() - hireDateObj.getFullYear();
+
+    // Calculate special leave days at next anniversary
+    let daysAtNextAnniversary = 0;
+    if (yearsAtNextAnniversary < 1) {
+      // Check if 6 months milestone is next
+      const sixMonthsDate = new Date(hireDateObj);
+      sixMonthsDate.setMonth(hireDateObj.getMonth() + 6);
+
+      if (sixMonthsDate > now) {
+        return {
+          date: sixMonthsDate.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+          days: 3
+        };
+      }
+      return null;
+    } else if (yearsAtNextAnniversary === 1) {
+      daysAtNextAnniversary = 7;
+    } else if (yearsAtNextAnniversary === 2) {
+      daysAtNextAnniversary = 10;
+    } else if (yearsAtNextAnniversary >= 3 && yearsAtNextAnniversary < 5) {
+      daysAtNextAnniversary = 14;
+    } else if (yearsAtNextAnniversary >= 5 && yearsAtNextAnniversary < 10) {
+      daysAtNextAnniversary = 15;
+    } else {
+      // 10 years and above
+      daysAtNextAnniversary = Math.min(16 + (yearsAtNextAnniversary - 10), 30);
+    }
+
+    return {
+      date: nextAnniversary.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+      days: daysAtNextAnniversary
+    };
+  };
+
+  const nextSpecialLeave = leaveType === '特別休假' && hireDate ? calculateNextSpecialLeave(hireDate) : null;
 
   return (
     <Dialog
@@ -107,7 +162,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             統計摘要 (過去一年)
           </Typography>
-          <Box sx={{ display: 'flex', gap: 3 }}>
+          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Typography variant="body2">
               總時數：<strong>{totalHours} 小時 {totalMinutes} 分鐘</strong>
             </Typography>
@@ -115,13 +170,27 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
               總天數：<strong>{totalDays} 天</strong>
             </Typography>
           </Box>
+
+          {nextSpecialLeave && (
+            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" color="primary" fontWeight="bold">
+                下次特休可使用日期：{nextSpecialLeave.date}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                屆時將可使用 {nextSpecialLeave.days} 天特休
+              </Typography>
+              <Typography variant="body2" fontWeight="bold">
+               {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Leave Records Table */}
         {leaves.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography color="text.secondary">
-              過去一年無已核准的 {leaveType} 紀錄
+              過去一年無已核准的{leaveType}紀錄
             </Typography>
           </Box>
         ) : (

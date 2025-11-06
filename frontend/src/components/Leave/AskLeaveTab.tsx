@@ -38,6 +38,7 @@ const AskLeaveTab: React.FC = () => {
   const [leaveDetailsDialogOpen, setLeaveDetailsDialogOpen] = useState(false);
   const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
   const [selectedLeaveTypeLeaves, setSelectedLeaveTypeLeaves] = useState<LeaveRequest[]>([]);
+  const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -90,9 +91,10 @@ const AskLeaveTab: React.FC = () => {
     }
   };
 
-  const handleLabelClick = (leaveType: string, leaves: LeaveRequest[]) => {
+  const handleLabelClick = (leaveType: string, leaves: LeaveRequest[], hireDate?: Date) => {
     setSelectedLeaveType(leaveType);
     setSelectedLeaveTypeLeaves(leaves);
+    setSelectedLeaveHireDate(hireDate);
     setLeaveDetailsDialogOpen(true);
   };
 
@@ -370,6 +372,7 @@ const AskLeaveTab: React.FC = () => {
         onClose={() => setLeaveDetailsDialogOpen(false)}
         leaveType={selectedLeaveType}
         leaves={selectedLeaveTypeLeaves}
+        hireDate={selectedLeaveHireDate}
       />
     </Box>
   );

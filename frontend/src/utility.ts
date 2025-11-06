@@ -1,6 +1,6 @@
-// version 0.0.3
+// version 0.0.4
 // by Randy Lin
-// 2025/09/26
+// 2025/11/06
 
 /**
  * need to install these depandancy
@@ -19,6 +19,22 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
+
+/**
+ * Checks if a given date falls on a weekend (Saturday or Sunday) in Taiwan.
+ *
+ * @param {string | Date | number | dayjs.Dayjs} date - The date to check. Can be a string, Date object, timestamp, or Dayjs object.
+ * @returns {boolean} Returns `true` if the date is a Saturday or Sunday, otherwise `false`.
+ *
+ * @example
+ * isWeekend("2025-10-18"); // true (Saturday)
+ * isWeekend(new Date("2025-10-19")); // true (Sunday)
+ * isWeekend(dayjs("2025-10-20")); // false (Monday)
+ */
+export function isWeekend(date: string | Date | number | dayjs.Dayjs): boolean {
+  const day = dayjs(date).locale("zh-tw").day();
+  return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+}
 
 
 /**
@@ -39,6 +55,25 @@ export function isToday(dateStr?: string): boolean {
 export function toTaipeiString(date?: string): string {
   if (!date) return dayjs().locale("tw").format('YYYY/MM/DD HH:mm')
   return dayjs(date).locale("tw").format('YYYY/MM/DD HH:mm')
+}
+
+/**
+ * 
+ * @param date ex: 2025-08-10T07:42:00.000Z
+ * @returns 2025/08/10 15:42
+ */
+export function toTaipeiDate(date?: any): string {
+  if (!date) return dayjs().locale("tw").format('YYYY/MM/DD')
+  return dayjs(date).locale("tw").format('YYYY/MM/DD')
+}
+
+/**
+ * 
+ * @param date ex: 2025-08-10T07:42:00.000Z
+ */
+export function toDayjs(date?: string): dayjs.Dayjs {
+  if (!date) return dayjs().tz("Asia/Taipei")
+  return dayjs(date).tz("Asia/Taipei")
 }
 
 export interface DateObjectQ {
@@ -151,13 +186,13 @@ export function calcWarkingDurent(
     }
 
     cursor = cursor.add(1, "day");
-  }
 
-  // 判斷是否跨過午休 12:00–13:00
-  const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
-  const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
-  if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
-    crossBreaktime = 60;
+    // 判斷是否跨過午休 12:00–13:00
+    const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
+    const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
+    if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
+      crossBreaktime = 60;
+    }
   }
 
   return { durent, crossBreaktime, crossNight, crossholiday };
