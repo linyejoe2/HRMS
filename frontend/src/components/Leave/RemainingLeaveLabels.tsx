@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Chip, Typography, CircularProgress } from '@mui/material';
+import { Box, Chip, Typography, CircularProgress, Tooltip, IconButton } from '@mui/material';
+import { HelpOutline as HelpIcon } from '@mui/icons-material';
 import { queryLeaveRequests, authAPI } from '../../services/api';
 import { LeaveRequest } from '../../types';
 import { toast } from 'react-toastify';
@@ -284,9 +285,61 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         backgroundColor: 'background.paper'
       }}
     >
-      <Typography variant="subtitle1" fontWeight="bold">
-        剩餘假別
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Typography variant="subtitle1" fontWeight="bold">
+          剩餘假別
+        </Typography>
+        <Tooltip
+          title={
+            <Box sx={{ p: 1 }}>
+              <Typography variant="body2" fontWeight="bold" gutterBottom>
+                顏色說明：
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      backgroundColor: 'success.main'
+                    }}
+                  />
+                  <Typography variant="body2">剩餘七天以上：綠色</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      backgroundColor: 'warning.main'
+                    }}
+                  />
+                  <Typography variant="body2">剩餘三天以上：橘色</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      backgroundColor: 'error.main'
+                    }}
+                  />
+                  <Typography variant="body2">剩餘三天以下：紅色</Typography>
+                </Box>
+              </Box>
+            </Box>
+          }
+          arrow
+          placement="right"
+        >
+          <IconButton size="small" sx={{ p: 0.5 }}>
+            <HelpIcon fontSize="small" color="action" />
+          </IconButton>
+        </Tooltip>
+      </Box>
       <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', height: 24 }} />
 
       {personalLeave && (
