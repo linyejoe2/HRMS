@@ -171,7 +171,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                 屆時將可使用 {nextSpecialLeave.days} 天特休
               </Typography>
               <Typography variant="body2" fontWeight="bold">
-               {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
+                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
               </Typography>
             </Box>
           )}
