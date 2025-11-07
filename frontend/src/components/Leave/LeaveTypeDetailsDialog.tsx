@@ -69,7 +69,8 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
 
   const totalHours = Math.floor(totalUsedMinutes / 60);
   const totalMinutes = totalUsedMinutes % 60;
-  const totalDays = (totalUsedMinutes / (8 * 60)).toFixed(2);
+  console.log(`${leaveType}: ${(totalUsedMinutes / (8 * 60))}`)
+  const totalDays = Math.ceil(totalUsedMinutes / (8 * 60));
 
   // Calculate next special leave availability (only for 特別休假)
   const calculateNextSpecialLeave = (hireDate: Date): { date: string; days: number } | null => {

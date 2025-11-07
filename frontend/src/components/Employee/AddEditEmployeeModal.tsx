@@ -16,16 +16,22 @@ import {
   Typography,
   Box,
   Chip,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Lock as LockIcon
 } from '@mui/icons-material';
-import { Employee, UserLevel } from '../../types';
-import { employeeAPI, authAPI } from '../../services/api';
+import { Employee, UserLevel, LeaveRequest } from '../../types';
+import { employeeAPI, authAPI, queryLeaveRequests } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import {
+  calculateRemainingPersonalLeaveDays,
+  calculateRemainingSickLeaveDays,
+  calculateRemainingSpecialLeaveDays
+} from '../Leave/RemainingLeaveLabels';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -61,6 +67,19 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   const [verificationPassword, setVerificationPassword] = useState('');
   const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [sensitiveData, setSensitiveData] = useState<Employee | null>(null);
+
+  // Leave information state
+  const [leaveInfo, setLeaveInfo] = useState<{
+    personalLeave: number;
+    sickLeave: number;
+    specialLeave: number;
+    loading: boolean;
+  }>({
+    personalLeave: 0,
+    sickLeave: 0,
+    specialLeave: 0,
+    loading: false
+  });
 
   // Department options
   // 管理部、業務部、研發課、財務部、稽核室、總經理室
@@ -143,6 +162,67 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     setVerifyingPassword(false);
   };
 
+  // Fetch remaining leave information
+  const fetchLeaveInfo = async (empId: string, hireDate?: string) => {
+    setLeaveInfo(prev => ({ ...prev, loading: true }));
+
+    try {
+      const now = new Date();
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(now.getFullYear() - 1);
+
+      // Fetch all leave types
+      const [personalResponse, sickResponse, specialResponse] = await Promise.all([
+        queryLeaveRequests({
+          timeStart: oneYearAgo.toISOString(),
+          timeEnd: now.toISOString(),
+          leaveType: '事假',
+          status: 'approved'
+        }),
+        queryLeaveRequests({
+          timeStart: oneYearAgo.toISOString(),
+          timeEnd: now.toISOString(),
+          leaveType: '普通傷病假',
+          status: 'approved'
+        }),
+        queryLeaveRequests({
+          timeStart: oneYearAgo.toISOString(),
+          timeEnd: now.toISOString(),
+          leaveType: '特別休假',
+          status: 'approved'
+        })
+      ]);
+
+      // Filter leaves by employee ID
+      const personalLeaves = personalResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
+      const sickLeaves = sickResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
+      const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
+
+      // Calculate remaining days
+      const personalRemaining = calculateRemainingPersonalLeaveDays(personalLeaves);
+      const sickRemaining = calculateRemainingSickLeaveDays(sickLeaves);
+      const specialRemaining = calculateRemainingSpecialLeaveDays(
+        specialLeaves,
+        hireDate ? new Date(hireDate) : undefined
+      );
+
+      setLeaveInfo({
+        personalLeave: personalRemaining,
+        sickLeave: sickRemaining,
+        specialLeave: specialRemaining,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error fetching leave info:', error);
+      setLeaveInfo({
+        personalLeave: 0,
+        sickLeave: 0,
+        specialLeave: 0,
+        loading: false
+      });
+    }
+  };
+
   // Initialize form data
   useEffect(() => {
     if (employee) {
@@ -156,6 +236,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
         salary: employee.salary ? employee.salary.toString() : ''
       });
+
+      // Fetch leave information for this employee
+      if (employee.empID) {
+        fetchLeaveInfo(employee.empID, employee.hireDate);
+      }
     } else {
       setFormData({
         name: '',
@@ -166,6 +251,12 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         isActive: true,
         hireDate: '',
         salary: ''
+      });
+      setLeaveInfo({
+        personalLeave: 0,
+        sickLeave: 0,
+        specialLeave: 0,
+        loading: false
       });
     }
     setErrors({});
@@ -462,28 +553,85 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             )}
 
             {isEditing && (
-              <Grid item xs={12}>
-                <Box sx={{ 
-                  p: 2, 
-                  backgroundColor: 'grey.50', 
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'grey.200'
-                }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    員工資訊
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    建立時間: {employee?.createdAt ? new Date(employee.createdAt).toLocaleString('zh-TW') : '-'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    最後更新: {employee?.updatedAt ? new Date(employee.updatedAt).toLocaleString('zh-TW') : '-'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    最後登入: {employee?.lastLogin ? new Date(employee.lastLogin).toLocaleString('zh-TW') : '從未登入'}
-                  </Typography>
-                </Box>
-              </Grid>
+              <>
+                {/* Remaining Leave Information */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>
+                    <Chip
+                      label="剩餘假別"
+                      color="primary"
+                      size="small"
+                    />
+                  </Divider>
+                </Grid>
+
+                <Grid item xs={12}>
+                  {leaveInfo.loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 3 }}>
+                      <CircularProgress size={24} sx={{ mr: 2 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        載入假別資訊中...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{
+                      p: 2,
+                      backgroundColor: 'grey.50',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'grey.200'
+                    }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        剩餘假別統計（過去一年）
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+                        <Chip
+                          label={`事假：${leaveInfo.personalLeave} 天`}
+                          color={leaveInfo.personalLeave > 7 ? 'success' : leaveInfo.personalLeave > 3 ? 'warning' : 'error'}
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                        <Chip
+                          label={`病假：${leaveInfo.sickLeave} 天`}
+                          color={leaveInfo.sickLeave > 15 ? 'success' : leaveInfo.sickLeave > 7 ? 'warning' : 'error'}
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                        <Chip
+                          label={`特休：${leaveInfo.specialLeave} 天`}
+                          color={leaveInfo.specialLeave > 7 ? 'success' : leaveInfo.specialLeave > 3 ? 'warning' : 'error'}
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        *剩餘天數基於過去一年的已核准請假記錄計算
+                      </Typography>
+                    </Box>
+                  )}
+                </Grid>
+
+                {/* Employee Information */}
+                <Grid item xs={12}>
+                  <Box sx={{
+                    p: 2,
+                    backgroundColor: 'grey.50',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'grey.200'
+                  }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      員工資訊
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      建立時間: {employee?.createdAt ? new Date(employee.createdAt).toLocaleString('zh-TW') : '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      最後更新: {employee?.updatedAt ? new Date(employee.updatedAt).toLocaleString('zh-TW') : '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      最後登入: {employee?.lastLogin ? new Date(employee.lastLogin).toLocaleString('zh-TW') : '從未登入'}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </>
             )}
           </Grid>
         </Box>

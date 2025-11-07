@@ -36,14 +36,20 @@ const calculateUsedTime = (leaves: LeaveRequest[]): { usedHours: number; usedMin
 export const calculateRemainingPersonalLeaveDays = (leaves: LeaveRequest[]): number => {
   const totalDays = 14; // 14 days per year
   const { usedDays } = calculateUsedTime(leaves);
-  return Math.max(0, totalDays - usedDays);
+  
+  const personalLeave = Math.max(0, totalDays - usedDays);
+  console.log("personalLeave: " + personalLeave);
+  return Math.ceil(personalLeave)
 };
 
 // Utility function: Calculate remaining sick leave days (病假)
 export const calculateRemainingSickLeaveDays = (leaves: LeaveRequest[]): number => {
   const totalDays = 30; // 30 days per year
   const { usedDays } = calculateUsedTime(leaves);
-  return Math.max(0, totalDays - usedDays);
+  
+  const sickLeave = Math.max(0, totalDays - usedDays);
+  console.log("sickLeave: " + sickLeave);
+  return Math.ceil(sickLeave)
 };
 
 export const calculateSpecialLeaveEntitlement = (hireDate: Date): number => {
@@ -141,7 +147,10 @@ export const calculateRemainingSpecialLeaveDays = (leaves: LeaveRequest[], hireD
 
   const totalDays = calculateSpecialLeaveEntitlementCumulative(hireDate);
   const { usedDays } = calculateUsedTime(leaves);
-  return Math.max(0, totalDays - usedDays);
+  
+  const specialLeave = Math.max(0, totalDays - usedDays);
+  console.log("specialLeave: " + specialLeave);
+  return Math.ceil(specialLeave)
 };
 
 const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick }) => {
@@ -344,7 +353,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {personalLeave && (
         <Chip
-          label={`事假：${personalLeave.remainingDays.toFixed(1)} 天`}
+          label={`事假：${personalLeave.remainingDays} 天`}
           color={personalLeave.remainingDays > 7 ? 'success' : personalLeave.remainingDays > 3 ? 'warning' : 'error'}
           onClick={() => onLabelClick(personalLeave.type, personalLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
@@ -353,7 +362,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {sickLeave && (
         <Chip
-          label={`病假：${sickLeave.remainingDays.toFixed(1)} 天`}
+          label={`病假：${sickLeave.remainingDays} 天`}
           color={sickLeave.remainingDays > 15 ? 'success' : sickLeave.remainingDays > 7 ? 'warning' : 'error'}
           onClick={() => onLabelClick(sickLeave.type, sickLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
@@ -362,7 +371,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {specialLeave && (
         <Chip
-          label={`特休：${specialLeave.remainingDays.toFixed(1)} 天`}
+          label={`特休：${specialLeave.remainingDays} 天`}
           color={specialLeave.remainingDays > 7 ? 'success' : specialLeave.remainingDays > 3 ? 'warning' : 'error'}
           onClick={() => onLabelClick(specialLeave.type, specialLeave.leaves, hireDate || undefined)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
