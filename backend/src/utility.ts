@@ -1,6 +1,6 @@
 // version 0.0.4
 // by Randy Lin
-// 2025/10/16
+// 2025/11/06
 
 /**
  * need to install these depandancy
@@ -55,6 +55,16 @@ export function isToday(dateStr?: string): boolean {
 export function toTaipeiString(date?: string): string {
   if (!date) return dayjs().locale("tw").format('YYYY/MM/DD HH:mm')
   return dayjs(date).locale("tw").format('YYYY/MM/DD HH:mm')
+}
+
+/**
+ * 
+ * @param date ex: 2025-08-10T07:42:00.000Z
+ * @returns 2025/08/10 15:42
+ */
+export function toTaipeiDate(date?: any): string {
+  if (!date) return dayjs().locale("tw").format('YYYY/MM/DD')
+  return dayjs(date).locale("tw").format('YYYY/MM/DD')
 }
 
 /**
@@ -124,6 +134,9 @@ export function calcWarkingDurent(
   const start = dayjs(from).tz("Asia/Taipei");
   const end = dayjs(to).tz("Asia/Taipei");
 
+  console.log(`start ${start}`)
+  console.log(`end ${end}`)
+
   if (!start.isValid() || !end.isValid()) {
     throw new Error("Invalid date format");
   }
@@ -166,7 +179,8 @@ export function calcWarkingDurent(
       const overlapEnd = dayjs.min(end, periodEnd);
 
       if (overlapEnd.isAfter(overlapStart)) {
-        durent += overlapEnd.diff(overlapStart, "minute");
+        durent += Math.round(overlapEnd.diff(overlapStart, "minute", true));
+        console.log(durent)
       }
     }
 
@@ -183,6 +197,12 @@ export function calcWarkingDurent(
     if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
       crossBreaktime = 60;
     }
+  }
+
+
+  // 👉 若結束時間正好是 17:20，補 10 分鐘
+  if (end.format("HH:mm") === "17:20") {
+    durent += 10;
   }
 
   return { durent, crossBreaktime, crossNight, crossholiday };

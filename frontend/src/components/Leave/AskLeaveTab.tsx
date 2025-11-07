@@ -153,7 +153,7 @@ const AskLeaveTab: React.FC = () => {
       field: 'duration',
       headerName: '請假時數',
       flex: 1,
-      valueGetter: (_, row) => `${row.hour}小時${row.minutes}分鐘`
+      valueGetter: (_, row) => `${row.hour}小時`
     },
     {
       field: 'supportingInfo',

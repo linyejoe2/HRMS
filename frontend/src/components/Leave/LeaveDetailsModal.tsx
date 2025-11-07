@@ -186,7 +186,7 @@ const LeaveDetailsModal: React.FC<LeaveDetailsModalProps> = ({
                       請假時數:
                     </Typography>
                     <Typography variant="body2">
-                      {leave.hour}小時 {leave.minutes}分鐘
+                      {leave.hour}小時
                     </Typography>
                   </Box>
 

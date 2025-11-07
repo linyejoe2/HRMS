@@ -192,7 +192,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'duration',
       headerName: '請假時數',
       flex: 2,
-      valueGetter: (_, row) => `${row.hour}小時${row.minutes}分鐘`,
+      valueGetter: (_, row) => `${row.hour}小時`,
       sortable: false
     },
     {
@@ -433,7 +433,7 @@ const ApproveLeaveList: React.FC = () => {
                 至 {new Date(selectedRequest.leaveEnd).toLocaleDateString('zh-TW')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                請假時數: {selectedRequest.hour}小時{selectedRequest.minutes}分鐘
+                請假時數: {selectedRequest.hour}小時
               </Typography>
             </Box>
           )

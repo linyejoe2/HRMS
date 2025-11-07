@@ -230,7 +230,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {personalLeave && (
         <Chip
-          label={`事假：${personalLeave.remainingHours.toFixed(1)} 小時`}
+          label={`事假：${personalLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(personalLeave.remainingHours, true)}
           onClick={() => onLabelClick(personalLeave.type, personalLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
@@ -239,7 +239,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {sickLeave && (
         <Chip
-          label={`病假：${sickLeave.remainingHours.toFixed(1)} 小時`}
+          label={`病假：${sickLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(sickLeave.remainingHours, false)}
           onClick={() => onLabelClick(sickLeave.type, sickLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
@@ -248,7 +248,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       {specialLeave && (
         <Chip
-          label={`特休：${specialLeave.remainingHours.toFixed(1)} 小時`}
+          label={`特休：${specialLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(specialLeave.remainingHours, true)}
           onClick={() => onLabelClick(specialLeave.type, specialLeave.leaves, hireDate || undefined)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}

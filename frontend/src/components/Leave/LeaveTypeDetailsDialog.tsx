@@ -221,7 +221,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                       })}
                     </TableCell>
                     <TableCell>
-                      {leave.hour}h {leave.minutes}m
+                      {leave.hour} 小時
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>

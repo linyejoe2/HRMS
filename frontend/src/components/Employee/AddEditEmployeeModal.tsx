@@ -587,17 +587,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                         <Chip
-                          label={`事假：${leaveInfo.personalLeave.toFixed(1)} 小時`}
+                          label={`事假：${leaveInfo.personalLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.personalLeave, true)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
-                          label={`病假：${leaveInfo.sickLeave.toFixed(1)} 小時`}
+                          label={`病假：${leaveInfo.sickLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.sickLeave, false)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
-                          label={`特休：${leaveInfo.specialLeave.toFixed(1)} 小時`}
+                          label={`特休：${leaveInfo.specialLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.specialLeave, true)}
                           sx={{ fontWeight: 'medium' }}
                         />
