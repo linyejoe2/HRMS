@@ -47,7 +47,9 @@ const getLeaveRule = (leaveType: string): string => {
 三、二年以上三年未滿者，十日。
 四、三年以上五年未滿者，每年十四日。
 五、五年以上十年未滿者，每年十五日。
-六、十年以上者，每一年加給一日，加至三十日為止。」`
+六、十年以上者，每一年加給一日，加至三十日為止。」
+
+參考勞動基準法第 38 條第 4 項，期滿未休完之特別休假將以時薪轉換為工資發放。`
     default:
       return ""
   }
@@ -173,10 +175,10 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           {nextSpecialLeave && (
             <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="body2" color="primary" fontWeight="bold">
-                下次特休增加日期：{nextSpecialLeave.date}
+                下次特休重置日期：{nextSpecialLeave.date}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                屆時將增加 {nextSpecialLeave.days} 天特休
+                屆時將可使用 {nextSpecialLeave.days} 天特休
               </Typography>
               <Typography variant="body2" fontWeight="bold">
                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
