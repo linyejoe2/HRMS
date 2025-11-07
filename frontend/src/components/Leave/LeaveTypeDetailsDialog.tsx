@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { LeaveRequest } from '../../types';
 import { toTaipeiDate } from '@/utility';
+import { calculateUsedMinutes, minutesToHours } from '../../utils/leaveCalculations';
 
 interface LeaveTypeDetailsDialogProps {
   open: boolean;
@@ -62,17 +63,9 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   leaves,
   hireDate
 }) => {
-  // Calculate total used time
-  const totalUsedMinutes = leaves.reduce((total, leave) => {
-    const hours = parseInt(leave.hour) || 0;
-    const minutes = parseInt(leave.minutes) || 0;
-    return total + (hours * 60) + minutes;
-  }, 0);
-
-  const totalHours = Math.floor(totalUsedMinutes / 60);
-  const totalMinutes = totalUsedMinutes % 60;
-  console.log(`${leaveType}: ${(totalUsedMinutes / (8 * 60))}`)
-  const totalDays = Math.ceil(totalUsedMinutes / (8 * 60));
+  // Calculate total used time using utility functions
+  const totalUsedMinutes = calculateUsedMinutes(leaves);
+  const totalHours = minutesToHours(totalUsedMinutes);
 
   // Calculate next special leave availability (only for 特別休假)
   const calculateNextSpecialLeave = (hireDate: Date): { date: string; days: number } | null => {
@@ -165,10 +158,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Typography variant="body2">
-              總時數：<strong>{totalHours} 小時 {totalMinutes} 分鐘</strong>
-            </Typography>
-            <Typography variant="body2">
-              總天數：<strong>{totalDays} 天</strong>
+              總時數：<strong>{totalHours.toFixed(1)} 小時</strong>
             </Typography>
           </Box>
 

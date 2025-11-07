@@ -28,10 +28,11 @@ import { employeeAPI, authAPI, queryLeaveRequests } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import {
-  calculateRemainingPersonalLeaveDays,
-  calculateRemainingSickLeaveDays,
-  calculateRemainingSpecialLeaveDays
-} from '../Leave/RemainingLeaveLabels';
+  calculateRemainingPersonalLeaveHours,
+  calculateRemainingSickLeaveHours,
+  calculateRemainingSpecialLeaveHours,
+  getLeaveColorByHours
+} from '../../utils/leaveCalculations';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -198,10 +199,10 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const sickLeaves = sickResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
       const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
 
-      // Calculate remaining days
-      const personalRemaining = calculateRemainingPersonalLeaveDays(personalLeaves);
-      const sickRemaining = calculateRemainingSickLeaveDays(sickLeaves);
-      const specialRemaining = calculateRemainingSpecialLeaveDays(
+      // Calculate remaining hours
+      const personalRemaining = calculateRemainingPersonalLeaveHours(personalLeaves);
+      const sickRemaining = calculateRemainingSickLeaveHours(sickLeaves);
+      const specialRemaining = calculateRemainingSpecialLeaveHours(
         specialLeaves,
         hireDate ? new Date(hireDate) : undefined
       );
@@ -586,23 +587,23 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                         <Chip
-                          label={`事假：${leaveInfo.personalLeave} 天`}
-                          color={leaveInfo.personalLeave > 7 ? 'success' : leaveInfo.personalLeave > 3 ? 'warning' : 'error'}
+                          label={`事假：${leaveInfo.personalLeave.toFixed(1)} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.personalLeave, true)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
-                          label={`病假：${leaveInfo.sickLeave} 天`}
-                          color={leaveInfo.sickLeave > 15 ? 'success' : leaveInfo.sickLeave > 7 ? 'warning' : 'error'}
+                          label={`病假：${leaveInfo.sickLeave.toFixed(1)} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.sickLeave, false)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
-                          label={`特休：${leaveInfo.specialLeave} 天`}
-                          color={leaveInfo.specialLeave > 7 ? 'success' : leaveInfo.specialLeave > 3 ? 'warning' : 'error'}
+                          label={`特休：${leaveInfo.specialLeave.toFixed(1)} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.specialLeave, true)}
                           sx={{ fontWeight: 'medium' }}
                         />
                       </Box>
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                        *剩餘天數基於過去一年的已核准請假記錄計算
+                        *剩餘時數基於過去一年的已核准請假記錄計算
                       </Typography>
                     </Box>
                   )}
