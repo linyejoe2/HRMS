@@ -5,13 +5,14 @@ import { queryLeaveRequests, authAPI } from '../../services/api';
 import { LeaveRequest } from '../../types';
 import { toast } from 'react-toastify';
 import {
-  calculateRemainingPersonalLeaveHours,
-  calculateRemainingSickLeaveHours,
-  calculateRemainingSpecialLeaveHours,
+  calculateRemainingPersonalLeaveMinutes,
+  calculateRemainingSickLeaveMinutes,
+  calculateRemainingSpecialLeaveMinutes,
   calculateUsedMinutes,
   minutesToHours,
   getLeaveColorByHours,
-  calculateSpecialLeaveEntitlementCumulativeDays
+  calculateSpecialLeaveEntitlementCumulativeDays,
+  formatMinutesToHours
 } from '../../utils/leaveCalculations';
 
 interface RemainingLeaveLabelProps {
@@ -81,7 +82,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       // Calculate personal leave using utility function
       const personalLeaves = personalLeaveResponse.data.data;
-      const personalRemainingHours = calculateRemainingPersonalLeaveHours(personalLeaves);
+      const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
       const personalUsedMinutes = calculateUsedMinutes(personalLeaves);
       const personalUsedHours = minutesToHours(personalUsedMinutes);
       const personalTotalHours = 14 * 8; // 14 days * 8 hours = 112 hours
@@ -97,7 +98,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
 
       // Calculate sick leave using utility function
       const sickLeaves = sickLeaveResponse.data.data;
-      const sickRemainingHours = calculateRemainingSickLeaveHours(sickLeaves);
+      const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
       const sickUsedMinutes = calculateUsedMinutes(sickLeaves);
       const sickUsedHours = minutesToHours(sickUsedMinutes);
       const sickTotalHours = 30 * 8; // 30 days * 8 hours = 240 hours
@@ -114,7 +115,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       // Calculate special leave using utility function
       const specialLeaves = specialLeaveResponse.data.data;
       const hireDateObj = employeeHireDate ? new Date(employeeHireDate) : undefined;
-      const specialRemainingHours = calculateRemainingSpecialLeaveHours(specialLeaves, hireDateObj);
+      const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
       const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
       const specialUsedHours = minutesToHours(specialUsedMinutes);
       const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementCumulativeDays(hireDateObj) : 0;
@@ -231,7 +232,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       {personalLeave && (
         <Chip
           label={`事假：${personalLeave.remainingHours} 小時`}
-          color={getLeaveColorByHours(personalLeave.remainingHours, true)}
+          color={getLeaveColorByHours(personalLeave.remainingHours)}
           onClick={() => onLabelClick(personalLeave.type, personalLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
@@ -240,7 +241,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       {sickLeave && (
         <Chip
           label={`病假：${sickLeave.remainingHours} 小時`}
-          color={getLeaveColorByHours(sickLeave.remainingHours, false)}
+          color={getLeaveColorByHours(sickLeave.remainingHours)}
           onClick={() => onLabelClick(sickLeave.type, sickLeave.leaves)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
@@ -249,7 +250,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       {specialLeave && (
         <Chip
           label={`特休：${specialLeave.remainingHours} 小時`}
-          color={getLeaveColorByHours(specialLeave.remainingHours, true)}
+          color={getLeaveColorByHours(specialLeave.remainingHours)}
           onClick={() => onLabelClick(specialLeave.type, specialLeave.leaves, hireDate || undefined)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />

@@ -13,6 +13,18 @@ export const calculateUsedMinutes = (leaves: LeaveRequest[]): number => {
   }, 0);
 };
 
+export const calculateRemainingMinutes = (leaves: LeaveRequest[], leaveType: string, hireDate?: Date): number => {
+  switch (leaveType) {
+    case "事假":
+      return calculateRemainingPersonalLeaveMinutes(leaves);
+    case "普通傷病假":
+      return calculateRemainingSickLeaveMinutes(leaves);
+    case "特別休假":
+      return calculateRemainingSpecialLeaveMinutes(leaves, hireDate ? new Date(hireDate) : undefined);
+  }
+  return 0
+}
+
 /**
  * Convert minutes to hours (decimal)
  * @param minutes Total minutes
@@ -32,6 +44,28 @@ export const minutesToDays = (minutes: number): number => {
 };
 
 /**
+ * Format minutes to display format (hours with 1 decimal place)
+ * @param minutes Total minutes
+ * @returns Formatted string (e.g., "112.0 小時")
+ */
+export const formatMinutesToHours = (minutes: number): number => {
+  const hours = minutesToHours(minutes);
+  return Math.round(hours);
+};
+
+/**
+ * Get color for remaining leave display based on hours
+ * @param remainingHours Remaining hours
+ * @param isSpecialOrPersonal Whether this is special leave or personal leave (true) or sick leave (false)
+ * @returns Color string: 'success' | 'warning' | 'error'
+ */
+export const getLeaveColorByHours = (remainingHours: number): 'success' | 'warning' | 'error' => {
+  if (remainingHours > 56) return 'success';
+  if (remainingHours > 24) return 'warning';
+  return 'error';
+};
+
+/**
  * Calculate remaining personal leave in minutes (事假)
  * Total allocation: 14 days = 112 hours = 6720 minutes per year
  * @param leaves Array of approved personal leave requests
@@ -44,15 +78,6 @@ export const calculateRemainingPersonalLeaveMinutes = (leaves: LeaveRequest[]): 
 };
 
 /**
- * Calculate remaining personal leave in hours (事假)
- * @param leaves Array of approved personal leave requests
- * @returns Remaining hours
- */
-export const calculateRemainingPersonalLeaveHours = (leaves: LeaveRequest[]): number => {
-  return minutesToHours(calculateRemainingPersonalLeaveMinutes(leaves));
-};
-
-/**
  * Calculate remaining sick leave in minutes (病假)
  * Total allocation: 30 days = 240 hours = 14400 minutes per year
  * @param leaves Array of approved sick leave requests
@@ -62,15 +87,6 @@ export const calculateRemainingSickLeaveMinutes = (leaves: LeaveRequest[]): numb
   const totalMinutes = 30 * 8 * 60; // 30 days * 8 hours * 60 minutes = 14400 minutes
   const usedMinutes = calculateUsedMinutes(leaves);
   return Math.max(0, totalMinutes - usedMinutes);
-};
-
-/**
- * Calculate remaining sick leave in hours (病假)
- * @param leaves Array of approved sick leave requests
- * @returns Remaining hours
- */
-export const calculateRemainingSickLeaveHours = (leaves: LeaveRequest[]): number => {
-  return minutesToHours(calculateRemainingSickLeaveMinutes(leaves));
 };
 
 /**
@@ -201,53 +217,55 @@ export const calculateRemainingSpecialLeaveMinutes = (leaves: LeaveRequest[], hi
     return 0;
   }
 
-  const totalMinutes = calculateSpecialLeaveEntitlementCumulativeMinutes(hireDate);
+  const totalMinutes = calculateSpecialLeaveEntitlementMinutes(hireDate);
   const usedMinutes = calculateUsedMinutes(leaves);
   return Math.max(0, totalMinutes - usedMinutes);
 };
 
-/**
- * Calculate remaining special leave in hours (特休)
- * @param leaves Array of approved special leave requests
- * @param hireDate Employee hire date (optional)
- * @returns Remaining hours
- */
-export const calculateRemainingSpecialLeaveHours = (leaves: LeaveRequest[], hireDate?: Date): number => {
-  return minutesToHours(calculateRemainingSpecialLeaveMinutes(leaves, hireDate));
-};
+// Calculate next special leave availability (only for 特別休假)
+export const calculateNextSpecialLeave = (hireDate: Date): { date: string; days: number } | null => {
+  const now = new Date();
+  const hireDateObj = new Date(hireDate);
 
-/**
- * Format minutes to display format (hours with 1 decimal place)
- * @param minutes Total minutes
- * @returns Formatted string (e.g., "112.0 小時")
- */
-export const formatMinutesToHours = (minutes: number): string => {
-  const hours = minutesToHours(minutes);
-  return `${hours.toFixed(1)} 小時`;
-};
+  // Find next anniversary
+  let nextAnniversary = new Date(hireDateObj);
+  nextAnniversary.setFullYear(now.getFullYear());
 
-/**
- * Get color for remaining leave display based on hours
- * @param remainingHours Remaining hours
- * @param isSpecialOrPersonal Whether this is special leave or personal leave (true) or sick leave (false)
- * @returns Color string: 'success' | 'warning' | 'error'
- */
-export const getLeaveColorByHours = (remainingHours: number, isSpecialOrPersonal: boolean = true): 'success' | 'warning' | 'error' => {
-  if (isSpecialOrPersonal) {
-    // For special leave and personal leave
-    // > 56 hours (7 days): green
-    // 24-56 hours (3-7 days): warning
-    // < 24 hours (3 days): red
-    if (remainingHours > 56) return 'success';
-    if (remainingHours > 24) return 'warning';
-    return 'error';
-  } else {
-    // For sick leave
-    // > 120 hours (15 days): green
-    // 56-120 hours (7-15 days): warning
-    // < 56 hours (7 days): red
-    if (remainingHours > 120) return 'success';
-    if (remainingHours > 56) return 'warning';
-    return 'error';
+  // If this year's anniversary has passed, use next year's
+  if (nextAnniversary <= now) {
+    nextAnniversary.setFullYear(now.getFullYear() + 1);
   }
+
+  // Calculate years of service at next anniversary
+  const yearsAtNextAnniversary = nextAnniversary.getFullYear() - hireDateObj.getFullYear();
+
+  // Calculate special leave days at next anniversary
+  let daysAtNextAnniversary = 0;
+  if (yearsAtNextAnniversary === 1) {
+    // Check if 6 months milestone is next
+    const sixMonthsDate = new Date(hireDateObj);
+    sixMonthsDate.setMonth(hireDateObj.getMonth() + 6);
+
+    if (sixMonthsDate > now) {
+      return {
+        date: sixMonthsDate.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+        days: 3
+      };
+    }
+    daysAtNextAnniversary = 7;
+  } else if (yearsAtNextAnniversary === 2) {
+    daysAtNextAnniversary = 10;
+  } else if (yearsAtNextAnniversary >= 3 && yearsAtNextAnniversary < 5) {
+    daysAtNextAnniversary = 14;
+  } else if (yearsAtNextAnniversary >= 5 && yearsAtNextAnniversary < 10) {
+    daysAtNextAnniversary = 15;
+  } else {
+    // 10 years and above
+    daysAtNextAnniversary = Math.min(16 + (yearsAtNextAnniversary - 10), 30);
+  }
+
+  return {
+    date: nextAnniversary.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+    days: daysAtNextAnniversary
+  };
 };

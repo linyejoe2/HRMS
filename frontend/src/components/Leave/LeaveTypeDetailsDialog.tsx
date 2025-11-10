@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { LeaveRequest } from '../../types';
 import { toTaipeiDate } from '@/utility';
-import { calculateUsedMinutes, minutesToHours } from '../../utils/leaveCalculations';
+import { calculateNextSpecialLeave, calculateRemainingMinutes, calculateUsedMinutes, formatMinutesToHours } from '../../utils/leaveCalculations';
 
 interface LeaveTypeDetailsDialogProps {
   open: boolean;
@@ -41,8 +41,8 @@ const getLeaveRule = (leaveType: string): string => {
 經醫師診斷，罹患癌症（含原位癌）採門診方式治療或懷孕期間需安胎休養者，其治療或休養期間，併入住院傷病假計算。
 普通傷病假一年內未超過三十日部分，工資折半發給，其領有勞工保險普通傷病給付未達工資半數者，由雇主補足之。」`
     case "特別休假":
-      return `勞動基準法第38條：「勞工在同一雇主或事業單位，繼續工作滿一定期間者，應依下列規定給予
-特別休假：
+      return `勞動基準法第38條：「
+勞工在同一雇主或事業單位，繼續工作滿一定期間者，應依下列規定給予特別休假：
 一、六個月以上一年未滿者，三日。
 二、一年以上二年未滿者，七日。
 三、二年以上三年未滿者，十日。
@@ -65,55 +65,9 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
 }) => {
   // Calculate total used time using utility functions
   const totalUsedMinutes = calculateUsedMinutes(leaves);
-  const totalHours = minutesToHours(totalUsedMinutes);
+  const totalHours = formatMinutesToHours(totalUsedMinutes);
 
-  // Calculate next special leave availability (only for 特別休假)
-  const calculateNextSpecialLeave = (hireDate: Date): { date: string; days: number } | null => {
-    const now = new Date();
-    const hireDateObj = new Date(hireDate);
-
-    // Find next anniversary
-    let nextAnniversary = new Date(hireDateObj);
-    nextAnniversary.setFullYear(now.getFullYear());
-
-    // If this year's anniversary has passed, use next year's
-    if (nextAnniversary <= now) {
-      nextAnniversary.setFullYear(now.getFullYear() + 1);
-    }
-
-    // Calculate years of service at next anniversary
-    const yearsAtNextAnniversary = nextAnniversary.getFullYear() - hireDateObj.getFullYear();
-
-    // Calculate special leave days at next anniversary
-    let daysAtNextAnniversary = 0;
-    if (yearsAtNextAnniversary === 1) {
-      // Check if 6 months milestone is next
-      const sixMonthsDate = new Date(hireDateObj);
-      sixMonthsDate.setMonth(hireDateObj.getMonth() + 6);
-
-      if (sixMonthsDate > now) {
-        return {
-          date: sixMonthsDate.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
-          days: 3
-        };
-      }
-      daysAtNextAnniversary = 7;
-    } else if (yearsAtNextAnniversary === 2) {
-      daysAtNextAnniversary = 10;
-    } else if (yearsAtNextAnniversary >= 3 && yearsAtNextAnniversary < 5) {
-      daysAtNextAnniversary = 14;
-    } else if (yearsAtNextAnniversary >= 5 && yearsAtNextAnniversary < 10) {
-      daysAtNextAnniversary = 15;
-    } else {
-      // 10 years and above
-      daysAtNextAnniversary = Math.min(16 + (yearsAtNextAnniversary - 10), 30);
-    }
-
-    return {
-      date: nextAnniversary.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
-      days: daysAtNextAnniversary
-    };
-  };
+  const remainingHours = formatMinutesToHours(calculateRemainingMinutes(leaves, leaveType, hireDate))
 
   const nextSpecialLeave = leaveType === '特別休假' && hireDate ? calculateNextSpecialLeave(hireDate) : null;
 
@@ -158,20 +112,23 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Typography variant="body2">
-              總時數：<strong>{totalHours.toFixed(1)} 小時</strong>
+              使用時數：<strong>{totalHours} 小時</strong>
+            </Typography>
+            <Typography variant="body2">
+              剩餘時數：<strong>{remainingHours} 小時</strong>
             </Typography>
           </Box>
 
           {nextSpecialLeave && (
             <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" fontWeight="bold">
+                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
+              </Typography>
               <Typography variant="body2" color="primary" fontWeight="bold">
                 下次特休重置日期：{nextSpecialLeave.date}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                屆時將可使用 {nextSpecialLeave.days} 天特休
-              </Typography>
-              <Typography variant="body2" fontWeight="bold">
-                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
+                屆時將可使用 <span style={{ fontWeight: "bold" }}>{nextSpecialLeave.days}</span> 天特休
               </Typography>
             </Box>
           )}

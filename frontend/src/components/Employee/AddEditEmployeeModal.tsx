@@ -28,9 +28,10 @@ import { employeeAPI, authAPI, queryLeaveRequests } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import {
-  calculateRemainingPersonalLeaveHours,
-  calculateRemainingSickLeaveHours,
-  calculateRemainingSpecialLeaveHours,
+  calculateRemainingPersonalLeaveMinutes,
+  calculateRemainingSickLeaveMinutes,
+  calculateRemainingSpecialLeaveMinutes,
+  formatMinutesToHours,
   getLeaveColorByHours
 } from '../../utils/leaveCalculations';
 
@@ -48,7 +49,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   onSaved
 }) => {
   const { user } = useAuth();
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -200,12 +201,12 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
 
       // Calculate remaining hours
-      const personalRemaining = calculateRemainingPersonalLeaveHours(personalLeaves);
-      const sickRemaining = calculateRemainingSickLeaveHours(sickLeaves);
-      const specialRemaining = calculateRemainingSpecialLeaveHours(
+      const personalRemaining = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
+      const sickRemaining = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
+      const specialRemaining = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(
         specialLeaves,
         hireDate ? new Date(hireDate) : undefined
-      );
+      ));
 
       setLeaveInfo({
         personalLeave: personalRemaining,
@@ -351,10 +352,10 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   const isEditing = !!employee;
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{ sx: { minHeight: '500px' } }}
     >
@@ -376,7 +377,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           )}
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
@@ -453,8 +454,8 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   disabled={loading}
                 >
                   {roleOptions.map((option) => (
-                    <MenuItem 
-                      key={option.value} 
+                    <MenuItem
+                      key={option.value}
                       value={option.value}
                       disabled={!canAssignRole(option.value)}
                     >
@@ -509,17 +510,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                     InputLabelProps={{
                       shrink: true,
                     }}
-                    // sx={{
-                    //   '& .MuiOutlinedInput-root': {
-                    //     '& fieldset': {
-                    //       borderColor: '#1976d2',
-                    //     },
-                    //   },
-                    //   '& .MuiInputBase-input': {
-                    //     color: '#1976d2',
-                    //     fontWeight: 'bold',
-                    //   },
-                    // }}
+                  // sx={{
+                  //   '& .MuiOutlinedInput-root': {
+                  //     '& fieldset': {
+                  //       borderColor: '#1976d2',
+                  //     },
+                  //   },
+                  //   '& .MuiInputBase-input': {
+                  //     color: '#1976d2',
+                  //     fontWeight: 'bold',
+                  //   },
+                  // }}
                   />
                 </Grid>
 
@@ -537,17 +538,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       min: 0,
                       step: 1000
                     }}
-                    // sx={{
-                    //   '& .MuiOutlinedInput-root': {
-                    //     '& fieldset': {
-                    //       borderColor: '#1976d2',
-                    //     },
-                    //   },
-                    //   '& .MuiInputBase-input': {
-                    //     color: '#1976d2',
-                    //     fontWeight: 'bold',
-                    //   },
-                    // }}
+                  // sx={{
+                  //   '& .MuiOutlinedInput-root': {
+                  //     '& fieldset': {
+                  //       borderColor: '#1976d2',
+                  //     },
+                  //   },
+                  //   '& .MuiInputBase-input': {
+                  //     color: '#1976d2',
+                  //     fontWeight: 'bold',
+                  //   },
+                  // }}
                   />
                 </Grid>
               </>
@@ -588,17 +589,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                         <Chip
                           label={`事假：${leaveInfo.personalLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.personalLeave, true)}
+                          color={getLeaveColorByHours(leaveInfo.personalLeave)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
                           label={`病假：${leaveInfo.sickLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.sickLeave, false)}
+                          color={getLeaveColorByHours(leaveInfo.sickLeave)}
                           sx={{ fontWeight: 'medium' }}
                         />
                         <Chip
                           label={`特休：${leaveInfo.specialLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.specialLeave, true)}
+                          color={getLeaveColorByHours(leaveInfo.specialLeave)}
                           sx={{ fontWeight: 'medium' }}
                         />
                       </Box>
