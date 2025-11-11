@@ -34,6 +34,7 @@ import {
   formatMinutesToHours,
   getLeaveColorByHours
 } from '../../utils/leaveCalculations';
+import LeaveDetailsDialog from './LeaveDetailsDialog';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -81,6 +82,15 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     sickLeave: 0,
     specialLeave: 0,
     loading: false
+  });
+
+  // Leave details dialog state
+  const [leaveDetailsDialog, setLeaveDetailsDialog] = useState<{
+    open: boolean;
+    leaveType: string;
+  }>({
+    open: false,
+    leaveType: ''
   });
 
   // Department options
@@ -349,6 +359,26 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     }
   };
 
+  // Handle leave chip click
+  const handleLeaveChipClick = (leaveType: string) => {
+    setLeaveDetailsDialog({
+      open: true,
+      leaveType
+    });
+  };
+
+  // Handle leave details dialog close
+  const handleLeaveDetailsClose = () => {
+    setLeaveDetailsDialog({
+      open: false,
+      leaveType: ''
+    });
+    // Refresh leave info after closing the dialog
+    if (employee?.empID) {
+      fetchLeaveInfo(employee.empID, employee.hireDate);
+    }
+  };
+
   const isEditing = !!employee;
 
   return (
@@ -590,21 +620,24 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                         <Chip
                           label={`事假：${leaveInfo.personalLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.personalLeave)}
-                          sx={{ fontWeight: 'medium' }}
+                          sx={{ fontWeight: 'medium', cursor: 'pointer' }}
+                          onClick={() => handleLeaveChipClick('事假')}
                         />
                         <Chip
                           label={`病假：${leaveInfo.sickLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.sickLeave)}
-                          sx={{ fontWeight: 'medium' }}
+                          sx={{ fontWeight: 'medium', cursor: 'pointer' }}
+                          onClick={() => handleLeaveChipClick('普通傷病假')}
                         />
                         <Chip
                           label={`特休：${leaveInfo.specialLeave} 小時`}
                           color={getLeaveColorByHours(leaveInfo.specialLeave)}
-                          sx={{ fontWeight: 'medium' }}
+                          sx={{ fontWeight: 'medium', cursor: 'pointer' }}
+                          onClick={() => handleLeaveChipClick('特別休假')}
                         />
                       </Box>
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                        *剩餘時數基於過去一年的已核准請假記錄計算
+                        *點擊查看詳細記錄，剩餘時數基於過去一年的已核准請假記錄計算
                       </Typography>
                     </Box>
                   )}
@@ -693,6 +726,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Leave Details Dialog */}
+      {employee && leaveDetailsDialog.open && (
+        <LeaveDetailsDialog
+          open={leaveDetailsDialog.open}
+          onClose={handleLeaveDetailsClose}
+          empID={employee.empID}
+          employeeName={employee.name}
+          leaveType={leaveDetailsDialog.leaveType}
+          hireDate={employee.hireDate}
+        />
+      )}
     </Dialog>
   );
 };

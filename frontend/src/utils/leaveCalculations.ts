@@ -1,4 +1,4 @@
-import { LeaveRequest } from '../types';
+import { LeaveRequest, LeaveAdjustment } from '../types';
 
 /**
  * Calculate total used minutes from leave requests
@@ -13,14 +13,23 @@ export const calculateUsedMinutes = (leaves: LeaveRequest[]): number => {
   }, 0);
 };
 
-export const calculateRemainingMinutes = (leaves: LeaveRequest[], leaveType: string, hireDate?: Date): number => {
+/**
+ * Calculate total adjustment minutes from leave adjustments
+ * @param adjustments Array of leave adjustments
+ * @returns Total minutes adjusted (positive = used more, negative = restored)
+ */
+export const calculateAdjustmentMinutes = (adjustments: LeaveAdjustment[]): number => {
+  return adjustments.reduce((total, adjustment) => total + adjustment.minutes, 0);
+};
+
+export const calculateRemainingMinutes = (leaves: LeaveRequest[], leaveType: string, hireDate?: Date, adjustments?: LeaveAdjustment[]): number => {
   switch (leaveType) {
     case "事假":
-      return calculateRemainingPersonalLeaveMinutes(leaves);
+      return calculateRemainingPersonalLeaveMinutes(leaves, adjustments);
     case "普通傷病假":
-      return calculateRemainingSickLeaveMinutes(leaves);
+      return calculateRemainingSickLeaveMinutes(leaves, adjustments);
     case "特別休假":
-      return calculateRemainingSpecialLeaveMinutes(leaves, hireDate ? new Date(hireDate) : undefined);
+      return calculateRemainingSpecialLeaveMinutes(leaves, hireDate ? new Date(hireDate) : undefined, adjustments);
   }
   return 0
 }
@@ -69,24 +78,28 @@ export const getLeaveColorByHours = (remainingHours: number): 'success' | 'warni
  * Calculate remaining personal leave in minutes (事假)
  * Total allocation: 14 days = 112 hours = 6720 minutes per year
  * @param leaves Array of approved personal leave requests
- * @returns Remaining minutes
+ * @param adjustments Optional array of leave adjustments
+ * @returns Remaining minutes (can be negative)
  */
-export const calculateRemainingPersonalLeaveMinutes = (leaves: LeaveRequest[]): number => {
+export const calculateRemainingPersonalLeaveMinutes = (leaves: LeaveRequest[], adjustments?: LeaveAdjustment[]): number => {
   const totalMinutes = 14 * 8 * 60; // 14 days * 8 hours * 60 minutes = 6720 minutes
   const usedMinutes = calculateUsedMinutes(leaves);
-  return Math.max(0, totalMinutes - usedMinutes);
+  const adjustmentMinutes = adjustments ? calculateAdjustmentMinutes(adjustments) : 0;
+  return totalMinutes - usedMinutes - adjustmentMinutes;
 };
 
 /**
  * Calculate remaining sick leave in minutes (病假)
  * Total allocation: 30 days = 240 hours = 14400 minutes per year
  * @param leaves Array of approved sick leave requests
- * @returns Remaining minutes
+ * @param adjustments Optional array of leave adjustments
+ * @returns Remaining minutes (can be negative)
  */
-export const calculateRemainingSickLeaveMinutes = (leaves: LeaveRequest[]): number => {
+export const calculateRemainingSickLeaveMinutes = (leaves: LeaveRequest[], adjustments?: LeaveAdjustment[]): number => {
   const totalMinutes = 30 * 8 * 60; // 30 days * 8 hours * 60 minutes = 14400 minutes
   const usedMinutes = calculateUsedMinutes(leaves);
-  return Math.max(0, totalMinutes - usedMinutes);
+  const adjustmentMinutes = adjustments ? calculateAdjustmentMinutes(adjustments) : 0;
+  return totalMinutes - usedMinutes - adjustmentMinutes;
 };
 
 /**
@@ -210,16 +223,18 @@ export const calculateSpecialLeaveEntitlementCumulativeMinutes = (hireDate: Date
  * Calculate remaining special leave in minutes (特休)
  * @param leaves Array of approved special leave requests
  * @param hireDate Employee hire date (optional)
- * @returns Remaining minutes
+ * @param adjustments Optional array of leave adjustments
+ * @returns Remaining minutes (can be negative)
  */
-export const calculateRemainingSpecialLeaveMinutes = (leaves: LeaveRequest[], hireDate?: Date): number => {
+export const calculateRemainingSpecialLeaveMinutes = (leaves: LeaveRequest[], hireDate?: Date, adjustments?: LeaveAdjustment[]): number => {
   if (!hireDate) {
     return 0;
   }
 
   const totalMinutes = calculateSpecialLeaveEntitlementMinutes(hireDate);
   const usedMinutes = calculateUsedMinutes(leaves);
-  return Math.max(0, totalMinutes - usedMinutes);
+  const adjustmentMinutes = adjustments ? calculateAdjustmentMinutes(adjustments) : 0;
+  return totalMinutes - usedMinutes - adjustmentMinutes;
 };
 
 // Calculate next special leave availability (only for 特別休假)

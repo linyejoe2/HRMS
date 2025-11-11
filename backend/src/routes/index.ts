@@ -6,6 +6,7 @@ import attendanceRoutes from './attendanceRoutes';
 import leaveRoutes from './leaveRoutes';
 import postClockRoutes from './postClockRoutes';
 import businessTripRoutes from './businessTripRoutes';
+import leaveAdjustmentRoutes from './leaveAdjustmentRoutes';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/employees', employeeRoutes);
 router.use('/migration', migrationRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/leave', leaveRoutes);
+router.use('/leave-adjustments', leaveAdjustmentRoutes);
 router.use('/postclock', postClockRoutes);
 router.use('/businesstrip', businessTripRoutes);
 

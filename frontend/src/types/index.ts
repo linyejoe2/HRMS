@@ -241,3 +241,16 @@ export interface BusinessTripRequest {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface LeaveAdjustment {
+  _id?: string;
+  empID: string;
+  name: string;
+  department: string;
+  leaveType: string;
+  minutes: number; // Can be negative to increase remaining leave, or positive to decrease
+  reason: string;
+  createdBy: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -341,6 +341,29 @@ export const rejectLeaveRequest = leaveAPI.reject;
 export const cancelLeaveRequest = leaveAPI.cancel;
 export const getCancelledLeaveRequests = leaveAPI.getCancelled;
 export const queryLeaveRequests = leaveAPI.query;
+
+export const leaveAdjustmentAPI = {
+  // Create leave adjustment (HR/Admin only)
+  create: (adjustmentData: {
+    empID: string;
+    leaveType: string;
+    minutes: number;
+    reason: string;
+  }): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveAdjustment }>> =>
+    api.post('/leave-adjustments', adjustmentData),
+
+  // Get adjustments for a specific employee
+  getByEmployee: (empID: string, leaveType?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveAdjustment[] }>> =>
+    api.get(`/leave-adjustments/employee/${empID}${leaveType ? `?leaveType=${leaveType}` : ''}`),
+
+  // Get all leave adjustments (HR/Admin only)
+  getAll: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveAdjustment[] }>> =>
+    api.get('/leave-adjustments/all'),
+
+  // Delete a leave adjustment (HR/Admin only)
+  delete: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: null }>> =>
+    api.delete(`/leave-adjustments/${id}`)
+};
 
 export const postClockAPI = {
   // Create postclock request
