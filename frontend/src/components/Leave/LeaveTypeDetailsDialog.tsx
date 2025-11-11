@@ -97,7 +97,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            {leaveType} - 已核准請假紀錄
+            {leaveType} - 請假紀錄
           </Typography>
           <Chip
             label={`共 ${leaves.length} 筆`}
@@ -117,24 +117,34 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
         </Box>
 
         {/* Summary Section */}
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+          統計摘要
+        </Typography>
         <Box sx={{ mb: 3, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-            統計摘要 (過去一年)
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="body2">總額度:</Typography>
             <Typography variant="body2">
-              總額度：<strong>{Math.round(totalHours)} 小時</strong>
+              {Math.round(totalHours)} 小時
             </Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="body2">已使用:</Typography>
             <Typography variant="body2">
-              已使用：<strong>{Math.round(usedHours)} 小時</strong>
+              {Math.round(usedHours)} 小時
             </Typography>
-            {adjustments.length > 0 && (
-              <Typography variant="body2">
-                手動調整：<strong>{Math.round(totalAdjustmentHours)} 小時</strong>
-              </Typography>
-            )}
-            <Typography variant="body2" sx={{ fontWeight: 'bold', color: remainingHours < 0 ? 'error.main' : 'primary.main' }}>
-              剩餘：<strong>{Math.round(remainingHours)} 小時</strong>
+          </Box>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="body2">手動調整:</Typography>
+            <Typography variant="body2">
+              {Math.round(totalAdjustmentHours)} 小時
+            </Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
+            <Typography variant="body1" fontWeight="bold">
+              剩餘:
+            </Typography>
+            <Typography variant="body1" fontWeight="bold" color={remainingHours < 0 ? 'error.main' : 'primary.main'}>
+              {Math.round(remainingHours)} 小時
             </Typography>
           </Box>
 
@@ -153,54 +163,19 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           )}
         </Box>
 
-        {/* Adjustments Section */}
-        {adjustments.length > 0 && (
-          <>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              調整記錄
-            </Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>調整時間</TableCell>
-                    <TableCell align="right">調整時數</TableCell>
-                    <TableCell>原因</TableCell>
-                    <TableCell>調整者</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {adjustments.map((adj) => (
-                    <TableRow key={adj._id}>
-                      <TableCell>
-                        {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
-                          color={adj.minutes > 0 ? 'error' : 'success'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{adj.reason}</TableCell>
-                      <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
 
         {/* Leave Records Table */}
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+          請假記錄
+        </Typography>
         {leaves.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Box sx={{ textAlign: 'center', py: 4, mb: 3 }}>
             <Typography color="text.secondary">
               過去一年無已核准的{leaveType}紀錄
             </Typography>
           </Box>
         ) : (
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer sx={{ mb: 3 }} component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -249,6 +224,56 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
             </Table>
           </TableContainer>
         )}
+
+        {/* Adjustments Section */}
+        {adjustments.length > 0 && (
+          <>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              調整記錄
+            </Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>調整時間</TableCell>
+                    <TableCell>調整時數</TableCell>
+                    <TableCell>原因</TableCell>
+                    <TableCell>調整者</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {adjustments.map((adj) => (
+                    <TableRow key={adj._id}>
+                      <TableCell>
+                        {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
+                          color={adj.minutes > 0 ? 'error' : 'success'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{adj.reason}</TableCell>
+                      <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
+                    </TableRow>
+                  ))}
+                  {leaves.length > 0 && (
+                    <TableRow>
+                      <TableCell >
+                        <strong>小計:</strong>
+                      </TableCell>
+                      <TableCell >
+                        <strong>{Math.round(usedHours)} 小時</strong>
+                      </TableCell>
+                      <TableCell />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
       </DialogContent>
 
       <DialogActions>
@@ -256,7 +281,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           關閉
         </Button>
       </DialogActions>
-    </Dialog>
+    </Dialog >
   );
 };
 

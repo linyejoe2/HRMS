@@ -180,7 +180,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
         ) : (
           <>
             {/* Leave Requests Table */}
-            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'bold' }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
               請假記錄
             </Typography>
             <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
@@ -262,7 +262,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
 
             {showAddAdjustment && (
               <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
+                <Typography variant="subtitle2" gutterBottom sx={{ mb: 1 }}>
                   新增假別調整
                 </Typography>
                 <Box display="flex" gap={2} alignItems="flex-start">
@@ -297,12 +297,12 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
               </Paper>
             )}
 
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer sx={{ mb: 3 }} component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>調整時間</TableCell>
-                    <TableCell align="right">調整時數</TableCell>
+                    <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>
                     <TableCell>調整者</TableCell>
                     {canManageAdjustments && <TableCell align="center">操作</TableCell>}
@@ -323,7 +323,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         <TableCell>
                           {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell>
                           <Chip
                             label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
                             color={adj.minutes > 0 ? 'error' : 'success'}
@@ -350,13 +350,13 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                   )}
                   {adjustments.length > 0 && (
                     <TableRow>
-                      <TableCell align="right">
+                      <TableCell >
                         <strong>小計:</strong>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell >
                         <strong>{Math.round(totalAdjustmentHours)} 小時</strong>
                       </TableCell>
-                      <TableCell colSpan={canManageAdjustments ? 3 : 2} />
+                      <TableCell />
                     </TableRow>
                   )}
                 </TableBody>
@@ -364,10 +364,10 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
             </TableContainer>
 
             {/* Summary */}
-            <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                統計摘要
-              </Typography>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              統計摘要
+            </Typography>
+            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body2">總額度:</Typography>
                 <Typography variant="body2">
