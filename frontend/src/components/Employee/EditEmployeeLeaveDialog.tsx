@@ -29,15 +29,14 @@ import { LeaveRequest, LeaveAdjustment, UserLevel } from '../../types';
 import { queryLeaveRequests, leaveAdjustmentAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { formatMinutesToHours, getLeaveColorByHours } from '../../utils/leaveCalculations';
+import { formatMinutesToHours, getLeaveColorByHours, RemainingLeaveData } from '../../utils/leaveCalculations';
 
 interface LeaveDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   empID: string;
   employeeName: string;
-  leaveType: string;
-  hireDate?: string;
+  leaveData: RemainingLeaveData;
 }
 
 const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
@@ -45,7 +44,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   onClose,
   empID,
   employeeName,
-  leaveType
+  leaveData
 }) => {
   const { user } = useAuth();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -65,7 +64,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     if (open && empID) {
       fetchLeaveData();
     }
-  }, [open, empID, leaveType]);
+  }, [open, empID, leaveData.type]);
 
   const fetchLeaveData = async () => {
     setLoading(true);
@@ -78,7 +77,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       const leaveResponse = await queryLeaveRequests({
         timeStart: oneYearAgo.toISOString(),
         timeEnd: now.toISOString(),
-        leaveType: leaveType,
+        leaveType: leaveData.type,
         status: 'approved'
       });
 
@@ -87,7 +86,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       setLeaves(employeeLeaves);
 
       // Fetch adjustments
-      const adjustmentResponse = await leaveAdjustmentAPI.getByEmployee(empID, leaveType);
+      const adjustmentResponse = await leaveAdjustmentAPI.getByEmployee(empID, leaveData.type);
       setAdjustments(adjustmentResponse.data.data);
     } catch (error) {
       console.error('Error fetching leave data:', error);
@@ -111,7 +110,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     try {
       await leaveAdjustmentAPI.create({
         empID,
-        leaveType,
+        leaveType: leaveData.type,
         minutes: newAdjustment.minutes,
         reason: newAdjustment.reason
       });
@@ -150,7 +149,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
 
   // Calculate total entitled leave
   const getTotalEntitledMinutes = () => {
-    switch (leaveType) {
+    switch (leaveData.type) {
       case '事假':
         return 14 * 8 * 60; // 14 days
       case '普通傷病假':
@@ -173,7 +172,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">
-            {employeeName} - {leaveType}
+            {employeeName} - {leaveData.type}
           </Typography>
           <Box>
             <Chip

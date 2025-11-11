@@ -12,7 +12,8 @@ import {
   minutesToHours,
   getLeaveColorByHours,
   calculateSpecialLeaveEntitlementCumulativeDays,
-  formatMinutesToHours
+  formatMinutesToHours,
+  calculateSpecialLeaveEntitlementDays
 } from '../../utils/leaveCalculations';
 
 interface RemainingLeaveLabelProps {
@@ -118,7 +119,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
       const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
       const specialUsedHours = minutesToHours(specialUsedMinutes);
-      const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementCumulativeDays(hireDateObj) : 0;
+      const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
       const specialTotalHours = specialTotalDays * 8;
 
       setSpecialLeave({

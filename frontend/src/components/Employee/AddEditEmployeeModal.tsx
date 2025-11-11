@@ -31,10 +31,14 @@ import {
   calculateRemainingPersonalLeaveMinutes,
   calculateRemainingSickLeaveMinutes,
   calculateRemainingSpecialLeaveMinutes,
+  calculateSpecialLeaveEntitlementDays,
+  calculateUsedMinutes,
   formatMinutesToHours,
-  getLeaveColorByHours
+  getLeaveColorByHours,
+  minutesToHours,
+  RemainingLeaveData
 } from '../../utils/leaveCalculations';
-import LeaveDetailsDialog from './LeaveDetailsDialog';
+import LeaveDetailsDialog from './EditEmployeeLeaveDialog';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -73,24 +77,31 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
   // Leave information state
   const [leaveInfo, setLeaveInfo] = useState<{
-    personalLeave: number;
-    sickLeave: number;
-    specialLeave: number;
+    personalLeave: RemainingLeaveData | null;
+    sickLeave: RemainingLeaveData | null;
+    specialLeave: RemainingLeaveData | null;
     loading: boolean;
   }>({
-    personalLeave: 0,
-    sickLeave: 0,
-    specialLeave: 0,
+    personalLeave: null,
+    sickLeave: null,
+    specialLeave: null,
     loading: false
   });
 
   // Leave details dialog state
   const [leaveDetailsDialog, setLeaveDetailsDialog] = useState<{
     open: boolean;
-    leaveType: string;
+    leaveData: RemainingLeaveData;
   }>({
     open: false,
-    leaveType: ''
+    leaveData: {
+      type: "",
+      displayName: "",
+      totalHours: 0,
+      usedHours: 0,
+      remainingHours: 0,
+      leaves: []
+    }
   });
 
   // Department options
@@ -210,28 +221,55 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const sickLeaves = sickResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
       const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
 
-      // Calculate remaining hours
-      const personalRemaining = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
-      const sickRemaining = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
-      const specialRemaining = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(
-        specialLeaves,
-        hireDate ? new Date(hireDate) : undefined
-      ));
+      const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
+      const personalUsedMinutes = calculateUsedMinutes(personalLeaves);
+      const personalUsedHours = minutesToHours(personalUsedMinutes);
+      const personalTotalHours = 14 * 8; // 14 days * 8 hours = 112 hours
+
+      // Calculate sick leave using utility function
+      const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
+      const sickUsedMinutes = calculateUsedMinutes(sickLeaves);
+      const sickUsedHours = minutesToHours(sickUsedMinutes);
+      const sickTotalHours = 30 * 8; // 30 days * 8 hours = 240 hours
+
+
+      // Calculate special leave using utility function
+      const hireDateObj = hireDate ? new Date(hireDate) : undefined;
+      const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
+      const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
+      const specialUsedHours = minutesToHours(specialUsedMinutes);
+      const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
+      const specialTotalHours = specialTotalDays * 8;
 
       setLeaveInfo({
-        personalLeave: personalRemaining,
-        sickLeave: sickRemaining,
-        specialLeave: specialRemaining,
+        personalLeave: {
+          type: '事假',
+          displayName: '事假',
+          totalHours: personalTotalHours,
+          usedHours: personalUsedHours,
+          remainingHours: personalRemainingHours,
+          leaves: personalLeaves
+        },
+        sickLeave: {
+          type: '普通傷病假',
+          displayName: '病假',
+          totalHours: sickTotalHours,
+          usedHours: sickUsedHours,
+          remainingHours: sickRemainingHours,
+          leaves: sickLeaves
+        },
+        specialLeave: {
+          type: '特別休假',
+          displayName: '特休',
+          totalHours: specialTotalHours,
+          usedHours: specialUsedHours,
+          remainingHours: specialRemainingHours,
+          leaves: specialLeaves
+        },
         loading: false
       });
     } catch (error) {
       console.error('Error fetching leave info:', error);
-      setLeaveInfo({
-        personalLeave: 0,
-        sickLeave: 0,
-        specialLeave: 0,
-        loading: false
-      });
     }
   };
 
@@ -263,12 +301,6 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         isActive: true,
         hireDate: '',
         salary: ''
-      });
-      setLeaveInfo({
-        personalLeave: 0,
-        sickLeave: 0,
-        specialLeave: 0,
-        loading: false
       });
     }
     setErrors({});
@@ -360,10 +392,14 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   };
 
   // Handle leave chip click
-  const handleLeaveChipClick = (leaveType: string) => {
+  const handleLeaveChipClick = (leaveData: RemainingLeaveData | null) => {
+    if (leaveData == null) {
+      toast.error("找不到休假資料!")
+      return
+    }
     setLeaveDetailsDialog({
       open: true,
-      leaveType
+      leaveData
     });
   };
 
@@ -371,7 +407,14 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   const handleLeaveDetailsClose = () => {
     setLeaveDetailsDialog({
       open: false,
-      leaveType: ''
+      leaveData: {
+        type: "",
+        displayName: "",
+        totalHours: 0,
+        usedHours: 0,
+        remainingHours: 0,
+        leaves: []
+      }
     });
     // Refresh leave info after closing the dialog
     if (employee?.empID) {
@@ -618,22 +661,22 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                         <Chip
-                          label={`事假：${leaveInfo.personalLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.personalLeave)}
+                          label={`事假：${leaveInfo.personalLeave?.remainingHours || 0} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.personalLeave?.remainingHours || 0)}
                           sx={{ fontWeight: 'medium', cursor: 'pointer' }}
-                          onClick={() => handleLeaveChipClick('事假')}
+                          onClick={() => handleLeaveChipClick(leaveInfo.personalLeave)}
                         />
                         <Chip
-                          label={`病假：${leaveInfo.sickLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.sickLeave)}
+                          label={`病假：${leaveInfo.sickLeave?.remainingHours || 0} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.sickLeave?.remainingHours || 0)}
                           sx={{ fontWeight: 'medium', cursor: 'pointer' }}
-                          onClick={() => handleLeaveChipClick('普通傷病假')}
+                          onClick={() => handleLeaveChipClick(leaveInfo.sickLeave)}
                         />
                         <Chip
-                          label={`特休：${leaveInfo.specialLeave} 小時`}
-                          color={getLeaveColorByHours(leaveInfo.specialLeave)}
+                          label={`特休：${leaveInfo.specialLeave?.remainingHours || 0} 小時`}
+                          color={getLeaveColorByHours(leaveInfo.specialLeave?.remainingHours || 0)}
                           sx={{ fontWeight: 'medium', cursor: 'pointer' }}
-                          onClick={() => handleLeaveChipClick('特別休假')}
+                          onClick={() => handleLeaveChipClick(leaveInfo.specialLeave)}
                         />
                       </Box>
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
@@ -734,8 +777,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           onClose={handleLeaveDetailsClose}
           empID={employee.empID}
           employeeName={employee.name}
-          leaveType={leaveDetailsDialog.leaveType}
-          hireDate={employee.hireDate}
+          leaveData={leaveDetailsDialog.leaveData}
         />
       )}
     </Dialog>
