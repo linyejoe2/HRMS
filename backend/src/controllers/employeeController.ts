@@ -37,6 +37,26 @@ export class EmployeeController {
     });
   });
 
+    getEmployeeByEmpID = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    
+    const employee = await employeeService.findByEmpID(id);
+    
+    if (!employee) {
+      res.status(404).json({
+        error: true,
+        message: '找不到員工資料'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      error: false,
+      message: '已成功取得員工資料',
+      data: { employee }
+    });
+  });
+
   searchEmployees = asyncHandler(async (req: Request, res: Response) => {
     const { q } = req.query;
     

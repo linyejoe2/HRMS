@@ -251,6 +251,7 @@ export interface LeaveAdjustment {
   minutes: number; // Can be negative to increase remaining leave, or positive to decrease
   reason: string;
   createdBy: string;
+  createdByDesc: string;
   createdAt?: string;
   updatedAt?: string;
 }

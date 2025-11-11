@@ -1,39 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Chip, Typography, CircularProgress, Tooltip, IconButton } from '@mui/material';
 import { HelpOutline as HelpIcon } from '@mui/icons-material';
-import { queryLeaveRequests, authAPI } from '../../services/api';
-import { LeaveRequest } from '../../types';
+import { authAPI } from '../../services/api';
 import { toast } from 'react-toastify';
-import {
-  calculateRemainingPersonalLeaveMinutes,
-  calculateRemainingSickLeaveMinutes,
-  calculateRemainingSpecialLeaveMinutes,
-  calculateUsedMinutes,
-  minutesToHours,
-  getLeaveColorByHours,
-  calculateSpecialLeaveEntitlementCumulativeDays,
-  formatMinutesToHours,
-  calculateSpecialLeaveEntitlementDays
-} from '../../utils/leaveCalculations';
+import { getLeaveColorByHours } from '../../utils/leaveCalculations';
+import { fetchUserLeaveData, LeaveData } from '../../services/leaveService';
 
 interface RemainingLeaveLabelProps {
-  onLabelClick: (leaveType: string, leaves: LeaveRequest[], hireDate?: Date) => void;
-}
-
-interface RemainingLeaveData {
-  type: string;
-  displayName: string;
-  totalHours: number;
-  usedHours: number;
-  remainingHours: number;
-  leaves: LeaveRequest[];
+  onLabelClick: (leaveData: LeaveData, hireDate?: Date) => void;
 }
 
 const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick }) => {
   const [loading, setLoading] = useState(true);
-  const [personalLeave, setPersonalLeave] = useState<RemainingLeaveData | null>(null);
-  const [sickLeave, setSickLeave] = useState<RemainingLeaveData | null>(null);
-  const [specialLeave, setSpecialLeave] = useState<RemainingLeaveData | null>(null);
+  const [personalLeave, setPersonalLeave] = useState<LeaveData | null>(null);
+  const [sickLeave, setSickLeave] = useState<LeaveData | null>(null);
+  const [specialLeave, setSpecialLeave] = useState<LeaveData | null>(null);
   const [hireDate, setHireDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -44,92 +25,24 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
     try {
       setLoading(true);
 
-      // Fetch employee data to get hire date
+      // Fetch employee data to get hire date and empID
       const employeeResponse = await authAPI.getMe();
       const employeeHireDate = employeeResponse.data.data.user?.hireDate;
+      const empID = employeeResponse.data.data.user?.empID;
 
-      if (employeeHireDate) {
-        setHireDate(new Date(employeeHireDate));
+      if (!employeeHireDate || !empID) {
+        toast.error('無法取得員工資訊');
+        return;
       }
 
-      // Calculate date range for past 1 year
-      const now = new Date();
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(now.getFullYear() - 1);
+      setHireDate(new Date(employeeHireDate));
 
-      // Query for "事假" (Personal Leave)
-      const personalLeaveResponse = await queryLeaveRequests({
-        timeStart: oneYearAgo.toISOString(),
-        timeEnd: now.toISOString(),
-        leaveType: '事假',
-        status: 'approved'
-      });
+      // Fetch all leave data using centralized service
+      const leaveData = await fetchUserLeaveData(empID, employeeHireDate);
 
-      // Query for "病假" (Sick Leave - 普通傷病假)
-      const sickLeaveResponse = await queryLeaveRequests({
-        timeStart: oneYearAgo.toISOString(),
-        timeEnd: now.toISOString(),
-        leaveType: '普通傷病假',
-        status: 'approved'
-      });
-
-      // Query for "特休" (Special Leave - 特別休假)
-      const specialLeaveResponse = await queryLeaveRequests({
-        timeStart: oneYearAgo.toISOString(),
-        timeEnd: now.toISOString(),
-        leaveType: '特別休假',
-        status: 'approved'
-      });
-
-      // Calculate personal leave using utility function
-      const personalLeaves = personalLeaveResponse.data.data;
-      const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
-      const personalUsedMinutes = calculateUsedMinutes(personalLeaves);
-      const personalUsedHours = minutesToHours(personalUsedMinutes);
-      const personalTotalHours = 14 * 8; // 14 days * 8 hours = 112 hours
-
-      setPersonalLeave({
-        type: '事假',
-        displayName: '事假',
-        totalHours: personalTotalHours,
-        usedHours: personalUsedHours,
-        remainingHours: personalRemainingHours,
-        leaves: personalLeaves
-      });
-
-      // Calculate sick leave using utility function
-      const sickLeaves = sickLeaveResponse.data.data;
-      const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
-      const sickUsedMinutes = calculateUsedMinutes(sickLeaves);
-      const sickUsedHours = minutesToHours(sickUsedMinutes);
-      const sickTotalHours = 30 * 8; // 30 days * 8 hours = 240 hours
-
-      setSickLeave({
-        type: '普通傷病假',
-        displayName: '病假',
-        totalHours: sickTotalHours,
-        usedHours: sickUsedHours,
-        remainingHours: sickRemainingHours,
-        leaves: sickLeaves
-      });
-
-      // Calculate special leave using utility function
-      const specialLeaves = specialLeaveResponse.data.data;
-      const hireDateObj = employeeHireDate ? new Date(employeeHireDate) : undefined;
-      const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
-      const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
-      const specialUsedHours = minutesToHours(specialUsedMinutes);
-      const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
-      const specialTotalHours = specialTotalDays * 8;
-
-      setSpecialLeave({
-        type: '特別休假',
-        displayName: '特休',
-        totalHours: specialTotalHours,
-        usedHours: specialUsedHours,
-        remainingHours: specialRemainingHours,
-        leaves: specialLeaves
-      });
+      setPersonalLeave(leaveData.personalLeave);
+      setSickLeave(leaveData.sickLeave);
+      setSpecialLeave(leaveData.specialLeave);
 
     } catch (error) {
       console.error('Error fetching remaining leave:', error);
@@ -234,7 +147,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         <Chip
           label={`事假：${personalLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(personalLeave.remainingHours)}
-          onClick={() => onLabelClick(personalLeave.type, personalLeave.leaves)}
+          onClick={() => onLabelClick(personalLeave)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
       )}
@@ -243,7 +156,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         <Chip
           label={`病假：${sickLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(sickLeave.remainingHours)}
-          onClick={() => onLabelClick(sickLeave.type, sickLeave.leaves)}
+          onClick={() => onLabelClick(sickLeave)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
       )}
@@ -252,7 +165,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         <Chip
           label={`特休：${specialLeave.remainingHours} 小時`}
           color={getLeaveColorByHours(specialLeave.remainingHours)}
-          onClick={() => onLabelClick(specialLeave.type, specialLeave.leaves, hireDate || undefined)}
+          onClick={() => onLabelClick(specialLeave, hireDate || undefined)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
       )}

@@ -37,20 +37,20 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials: AuthRequest): Promise<AxiosResponse<AuthResponse>> =>
     api.post('/auth/login', credentials),
-  
+
   register: (userData: RegisterRequest): Promise<AxiosResponse<AuthResponse>> =>
     api.post('/auth/register', userData),
-  
+
   getMe: () => api.get('/auth/me'),
 
   getMeWithSensitive: (password: string, employee_id?: string) => api.post('/auth/profile/sensitive', { password, employee_id }),
 
   verify: () => api.post('/auth/verify'),
-  
+
   changePassword: (passwordData: ChangePasswordRequest): Promise<AxiosResponse<{ message: string }>> =>
     api.post('/auth/change-password', passwordData),
-  
-  updateProfile: (profileData: UpdateProfileRequest): Promise<AxiosResponse<{ data: {employee: User }, message: string}>> =>
+
+  updateProfile: (profileData: UpdateProfileRequest): Promise<AxiosResponse<{ data: { employee: User }, message: string }>> =>
     api.put('/auth/profile', profileData),
 };
 
@@ -95,7 +95,7 @@ export const conversationAPI = {
       };
     });
   },
-  
+
   createConversation: (title?: string): Promise<AxiosResponse<Conversation>> => {
     return aiServiceAPI.post('/conversations', { title }).then(response => {
       const conversationData = response.data;
@@ -111,16 +111,16 @@ export const conversationAPI = {
       };
     });
   },
-  
+
   getConversation: (id: number): Promise<AxiosResponse<Conversation>> =>
     api.get(`/conversations/${id}`), // Keep this in backend for now
-  
+
   updateConversation: (id: number, title: string): Promise<AxiosResponse<{ message: string }>> =>
     api.put(`/conversations/${id}`, { title }), // Keep this in backend for now
-  
+
   deleteConversation: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     api.delete(`/conversations/${id}`), // Keep this in backend for now
-  
+
   getMessages: (conversationId: number): Promise<AxiosResponse<Message[]>> => {
     return aiServiceAPI.get(`/conversations/${conversationId}/messages`).then(response => {
       const messagesData = response.data;
@@ -152,7 +152,7 @@ export const aiAPI = {
       top_k: 5,
       similarity_threshold: 0.1
     };
-    
+
     return aiServiceAPI.post('/chat', aiServiceRequest).then(response => {
       // Transform AI service response to match frontend interface
       const aiServiceResponse = response.data;
@@ -167,9 +167,9 @@ export const aiAPI = {
       };
     });
   },
-  
+
   checkHealth: () => aiServiceAPI.get('/health'),
-  
+
   checkAllModelsHealth: (): Promise<AxiosResponse<Record<AIModel, boolean>>> => {
     return aiServiceAPI.get('/health').then(response => {
       const healthData = response.data;
@@ -181,7 +181,7 @@ export const aiAPI = {
         [AIModel.gpt5mini]: healthData.services?.openai?.status === 'healthy',
         [AIModel.DEEPSEEK]: healthData.services?.deepseek?.status === 'healthy'
       };
-      
+
       return {
         ...response,
         data: modelHealth
@@ -200,13 +200,13 @@ export const documentAPI = {
       },
     });
   },
-  
+
   listDocuments: (conversationId: number): Promise<AxiosResponse<Document[]>> =>
     aiServiceAPI.get(`/documents/${conversationId}/list`),
-  
+
   deleteDocument: (documentId: number): Promise<AxiosResponse<{ message: string }>> =>
     aiServiceAPI.delete(`/documents/${documentId}`),
-  
+
   downloadDocument: (documentId: number): Promise<AxiosResponse<Blob>> =>
     aiServiceAPI.get(`/documents/${documentId}/download`, {
       responseType: 'blob',
@@ -214,28 +214,28 @@ export const documentAPI = {
 };
 
 export const attendanceAPI = {
-  scanNow: (): Promise<AxiosResponse<{error: boolean, message: string, data: { processed: number, updated: number, imported: number;}}>>=> api.post(`/attendance/scan/now`),
+  scanNow: (): Promise<AxiosResponse<{ error: boolean, message: string, data: { processed: number, updated: number, imported: number; } }>> => api.post(`/attendance/scan/now`),
 
   // Import attendance data for a specific date (admin/hr only)
   importByDate: (date: string): Promise<AxiosResponse<{ imported: number; errors: string[] }>> =>
     api.post(`/attendance/import/${date}`),
-  
+
   // Get attendance records for a specific date
   getByDate: (date: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/date/${date}`),
-  
+
   // Get attendance records for a date range
   getByDateRange: (startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/daterange?startDate=${startDate}&endDate=${endDate}`),
-  
+
   // Get my attendance records
   getMyAttendance: (startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/my?startDate=${startDate}&endDate=${endDate}`),
-  
+
   // Get attendance records for an employee (admin/hr only)
   getEmployeeAttendance: (empID: string, startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
     api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`),
-  
+
   // Get attendance summary (admin/hr only)
   getSummary: (startDate: string, endDate: string): Promise<AxiosResponse<{ summary: AttendanceSummary }>> =>
     api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`)
@@ -243,9 +243,9 @@ export const attendanceAPI = {
 
 export const employeeAPI = {
   // Get all employees (with pagination)
-  getAll: (page: number = 1, limit: number = 20, department?: string): Promise<AxiosResponse<{ error: boolean, message: string, data:{ employees: Employee[], total: number, pages: number }}>> =>
+  getAll: (page: number = 1, limit: number = 20, department?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employees: Employee[], total: number, pages: number } }>> =>
     api.get(`/employees?page=${page}&limit=${limit}${department ? `&department=${department}` : ''}`),
-  
+
   // Search employees
   search: (query: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employees: Employee[] } }>> =>
     api.get(`/employees/search?q=${encodeURIComponent(query)}`),
@@ -253,6 +253,13 @@ export const employeeAPI = {
   // Get single employee
   getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
     api.get(`/employees/${id}`),
+
+  // Get single employee by empID
+  getByEmpID: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
+    api.get(`/employees/empid/${id}`),
+
+  // Get employee name
+  getNameById: (id: string): Promise<string> => { return employeeAPI.getByEmpID(id).then(res => { return res.data.data.employee.name ?? "" }) },
 
   // Create employee (HR/Admin only)
   create: (employeeData: Partial<Employee>): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>

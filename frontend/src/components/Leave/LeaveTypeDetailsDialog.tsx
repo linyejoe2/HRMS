@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,15 +16,15 @@ import {
   Box,
   Chip
 } from '@mui/material';
-import { LeaveRequest } from '../../types';
 import { toTaipeiDate } from '@/utility';
-import { calculateNextSpecialLeave, calculateRemainingMinutes, calculateUsedMinutes, formatMinutesToHours } from '../../utils/leaveCalculations';
+import { calculateNextSpecialLeave, formatMinutesToHours } from '../../utils/leaveCalculations';
+import { LeaveData } from '../../services/leaveService';
+import { employeeAPI } from '@/services/api';
 
 interface LeaveTypeDetailsDialogProps {
   open: boolean;
   onClose: () => void;
-  leaveType: string;
-  leaves: LeaveRequest[];
+  leaveData: LeaveData;
   hireDate?: Date;
 }
 
@@ -59,15 +59,26 @@ const getLeaveRule = (leaveType: string): string => {
 const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   open,
   onClose,
-  leaveType,
-  leaves,
+  leaveData,
   hireDate
 }) => {
-  // Calculate total used time using utility functions
-  const totalUsedMinutes = calculateUsedMinutes(leaves);
-  const totalHours = formatMinutesToHours(totalUsedMinutes);
+  // Use pre-calculated values from leaveData
+  const { type: leaveType, totalHours, usedHours, remainingHours, leaves, adjustments } = leaveData;
 
-  const remainingHours = formatMinutesToHours(calculateRemainingMinutes(leaves, leaveType, hireDate))
+  // Calculate total adjustment hours for display
+  const totalAdjustmentHours = adjustments.reduce((total, adj) => {
+    return total + (adj.minutes / 60);
+  }, 0);
+
+  function generateCreatedByName(createdBy: string) {
+    const [name, setName] = useState<string>("");
+
+    useEffect(() => {
+      employeeAPI.getNameById(createdBy).then(setName);
+    }, [createdBy]);
+
+    return name || "Loading...";;
+  }
 
   const nextSpecialLeave = leaveType === '特別休假' && hireDate ? calculateNextSpecialLeave(hireDate) : null;
 
@@ -112,10 +123,18 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Typography variant="body2">
-              使用時數：<strong>{totalHours} 小時</strong>
+              總額度：<strong>{Math.round(totalHours)} 小時</strong>
             </Typography>
             <Typography variant="body2">
-              剩餘時數：<strong>{remainingHours} 小時</strong>
+              已使用：<strong>{Math.round(usedHours)} 小時</strong>
+            </Typography>
+            {adjustments.length > 0 && (
+              <Typography variant="body2">
+                手動調整：<strong>{Math.round(totalAdjustmentHours)} 小時</strong>
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ fontWeight: 'bold', color: remainingHours < 0 ? 'error.main' : 'primary.main' }}>
+              剩餘：<strong>{Math.round(remainingHours)} 小時</strong>
             </Typography>
           </Box>
 
@@ -133,6 +152,45 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
             </Box>
           )}
         </Box>
+
+        {/* Adjustments Section */}
+        {adjustments.length > 0 && (
+          <>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              調整記錄
+            </Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>調整時間</TableCell>
+                    <TableCell align="right">調整時數</TableCell>
+                    <TableCell>原因</TableCell>
+                    <TableCell>調整者</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {adjustments.map((adj) => (
+                    <TableRow key={adj._id}>
+                      <TableCell>
+                        {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
+                          color={adj.minutes > 0 ? 'error' : 'success'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{adj.reason}</TableCell>
+                      <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
 
         {/* Leave Records Table */}
         {leaves.length === 0 ? (

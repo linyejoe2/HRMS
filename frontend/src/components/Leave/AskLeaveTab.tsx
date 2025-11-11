@@ -26,6 +26,7 @@ import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import RemainingLeaveLabels from './RemainingLeaveLabels';
 import LeaveTypeDetailsDialog from './LeaveTypeDetailsDialog';
+import { LeaveData } from '../../services/leaveService';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -36,8 +37,7 @@ const AskLeaveTab: React.FC = () => {
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [leaveDetailsDialogOpen, setLeaveDetailsDialogOpen] = useState(false);
-  const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
-  const [selectedLeaveTypeLeaves, setSelectedLeaveTypeLeaves] = useState<LeaveRequest[]>([]);
+  const [selectedLeaveData, setSelectedLeaveData] = useState<LeaveData | null>(null);
   const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
 
   const fetchLeaveRequests = async () => {
@@ -91,9 +91,8 @@ const AskLeaveTab: React.FC = () => {
     }
   };
 
-  const handleLabelClick = (leaveType: string, leaves: LeaveRequest[], hireDate?: Date) => {
-    setSelectedLeaveType(leaveType);
-    setSelectedLeaveTypeLeaves(leaves);
+  const handleLabelClick = (leaveData: LeaveData, hireDate?: Date) => {
+    setSelectedLeaveData(leaveData);
     setSelectedLeaveHireDate(hireDate);
     setLeaveDetailsDialogOpen(true);
   };
@@ -367,13 +366,14 @@ const AskLeaveTab: React.FC = () => {
       />
 
       {/* Leave Type Details Dialog */}
-      <LeaveTypeDetailsDialog
-        open={leaveDetailsDialogOpen}
-        onClose={() => setLeaveDetailsDialogOpen(false)}
-        leaveType={selectedLeaveType}
-        leaves={selectedLeaveTypeLeaves}
-        hireDate={selectedLeaveHireDate}
-      />
+      {selectedLeaveData && (
+        <LeaveTypeDetailsDialog
+          open={leaveDetailsDialogOpen}
+          onClose={() => setLeaveDetailsDialogOpen(false)}
+          leaveData={selectedLeaveData}
+          hireDate={selectedLeaveHireDate}
+        />
+      )}
     </Box>
   );
 };

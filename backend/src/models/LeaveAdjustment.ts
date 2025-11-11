@@ -8,6 +8,7 @@ export interface ILeaveAdjustment extends Document {
   minutes: number; // Can be negative to increase remaining leave, or positive to decrease
   reason: string;
   createdBy: string; // empID of the user who created this adjustment
+  createdByDesc: string;
   createdAt: Date;
   updatedAt: Date;
 }

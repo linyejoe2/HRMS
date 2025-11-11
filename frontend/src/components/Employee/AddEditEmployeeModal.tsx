@@ -23,21 +23,12 @@ import {
   Visibility as VisibilityIcon,
   Lock as LockIcon
 } from '@mui/icons-material';
-import { Employee, UserLevel, LeaveRequest } from '../../types';
-import { employeeAPI, authAPI, queryLeaveRequests } from '../../services/api';
+import { Employee, UserLevel } from '../../types';
+import { employeeAPI, authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import {
-  calculateRemainingPersonalLeaveMinutes,
-  calculateRemainingSickLeaveMinutes,
-  calculateRemainingSpecialLeaveMinutes,
-  calculateSpecialLeaveEntitlementDays,
-  calculateUsedMinutes,
-  formatMinutesToHours,
-  getLeaveColorByHours,
-  minutesToHours,
-  RemainingLeaveData
-} from '../../utils/leaveCalculations';
+import { getLeaveColorByHours } from '../../utils/leaveCalculations';
+import { fetchUserLeaveData, LeaveData } from '../../services/leaveService';
 import LeaveDetailsDialog from './EditEmployeeLeaveDialog';
 
 interface AddEditEmployeeModalProps {
@@ -77,9 +68,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
   // Leave information state
   const [leaveInfo, setLeaveInfo] = useState<{
-    personalLeave: RemainingLeaveData | null;
-    sickLeave: RemainingLeaveData | null;
-    specialLeave: RemainingLeaveData | null;
+    personalLeave: LeaveData | null;
+    sickLeave: LeaveData | null;
+    specialLeave: LeaveData | null;
     loading: boolean;
   }>({
     personalLeave: null,
@@ -91,7 +82,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   // Leave details dialog state
   const [leaveDetailsDialog, setLeaveDetailsDialog] = useState<{
     open: boolean;
-    leaveData: RemainingLeaveData;
+    leaveData: LeaveData;
   }>({
     open: false,
     leaveData: {
@@ -100,7 +91,8 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       totalHours: 0,
       usedHours: 0,
       remainingHours: 0,
-      leaves: []
+      leaves: [],
+      adjustments: []
     }
   });
 
@@ -187,89 +179,35 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
   // Fetch remaining leave information
   const fetchLeaveInfo = async (empId: string, hireDate?: string) => {
+    if (!hireDate) {
+      setLeaveInfo({
+        personalLeave: null,
+        sickLeave: null,
+        specialLeave: null,
+        loading: false
+      });
+      return;
+    }
+
     setLeaveInfo(prev => ({ ...prev, loading: true }));
 
     try {
-      const now = new Date();
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(now.getFullYear() - 1);
-
-      // Fetch all leave types
-      const [personalResponse, sickResponse, specialResponse] = await Promise.all([
-        queryLeaveRequests({
-          timeStart: oneYearAgo.toISOString(),
-          timeEnd: now.toISOString(),
-          leaveType: '事假',
-          status: 'approved'
-        }),
-        queryLeaveRequests({
-          timeStart: oneYearAgo.toISOString(),
-          timeEnd: now.toISOString(),
-          leaveType: '普通傷病假',
-          status: 'approved'
-        }),
-        queryLeaveRequests({
-          timeStart: oneYearAgo.toISOString(),
-          timeEnd: now.toISOString(),
-          leaveType: '特別休假',
-          status: 'approved'
-        })
-      ]);
-
-      // Filter leaves by employee ID
-      const personalLeaves = personalResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
-      const sickLeaves = sickResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
-      const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empId);
-
-      const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
-      const personalUsedMinutes = calculateUsedMinutes(personalLeaves);
-      const personalUsedHours = minutesToHours(personalUsedMinutes);
-      const personalTotalHours = 14 * 8; // 14 days * 8 hours = 112 hours
-
-      // Calculate sick leave using utility function
-      const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
-      const sickUsedMinutes = calculateUsedMinutes(sickLeaves);
-      const sickUsedHours = minutesToHours(sickUsedMinutes);
-      const sickTotalHours = 30 * 8; // 30 days * 8 hours = 240 hours
-
-
-      // Calculate special leave using utility function
-      const hireDateObj = hireDate ? new Date(hireDate) : undefined;
-      const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
-      const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
-      const specialUsedHours = minutesToHours(specialUsedMinutes);
-      const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
-      const specialTotalHours = specialTotalDays * 8;
-
+      const leaveData = await fetchUserLeaveData(empId, hireDate);
       setLeaveInfo({
-        personalLeave: {
-          type: '事假',
-          displayName: '事假',
-          totalHours: personalTotalHours,
-          usedHours: personalUsedHours,
-          remainingHours: personalRemainingHours,
-          leaves: personalLeaves
-        },
-        sickLeave: {
-          type: '普通傷病假',
-          displayName: '病假',
-          totalHours: sickTotalHours,
-          usedHours: sickUsedHours,
-          remainingHours: sickRemainingHours,
-          leaves: sickLeaves
-        },
-        specialLeave: {
-          type: '特別休假',
-          displayName: '特休',
-          totalHours: specialTotalHours,
-          usedHours: specialUsedHours,
-          remainingHours: specialRemainingHours,
-          leaves: specialLeaves
-        },
+        personalLeave: leaveData.personalLeave,
+        sickLeave: leaveData.sickLeave,
+        specialLeave: leaveData.specialLeave,
         loading: false
       });
     } catch (error) {
       console.error('Error fetching leave info:', error);
+      toast.error('載入假別資料失敗');
+      setLeaveInfo({
+        personalLeave: null,
+        sickLeave: null,
+        specialLeave: null,
+        loading: false
+      });
     }
   };
 
@@ -392,7 +330,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   };
 
   // Handle leave chip click
-  const handleLeaveChipClick = (leaveData: RemainingLeaveData | null) => {
+  const handleLeaveChipClick = (leaveData: LeaveData | null) => {
     if (leaveData == null) {
       toast.error("找不到休假資料!")
       return
@@ -413,11 +351,12 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         totalHours: 0,
         usedHours: 0,
         remainingHours: 0,
-        leaves: []
+        leaves: [],
+        adjustments: []
       }
     });
     // Refresh leave info after closing the dialog
-    if (employee?.empID) {
+    if (employee?.empID && employee?.hireDate) {
       fetchLeaveInfo(employee.empID, employee.hireDate);
     }
   };
@@ -778,6 +717,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           empID={employee.empID}
           employeeName={employee.name}
           leaveData={leaveDetailsDialog.leaveData}
+          hireDate={employee.hireDate}
         />
       )}
     </Dialog>

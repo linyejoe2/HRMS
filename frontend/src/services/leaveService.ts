@@ -45,19 +45,26 @@ export async function fetchUserLeaveData(empID: string, hireDate: string): Promi
     })
   ]);
 
+    // Fetch all adjustments
+  const [personalAdjustment, sickAdjustment, specialAdjustment] = await Promise.all([
+    leaveAdjustmentAPI.getByEmployee(empID, '事假'),
+    leaveAdjustmentAPI.getByEmployee(empID, '普通傷病假'),
+    leaveAdjustmentAPI.getByEmployee(empID, '特別休假')
+  ]);
+
   // Filter leaves by employee ID
   const personalLeaves = personalResponse.data.data.filter((l: LeaveRequest) => l.empID === empID);
   const sickLeaves = sickResponse.data.data.filter((l: LeaveRequest) => l.empID === empID);
   const specialLeaves = specialResponse.data.data.filter((l: LeaveRequest) => l.empID === empID);
 
   // Calculate personal leave using utility function
-  const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves));
+  const personalRemainingHours = formatMinutesToHours(calculateRemainingPersonalLeaveMinutes(personalLeaves, personalAdjustment.data.data));
   const personalUsedMinutes = calculateUsedMinutes(personalLeaves);
   const personalUsedHours = minutesToHours(personalUsedMinutes);
   const personalTotalHours = 14 * 8; // 14 days * 8 hours = 112 hours
 
   // Calculate sick leave using utility function
-  const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves));
+  const sickRemainingHours = formatMinutesToHours(calculateRemainingSickLeaveMinutes(sickLeaves, sickAdjustment.data.data));
   const sickUsedMinutes = calculateUsedMinutes(sickLeaves);
   const sickUsedHours = minutesToHours(sickUsedMinutes);
   const sickTotalHours = 30 * 8; // 30 days * 8 hours = 240 hours
@@ -65,19 +72,11 @@ export async function fetchUserLeaveData(empID: string, hireDate: string): Promi
 
   // Calculate special leave using utility function
   const hireDateObj = hireDate ? new Date(hireDate) : undefined;
-  const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj));
+  const specialRemainingHours = formatMinutesToHours(calculateRemainingSpecialLeaveMinutes(specialLeaves, hireDateObj, specialAdjustment.data.data));
   const specialUsedMinutes = calculateUsedMinutes(specialLeaves);
   const specialUsedHours = minutesToHours(specialUsedMinutes);
   const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
   const specialTotalHours = specialTotalDays * 8;
-
-
-    // Fetch all adjustments
-  const [personalAdjustment, sickAdjustment, specialAdjustment] = await Promise.all([
-    leaveAdjustmentAPI.getByEmployee(empID, '事假'),
-    leaveAdjustmentAPI.getByEmployee(empID, '普通傷病假'),
-    leaveAdjustmentAPI.getByEmployee(empID, '特別休假')
-  ]);
 
   return ({
     personalLeave: {

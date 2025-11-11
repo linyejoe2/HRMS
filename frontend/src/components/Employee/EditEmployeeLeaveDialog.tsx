@@ -25,18 +25,20 @@ import {
   Add as AddIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { LeaveRequest, LeaveAdjustment, UserLevel } from '../../types';
-import { queryLeaveRequests, leaveAdjustmentAPI } from '../../services/api';
+import { UserLevel } from '../../types';
+import { employeeAPI, leaveAdjustmentAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { formatMinutesToHours, getLeaveColorByHours, RemainingLeaveData } from '../../utils/leaveCalculations';
+import { formatMinutesToHours, getLeaveColorByHours } from '../../utils/leaveCalculations';
+import { LeaveData, fetchUserLeaveData } from '../../services/leaveService';
 
 interface LeaveDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   empID: string;
   employeeName: string;
-  leaveData: RemainingLeaveData;
+  leaveData: LeaveData;
+  hireDate?: string;
 }
 
 const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
@@ -44,11 +46,11 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   onClose,
   empID,
   employeeName,
-  leaveData
+  leaveData: initialLeaveData,
+  hireDate
 }) => {
   const { user } = useAuth();
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
-  const [adjustments, setAdjustments] = useState<LeaveAdjustment[]>([]);
+  const [leaveData, setLeaveData] = useState<LeaveData>(initialLeaveData);
   const [loading, setLoading] = useState(false);
   const [showAddAdjustment, setShowAddAdjustment] = useState(false);
   const [newAdjustment, setNewAdjustment] = useState({
@@ -59,38 +61,38 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   // Check if user can manage adjustments
   const canManageAdjustments = user?.role === UserLevel.HR || user?.role === UserLevel.ADMIN;
 
-  // Fetch leave requests and adjustments
+  // Update local state when prop changes
   useEffect(() => {
-    if (open && empID) {
-      fetchLeaveData();
-    }
-  }, [open, empID, leaveData.type]);
+    setLeaveData(initialLeaveData);
+  }, [initialLeaveData]);
 
-  const fetchLeaveData = async () => {
+  function generateCreatedByName(createdBy: string) {
+    const [name, setName] = useState<string>("");
+
+    useEffect(() => {
+      employeeAPI.getNameById(createdBy).then(setName);
+    }, [createdBy]);
+
+    return name || "Loading...";
+  }
+
+  const refreshLeaveData = async (hireDate?: string) => {
+    if (!hireDate) {
+      toast.error('缺少入職日期');
+      return;
+    }
+
     setLoading(true);
     try {
-      const now = new Date();
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(now.getFullYear() - 1);
-
-      // Fetch leave requests
-      const leaveResponse = await queryLeaveRequests({
-        timeStart: oneYearAgo.toISOString(),
-        timeEnd: now.toISOString(),
-        leaveType: leaveData.type,
-        status: 'approved'
-      });
-
-      // Filter by employee
-      const employeeLeaves = leaveResponse.data.data.filter((l: LeaveRequest) => l.empID === empID);
-      setLeaves(employeeLeaves);
-
-      // Fetch adjustments
-      const adjustmentResponse = await leaveAdjustmentAPI.getByEmployee(empID, leaveData.type);
-      setAdjustments(adjustmentResponse.data.data);
+      const userData = await fetchUserLeaveData(empID, hireDate);
+      // Get the specific leave type data
+      const typeKey = leaveData.type === '事假' ? 'personalLeave'
+        : leaveData.type === '普通傷病假' ? 'sickLeave'
+          : 'specialLeave';
+      setLeaveData(userData[typeKey]);
     } catch (error) {
-      console.error('Error fetching leave data:', error);
-      toast.error('載入假別資料失敗');
+      console.error('Error refreshing leave data:', error);
+      toast.error('刷新假別資料失敗');
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       toast.success('假別調整已新增');
       setShowAddAdjustment(false);
       setNewAdjustment({ minutes: 0, reason: '' });
-      fetchLeaveData();
+      await refreshLeaveData(hireDate);
     } catch (error: any) {
       toast.error(error.response?.data?.error || '新增調整失敗');
     }
@@ -132,40 +134,23 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     try {
       await leaveAdjustmentAPI.delete(id);
       toast.success('調整記錄已刪除');
-      fetchLeaveData();
+      await refreshLeaveData(hireDate);
     } catch (error: any) {
       toast.error(error.response?.data?.error || '刪除調整失敗');
     }
   };
 
-  // Calculate totals
-  const totalUsedMinutes = leaves.reduce((total, leave) => {
-    const hours = parseInt(leave.hour) || 0;
-    const minutes = parseInt(leave.minutes) || 0;
-    return total + (hours * 60) + minutes;
+  // Use data from leaveData state (already calculated in the service)
+  const totalUsedHours = leaveData.usedHours;
+  const totalHours = leaveData.totalHours;
+  const remainingHours = leaveData.remainingHours;
+  const leaves = leaveData.leaves;
+  const adjustments = leaveData.adjustments;
+
+  // Calculate total adjustment hours for display
+  const totalAdjustmentHours = adjustments.reduce((total, adj) => {
+    return total + (adj.minutes / 60);
   }, 0);
-
-  const totalAdjustmentMinutes = adjustments.reduce((total, adj) => total + adj.minutes, 0);
-
-  // Calculate total entitled leave
-  const getTotalEntitledMinutes = () => {
-    switch (leaveData.type) {
-      case '事假':
-        return 14 * 8 * 60; // 14 days
-      case '普通傷病假':
-        return 30 * 8 * 60; // 30 days
-      case '特別休假':
-        // This would need the hire date calculation
-        // For now, return 0 or calculate based on hireDate
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
-  const totalEntitledMinutes = getTotalEntitledMinutes();
-  const remainingMinutes = totalEntitledMinutes - totalUsedMinutes - totalAdjustmentMinutes;
-  const remainingHours = formatMinutesToHours(remainingMinutes);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -249,7 +234,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         <strong>小計:</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>{formatMinutesToHours(totalUsedMinutes)} 小時</strong>
+                        <strong>{Math.round(totalUsedHours)} 小時</strong>
                       </TableCell>
                       <TableCell />
                     </TableRow>
@@ -261,7 +246,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
             {/* Adjustments Table */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                手動調整記錄
+                調整記錄
               </Typography>
               {canManageAdjustments && !showAddAdjustment && (
                 <Button
@@ -346,7 +331,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                           />
                         </TableCell>
                         <TableCell>{adj.reason}</TableCell>
-                        <TableCell>{adj.createdBy}</TableCell>
+                        <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
                         {canManageAdjustments && (
                           <TableCell align="center">
                             <Tooltip title="刪除">
@@ -369,7 +354,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         <strong>小計:</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>{formatMinutesToHours(totalAdjustmentMinutes)} 小時</strong>
+                        <strong>{Math.round(totalAdjustmentHours)} 小時</strong>
                       </TableCell>
                       <TableCell colSpan={canManageAdjustments ? 3 : 2} />
                     </TableRow>
@@ -386,27 +371,27 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body2">總額度:</Typography>
                 <Typography variant="body2">
-                  {formatMinutesToHours(totalEntitledMinutes)} 小時
+                  {Math.round(totalHours)} 小時
                 </Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body2">已使用:</Typography>
                 <Typography variant="body2">
-                  {formatMinutesToHours(totalUsedMinutes)} 小時
+                  {Math.round(totalUsedHours)} 小時
                 </Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body2">手動調整:</Typography>
                 <Typography variant="body2">
-                  {formatMinutesToHours(totalAdjustmentMinutes)} 小時
+                  {Math.round(totalAdjustmentHours)} 小時
                 </Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="body1" fontWeight="bold">
                   剩餘:
                 </Typography>
-                <Typography variant="body1" fontWeight="bold" color={remainingMinutes < 0 ? 'error.main' : 'primary.main'}>
-                  {remainingHours} 小時
+                <Typography variant="body1" fontWeight="bold" color={remainingHours < 0 ? 'error.main' : 'primary.main'}>
+                  {Math.round(remainingHours)} 小時
                 </Typography>
               </Box>
             </Box>
