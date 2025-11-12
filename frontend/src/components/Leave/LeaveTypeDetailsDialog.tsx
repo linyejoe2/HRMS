@@ -20,6 +20,7 @@ import { toTaipeiDate } from '@/utility';
 import { calculateNextSpecialLeave, formatMinutesToHours } from '../../utils/leaveCalculations';
 import { LeaveData } from '../../services/leaveService';
 import { employeeAPI } from '@/services/api';
+import { toast } from 'react-toastify';
 
 interface LeaveTypeDetailsDialogProps {
   open: boolean;
@@ -62,6 +63,9 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   leaveData,
   hireDate
 }) => {
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
   // Use pre-calculated values from leaveData
   const { type: leaveType, totalHours, usedHours, remainingHours, leaves, adjustments } = leaveData;
 
@@ -70,15 +74,27 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
     return total + (adj.minutes / 60);
   }, 0);
 
-  function generateCreatedByName(createdBy: string) {
-    const [name, setName] = useState<string>("");
+  // ✅ 頁面載入時，一次抓所有 employee
+  useEffect(() => {
+    async function fetchEmployees() {
+      try {
+        const allEmployees = (await employeeAPI.getAll()).data.data.employees;
+        // 假設回傳格式是 [{ id: 'E001', name: '王小明' }, ...]
+        const map: Record<string, string> = {};
+        allEmployees.forEach((emp) => {
+          map[emp.empID] = emp.name;
+        });
+        setEmployeeMap(map);
+      } catch (error) {
+        console.error("取得員工資料失敗:", error);
+        toast.error("無法載入員工資料");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    useEffect(() => {
-      employeeAPI.getNameById(createdBy).then(setName);
-    }, [createdBy]);
-
-    return name || "Loading...";;
-  }
+    fetchEmployees();
+  }, []);
 
   const nextSpecialLeave = leaveType === '特別休假' && hireDate ? calculateNextSpecialLeave(hireDate) : null;
 
@@ -156,7 +172,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
               sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}
             >
               <Typography variant="body1" fontWeight="bold">
-                剩餘:
+                剩餘可用:
               </Typography>
               <Typography
                 variant="body1"
@@ -297,7 +313,9 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                         />
                       </TableCell>
                       <TableCell>{adj.reason}</TableCell>
-                      <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
+                      <TableCell>{employeeMap[adj.createdBy] || "未知使用者"}</TableCell>
+                      {/* <TableCell>{adj.createdBy}</TableCell> */}
+                      {/* <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell> */}
                     </TableRow>
                   ))}
                   {leaves.length > 0 && (

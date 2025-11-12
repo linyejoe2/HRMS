@@ -53,6 +53,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   const [leaveData, setLeaveData] = useState<LeaveData>(initialLeaveData);
   const [loading, setLoading] = useState(false);
   const [showAddAdjustment, setShowAddAdjustment] = useState(false);
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
   const [newAdjustment, setNewAdjustment] = useState({
     minutes: 0,
     reason: ''
@@ -66,15 +67,27 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     setLeaveData(initialLeaveData);
   }, [initialLeaveData]);
 
-  function generateCreatedByName(createdBy: string) {
-    const [name, setName] = useState<string>("");
+  // ✅ 頁面載入時，一次抓所有 employee
+  useEffect(() => {
+    async function fetchEmployees() {
+      try {
+        const allEmployees = (await employeeAPI.getAll()).data.data.employees;
+        // 假設回傳格式是 [{ id: 'E001', name: '王小明' }, ...]
+        const map: Record<string, string> = {};
+        allEmployees.forEach((emp) => {
+          map[emp.empID] = emp.name;
+        });
+        setEmployeeMap(map);
+      } catch (error) {
+        console.error("取得員工資料失敗:", error);
+        toast.error("無法載入員工資料");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    useEffect(() => {
-      employeeAPI.getNameById(createdBy).then(setName);
-    }, [createdBy]);
-
-    return name || "Loading...";
-  }
+    fetchEmployees();
+  }, []);
 
   const refreshLeaveData = async (hireDate?: string) => {
     if (!hireDate) {
@@ -152,6 +165,18 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     return total + (adj.minutes / 60);
   }, 0);
 
+  const buttonStyle = {
+    borderRadius: 2,
+    textTransform: 'none',
+    px: 1.5,
+    minWidth: 80,
+    '&:hover': {
+      backgroundColor: 'action.hover',
+      borderColor: 'primary.main',
+    },
+  };
+
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -161,7 +186,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
           </Typography>
           <Box>
             <Chip
-              label={`剩餘: ${remainingHours} 小時`}
+              label={`剩餘可用: ${remainingHours} 小時`}
               color={getLeaveColorByHours(remainingHours)}
               sx={{ fontWeight: 'bold', mr: 1 }}
             />
@@ -262,14 +287,30 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
 
             {showAddAdjustment && (
               <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ mb: 1 }}>
-                  新增假別調整
+                <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
+                  新增休假調整
                 </Typography>
-                <Box display="flex" gap={2} alignItems="flex-start">
+                <Box display="flex" gap={1.5} alignItems="center" mb={2} flexWrap="wrap" justifyContent="center">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={buttonStyle}
+                    onClick={() => setNewAdjustment({ ...newAdjustment, minutes: newAdjustment.minutes - 480 })}
+                  >
+                    - 一天
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={buttonStyle}
+                    onClick={() => setNewAdjustment({ ...newAdjustment, minutes: newAdjustment.minutes - 60 })}
+                  >
+                    - 一小時
+                  </Button>
+
                   <TextField
                     label="調整時數"
                     type="number"
-                    size="small"
                     value={newAdjustment.minutes / 60}
                     onChange={(e) =>
                       setNewAdjustment({
@@ -277,21 +318,67 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         minutes: parseFloat(e.target.value) * 60
                       })
                     }
-                    sx={{ width: 150 }}
+                    sx={{ width: 150, borderRadius: '8px', flexGrow: 1 }}
+                    inputProps={{ sx: { padding: '8px' } }}
+                    InputLabelProps={{ sx: { borderRadius: '9px' } }}
                   />
-                  <TextField
-                    label="調整原因"
+
+
+                  <Box
+                    sx={{
+                      display: 'none',
+                      px: 3,
+                      py: 1.2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      minWidth: 120,
+                      flexGrow: 1,
+                      textAlign: 'center',
+                      backgroundColor: 'grey.50',
+                      boxShadow: (theme) => `inset 0 1px 2px ${theme.palette.grey[200]}`,
+                    }}
+                  >
+                    <Typography variant="body1" fontWeight="medium" color="text.primary">
+                      {(newAdjustment.minutes / 60).toFixed(0)} 小時
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    variant="outlined"
                     size="small"
-                    fullWidth
-                    value={newAdjustment.reason}
-                    onChange={(e) =>
-                      setNewAdjustment({ ...newAdjustment, reason: e.target.value })
-                    }
-                  />
+                    sx={buttonStyle}
+                    onClick={() => setNewAdjustment({ ...newAdjustment, minutes: newAdjustment.minutes + 60 })}
+                  >
+                    + 一小時
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={buttonStyle}
+                    onClick={() => setNewAdjustment({ ...newAdjustment, minutes: newAdjustment.minutes + 480 })}
+                  >
+                    + 一天
+                  </Button>
+                </Box>
+
+                <TextField
+                  label="調整原因"
+                  size="small"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  value={newAdjustment.reason}
+                  onChange={(e) =>
+                    setNewAdjustment({ ...newAdjustment, reason: e.target.value })
+                  }
+                  sx={{ mb: 3 }}
+                />
+                <Box display="flex" justifyContent="flex-end" gap={1}>
+                  <Button onClick={() => setShowAddAdjustment(false)}>取消</Button>
                   <Button variant="contained" onClick={handleAddAdjustment}>
                     儲存
                   </Button>
-                  <Button onClick={() => setShowAddAdjustment(false)}>取消</Button>
                 </Box>
               </Paper>
             )}
@@ -317,35 +404,37 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                       </TableCell>
                     </TableRow>
                   ) : (
-                    adjustments.map((adj) => (
-                      <TableRow key={adj._id}>
-                        <TableCell>
-                          {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
-                            color={adj.minutes > 0 ? 'success' : 'error'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{adj.reason}</TableCell>
-                        <TableCell>{generateCreatedByName(adj.createdBy)}</TableCell>
-                        {canManageAdjustments && (
-                          <TableCell align="center">
-                            <Tooltip title="刪除">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDeleteAdjustment(adj._id!)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                    adjustments.map((adj) => {
+                      return (
+                        <TableRow key={adj._id}>
+                          <TableCell>
+                            {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
                           </TableCell>
-                        )}
-                      </TableRow>
-                    ))
+                          <TableCell>
+                            <Chip
+                              label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
+                              color={adj.minutes > 0 ? 'success' : 'error'}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{adj.reason}</TableCell>
+                          <TableCell>{employeeMap[adj.createdBy] || "未知使用者"}</TableCell>
+                          {canManageAdjustments && (
+                            <TableCell align="center">
+                              <Tooltip title="刪除">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDeleteAdjustment(adj._id!)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      )
+                    })
                   )}
                   {adjustments.length > 0 && (
                     <TableRow>
@@ -387,7 +476,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
               </Box>
               <Box display="flex" justifyContent="space-between" sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="body1" fontWeight="bold">
-                  剩餘:
+                  剩餘可用:
                 </Typography>
                 <Typography variant="body1" fontWeight="bold" color={remainingHours < 0 ? 'error.main' : 'primary.main'}>
                   {Math.round(remainingHours)} 小時
