@@ -120,45 +120,87 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
           統計摘要
         </Typography>
-        <Box sx={{ mb: 3, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
-          <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography variant="body2">總額度:</Typography>
-            <Typography variant="body2">
-              {Math.round(totalHours)} 小時
-            </Typography>
-          </Box>
-          <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography variant="body2">已使用:</Typography>
-            <Typography variant="body2">
-              {Math.round(usedHours)} 小時
-            </Typography>
-          </Box>
-          <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography variant="body2">手動調整:</Typography>
-            <Typography variant="body2">
-              {Math.round(totalAdjustmentHours)} 小時
-            </Typography>
-          </Box>
-          <Box display="flex" justifyContent="space-between" sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
-            <Typography variant="body1" fontWeight="bold">
-              剩餘:
-            </Typography>
-            <Typography variant="body1" fontWeight="bold" color={remainingHours < 0 ? 'error.main' : 'primary.main'}>
-              {Math.round(remainingHours)} 小時
-            </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' }, // 手機直排、桌機橫排
+            gap: 2, // Box 之間的間距
+            mb: 3
+          }}
+        >
+          {/* 第一個 Box */}
+          <Box
+            sx={{
+              flex: 1, // 讓兩個 Box 平均分配寬度
+              mb: { xs: 2, md: 0 },
+              p: 2,
+              backgroundColor: 'action.hover',
+              borderRadius: 1,
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="body2">總額度:</Typography>
+              <Typography variant="body2">{Math.round(totalHours)} 小時</Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="body2">已使用:</Typography>
+              <Typography variant="body2">{Math.round(usedHours)} 小時</Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="body2">手動調整:</Typography>
+              <Typography variant="body2">{Math.round(totalAdjustmentHours)} 小時</Typography>
+            </Box>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}
+            >
+              <Typography variant="body1" fontWeight="bold">
+                剩餘:
+              </Typography>
+              <Typography
+                variant="body1"
+                fontWeight="bold"
+                color={remainingHours < 0 ? 'error.main' : 'primary.main'}
+              >
+                {Math.round(remainingHours)} 小時
+              </Typography>
+            </Box>
           </Box>
 
+          {/* 第二個 Box */}
           {nextSpecialLeave && (
-            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="body2" fontWeight="bold">
-                {leaveType == "特別休假" ? "  到職日: " + toTaipeiDate(hireDate) : ""}
-              </Typography>
-              <Typography variant="body2" color="primary" fontWeight="bold">
-                下次特休重置日期：{nextSpecialLeave.date}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                屆時將可使用 <span style={{ fontWeight: "bold" }}>{nextSpecialLeave.days}</span> 天特休
-              </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                backgroundColor: 'action.hover',
+                borderRadius: 1,
+              }}
+            >
+              <Box>
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body2">到職日:</Typography>
+                  <Typography variant="body2">{toTaipeiDate(hireDate)}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body2" >下次特休重置日期：</Typography>
+                  <Typography variant="body2" >{nextSpecialLeave.date}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={1} sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography variant="body1" fontWeight="bold">屆時特休天數</Typography>
+                  <Typography variant="body1" fontWeight="bold" color="primary"><span style={{ fontWeight: 'bold' }}>{nextSpecialLeave.days}</span> 天</Typography>
+                </Box>
+                {/* <Typography variant="body2" fontWeight="bold">
+                  {leaveType == '特別休假' ? '到職日: ' + toTaipeiDate(hireDate) : ''}
+                </Typography>
+                <Typography variant="body2" color="primary" fontWeight="bold">
+                  下次特休重置日期：{nextSpecialLeave.date}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  屆時將可使用 <span style={{ fontWeight: 'bold' }}>{nextSpecialLeave.days}</span> 天特休
+                </Typography> */}
+              </Box>
             </Box>
           )}
         </Box>
@@ -250,7 +292,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                       <TableCell>
                         <Chip
                           label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
-                          color={adj.minutes > 0 ? 'error' : 'success'}
+                          color={adj.minutes > 0 ? 'success' : 'error'}
                           size="small"
                         />
                       </TableCell>
@@ -264,7 +306,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                         <strong>小計:</strong>
                       </TableCell>
                       <TableCell >
-                        <strong>{Math.round(usedHours)} 小時</strong>
+                        <strong>{Math.round(totalAdjustmentHours)} 小時</strong>
                       </TableCell>
                       <TableCell />
                     </TableRow>

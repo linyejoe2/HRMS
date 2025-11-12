@@ -230,7 +230,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                   )}
                   {leaves.length > 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} align="right">
+                      <TableCell colSpan={3} align="left">
                         <strong>小計:</strong>
                       </TableCell>
                       <TableCell align="right">
@@ -277,7 +277,6 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         minutes: parseFloat(e.target.value) * 60
                       })
                     }
-                    helperText="正數=扣除假別，負數=增加假別"
                     sx={{ width: 150 }}
                   />
                   <TextField
@@ -326,7 +325,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         <TableCell>
                           <Chip
                             label={`${adj.minutes > 0 ? '+' : ''}${formatMinutesToHours(adj.minutes)} 小時`}
-                            color={adj.minutes > 0 ? 'error' : 'success'}
+                            color={adj.minutes > 0 ? 'success' : 'error'}
                             size="small"
                           />
                         </TableCell>
