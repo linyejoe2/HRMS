@@ -9,7 +9,9 @@ import {
   MenuItem,
   Grid,
   Typography,
-  CircularProgress
+  CircularProgress,
+  Alert,
+  AlertTitle
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -22,6 +24,9 @@ import { createLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
 import { useFileUpload } from '../../hooks/useFileUpload';
+import { useAuth } from '../../contexts/AuthContext';
+import { fetchUserLeaveData } from '../../services/leaveService';
+import { calcWorkingDurent } from '@/utility';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -49,6 +54,10 @@ const leaveTypes = [
 const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
+  const { user } = useAuth();
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState<LeaveRequestForm | null>(null);
+  const [warningMessage, setWarningMessage] = useState('');
 
   const {
     control,
@@ -67,7 +76,73 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
 
   const leaveStart = watch('leaveStart');
 
+  // Check leave balance
+  const checkLeaveBalance = async (data: LeaveRequestForm): Promise<boolean> => {
+    if (!user?.empID || !user?.hireDate) {
+      return true; // Skip validation if user info not available
+    }
+
+    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假'];
+    if (!leaveTypesToCheck.includes(data.leaveType)) {
+      return true; // Skip validation for other leave types
+    }
+
+    try {
+      const leaveData = await fetchUserLeaveData(user.empID, user.hireDate);
+      const workingDurentObj = calcWorkingDurent(data.leaveStart, data.leaveEnd);
+      const requestedHours = workingDurentObj.hourFormat
+
+      let remainingHours = 0;
+      let leaveTypeName = '';
+
+      switch (data.leaveType) {
+        case '事假':
+          remainingHours = leaveData.personalLeave.remainingHours;
+          leaveTypeName = '事假';
+          break;
+        case '普通傷病假':
+          remainingHours = leaveData.sickLeave.remainingHours;
+          leaveTypeName = '病假';
+          break;
+        case '特別休假':
+          remainingHours = leaveData.specialLeave.remainingHours;
+          leaveTypeName = '特休';
+          break;
+      }
+
+      if (requestedHours > remainingHours) {
+        setWarningMessage(
+          `您的${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，` +
+          `但此次申請需要 ${requestedHours.toFixed(1)} 小時。\n\n` +
+          `超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。\n\n` +
+          `您仍然可以繼續送出申請，但可能需要額外的審核。`
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking leave balance:', error);
+      return true; // Continue if check fails
+    }
+  };
+
   const onSubmit = async (data: LeaveRequestForm) => {
+    // Check leave balance first
+    const hasSufficientBalance = await checkLeaveBalance(data);
+
+    if (!hasSufficientBalance) {
+      // Show warning dialog but allow submission
+      setPendingSubmitData(data);
+      setWarningDialogOpen(true);
+      return;
+    }
+
+    // Sufficient balance, proceed with submission
+    await performSubmit(data);
+  };
+
+  const performSubmit = async (data: LeaveRequestForm) => {
     try {
       setLoading(true);
       const submitData: LeaveRequestForm = {
@@ -78,6 +153,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       toast.success('請假申請已成功送出');
       reset();
       clearFiles();
+      setPendingSubmitData(null);
       onClose();
     } catch (error: any) {
       console.error('Error creating leave request:', error);
@@ -85,6 +161,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       toast.error(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWarningConfirm = async () => {
+    setWarningDialogOpen(false);
+    if (pendingSubmitData) {
+      await performSubmit(pendingSubmitData);
     }
   };
 
@@ -241,6 +324,46 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Warning Dialog for insufficient leave balance */}
+      <Dialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" color="warning.main">
+            請假時數不足警告
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <AlertTitle>剩餘時數不足</AlertTitle>
+            {warningMessage.split('\n').map((line, index) => (
+              <Typography key={index} variant="body2">
+                {line}
+              </Typography>
+            ))}
+          </Alert>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            確定要繼續送出申請嗎？
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWarningDialogOpen(false)}>
+            取消
+          </Button>
+          <Button
+            onClick={handleWarningConfirm}
+            variant="contained"
+            color="warning"
+            disabled={loading}
+          >
+            仍要送出
+          </Button>
+        </DialogActions>
       </Dialog>
     </LocalizationProvider>
   );

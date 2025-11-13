@@ -64,7 +64,6 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
   hireDate
 }) => {
   const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
 
   // Use pre-calculated values from leaveData
   const { type: leaveType, totalHours, usedHours, remainingHours, leaves, adjustments } = leaveData;
@@ -88,8 +87,6 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
       } catch (error) {
         console.error("取得員工資料失敗:", error);
         toast.error("無法載入員工資料");
-      } finally {
-        setLoading(false);
       }
     }
 

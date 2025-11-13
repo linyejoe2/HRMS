@@ -9,7 +9,13 @@ import {
   ToggleButtonGroup,
   InputAdornment,
   Typography,
-  TextField
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert
 } from '@mui/material';
 import {
   Check as ApproveIcon,
@@ -20,12 +26,15 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
+import { fetchUserLeaveData } from '../../services/leaveService';
+import { calcWorkingDurent, errorToString } from '@/utility';
+import { Link } from 'react-router-dom';
 
 const ApproveLeaveList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -38,6 +47,8 @@ const ApproveLeaveList: React.FC = () => {
   const [searchSequence, setSearchSequence] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -56,9 +67,86 @@ const ApproveLeaveList: React.FC = () => {
     fetchLeaveRequests(statusFilter || undefined);
   }, [statusFilter]);
 
-  const handleApproveClick = (request: LeaveRequest) => {
+  // Check leave balance before approval
+  const checkLeaveBalance = async (request: LeaveRequest): Promise<boolean> => {
+    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假'];
+    if (!leaveTypesToCheck.includes(request.leaveType)) {
+      return true; // Skip validation for other leave types
+    }
+
+    try {
+      // Get employee hire date
+      const employeeResponse = await employeeAPI.getByEmpID(request.empID);
+      const employee = employeeResponse.data.data.employee;
+
+      if (!employee?.hireDate) {
+        toast.warn("請先設定員工到職日。")
+        return false; // Skip validation if hire date not available
+      }
+
+      const leaveData = await fetchUserLeaveData(request.empID, employee.hireDate);
+      const workingDurentObj = calcWorkingDurent(request.leaveStart, request.leaveEnd);
+      const requestedHours = workingDurentObj.hourFormat
+
+      let remainingHours = 0;
+      let leaveTypeName = '';
+
+      switch (request.leaveType) {
+        case '事假':
+          remainingHours = leaveData.personalLeave.remainingHours;
+          leaveTypeName = '事假';
+          break;
+        case '普通傷病假':
+          remainingHours = leaveData.sickLeave.remainingHours;
+          leaveTypeName = '病假';
+          break;
+        case '特別休假':
+          remainingHours = leaveData.specialLeave.remainingHours;
+          leaveTypeName = '特休';
+          break;
+      }
+
+      if (requestedHours > remainingHours) {
+        setWarningMessage(
+          `員工「${request.name}」的${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，
+但此次申請需要 ${requestedHours.toFixed(1)} 小時。
+超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。`
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      throw error
+      console.error('Error checking leave balance:', error);
+      return true; // Continue if check fails
+    }
+  };
+
+  const handleApproveClick = async (request: LeaveRequest) => {
     setSelectedRequest(request);
-    setApproveDialogOpen(true);
+
+    // Check leave balance first
+    try {
+      const hasSufficientBalance = await checkLeaveBalance(request);
+
+      if (!hasSufficientBalance) {
+        // Show warning dialog
+        // toast.warn(<div>
+        //   <Typography variant="subtitle2" >title</Typography>
+        //   <Typography variant="body1" >body</Typography>
+        // </div>,{
+        //   autoClose: 10000
+        // })
+        setWarningDialogOpen(true);
+        return;
+      }
+
+      // Sufficient balance, show normal approve dialog
+      setApproveDialogOpen(true);
+    } catch (error) {
+      toast.error(errorToString(error))
+    }
   };
 
   const handleApproveConfirm = async (_: string) => {
@@ -510,6 +598,36 @@ const ApproveLeaveList: React.FC = () => {
         files={selectedFiles}
         title="請假佐證資料"
       />
+
+      {/* Warning Dialog for insufficient leave balance */}
+      <Dialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" color="error.main">
+            員工剩餘時數不足
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom sx={{ whiteSpace: 'pre-line' }}> {warningMessage}</Typography>
+          </Alert>
+
+          <Typography sx={{ mt: 2 }}>
+            請先到「<Link to="/employees" style={{ textDecoration: 'none', color: '#1976d2' }}>
+              員工管理
+            </Link>」頁面為此員工進行假別調整，<br />增加其假別額度後再核准此申請。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWarningDialogOpen(false)} variant="contained">
+            知道了
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
