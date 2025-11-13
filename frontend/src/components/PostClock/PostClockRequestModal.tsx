@@ -33,24 +33,32 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
 
+  type FormData = {
+    date: string;
+    time: string;
+    clockType: 'in' | 'out';
+    reason: string;
+    dateObj: Dayjs | null;
+    timeObj: Dayjs | null;
+  };
+
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm<PostClockRequestForm & { dateObj: Dayjs | null, timeObj: Dayjs | null }>({
+  } = useForm<FormData>({
     defaultValues: {
       date: dayjs().toISOString(),
       time: dayjs().hour(8).minute(30).second(0).toISOString(),
-      clockType: 'in',
+      clockType: 'in' as const,
       reason: '',
-      supportingInfo: undefined,
       dateObj: null,
       timeObj: null
     }
   });
 
-  const onSubmit = async (data: PostClockRequestForm & { dateObj: Dayjs | null, timeObj: Dayjs | null }) => {
+  const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
 
