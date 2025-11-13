@@ -1,6 +1,6 @@
-// version 0.0.4
+// version 0.0.6
 // by Randy Lin
-// 2025/11/06
+// 2025/11/13
 
 /**
  * need to install these depandancy
@@ -122,15 +122,23 @@ export function toSeparatVariable(date?: string, timeZone: string = "tw"): DateO
   };
 }
 
-export function calcWarkingDurent(
+export function calcWorkingDurent(
   from: string,
   to: string
 ): {
-  durent: number;
+  minuteFormat: number;
+  hourFormat: number
   crossBreaktime: number;
   crossNight: number;
   crossholiday: number;
 } {
+  let output = {
+    minuteFormat: 0,
+    hourFormat: 0,
+    crossBreaktime: 0,
+    crossNight: 0,
+    crossholiday: 0
+  }
   const start = dayjs(from).tz("Asia/Taipei");
   const end = dayjs(to).tz("Asia/Taipei");
 
@@ -138,13 +146,10 @@ export function calcWarkingDurent(
     throw new Error("Invalid date format");
   }
   if (end.isBefore(start)) {
-    return { durent: 0, crossBreaktime: 0, crossNight: 0, crossholiday: 0 };
+    return output;
   }
 
-  let durent = 0;
-  let crossBreaktime = 0;
-  let crossNight = 0;
-  let crossholiday = 0;
+
 
   // 定義每天的工作時段
   const WORK_PERIODS: [string, string][] = [
@@ -159,7 +164,7 @@ export function calcWarkingDurent(
 
     // 處理週末
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      crossholiday += 24 * 60;
+      output.crossholiday += 24 * 60;
       cursor = cursor.add(1, "day");
       continue;
     }
@@ -176,13 +181,13 @@ export function calcWarkingDurent(
       const overlapEnd = dayjs.min(end, periodEnd);
 
       if (overlapEnd.isAfter(overlapStart)) {
-        durent += overlapEnd.diff(overlapStart, "minute");
+        output.minuteFormat += overlapEnd.diff(overlapStart, "minute");
       }
     }
 
     // 判斷跨日 → 每天有 15 小時不算工時
     if (end.isAfter(cursor.endOf("day"))) {
-      crossNight += 15 * 60;
+      output.crossNight += 15 * 60;
     }
 
     cursor = cursor.add(1, "day");
@@ -191,9 +196,32 @@ export function calcWarkingDurent(
     const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
     const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
     if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
-      crossBreaktime = 60;
+      output.crossBreaktime = 60;
     }
   }
 
-  return { durent, crossBreaktime, crossNight, crossholiday };
+  // 👉 若結束時間正好是 17:20，補 10 分鐘
+  if (end.format("HH:mm") === "17:20") {
+    output.minuteFormat += 10;
+  }
+
+  output.hourFormat = Math.floor(output.minuteFormat / 60)
+
+  return output;
 }
+
+
+/**
+ * Converts an error object to a string with an optional prefix.
+ *
+ * @param {any} error - The error object or message.
+ * @param {string} [prefix=''] - The optional prefix to prepend to the error message.
+ * @returns {string} - The error message as a string.
+ */
+export const errorToString = (error: any, prefix: string = ''): string => {
+  let res = prefix ? prefix + " " : '';
+  if (error instanceof Error) return (res += error.message);
+  if (typeof error === 'string') return (res += error);
+
+  return (res += 'Internal Server Error.');
+};

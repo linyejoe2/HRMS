@@ -1,6 +1,5 @@
 import { PostClock, IPostClock, Employee, Attendance } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { calcWarkingDurent } from '../utility';
 import { calcWorkDuration } from './attendanceService';
 
 export class PostClockService {

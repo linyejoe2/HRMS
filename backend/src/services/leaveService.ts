@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { calcWarkingDurent, isWeekend } from '../utility';
+import { calcWorkingDurent, isWeekend } from '../utility';
 
 export class LeaveService {
   static async checkLeaveRequestDidntRepeat(leave: ILeave): Promise<boolean> {
@@ -61,8 +61,8 @@ export class LeaveService {
     const leaveStart = new Date(leaveData.leaveStart);
     const leaveEnd = new Date(leaveData.leaveEnd);
 
-    const timeDiff = calcWarkingDurent(leaveData.leaveStart, leaveData.leaveEnd);
-    const totalMinutes = Math.floor(timeDiff.durent);
+    const timeDiff = calcWorkingDurent(leaveData.leaveStart, leaveData.leaveEnd);
+    const totalMinutes = Math.floor(timeDiff.minuteFormat);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     console.log(timeDiff)
