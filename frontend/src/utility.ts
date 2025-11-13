@@ -1,4 +1,4 @@
-// version 0.0.6
+// version 0.0.7
 // by Randy Lin
 // 2025/11/13
 
@@ -205,7 +205,7 @@ export function calcWorkingDurent(
     output.minuteFormat += 10;
   }
 
-  output.hourFormat = Math.floor(output.minuteFormat / 60)
+  output.hourFormat = Math.round(output.minuteFormat / 60)
 
   return output;
 }
