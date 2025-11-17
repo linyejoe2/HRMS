@@ -29,12 +29,13 @@ export class AttendanceService {
     
     try {
       // Extract components using regex
-      const match = line.match(/01.(\d{3})(:|;).....(\d{8})----(\d{6}).:(\d{6})/);
+      const match = line.match(/(01.)(\d{3})(:|;).....(\d{8})----(\d{6}).:(\d{6})/);
       if (!match) return null;
       
-      const [, statusCode, , empID, dateStr, timeStr] = match;
+      const [, startCode, statusCode, , empID, dateStr, timeStr] = match;
 
-      if (statusCode !== "000" && statusCode !== "900") return null;
+      // if (statusCode !== "000" && statusCode !== "900") return null;
+      if (startCode !== "01D") return null;
       
       // Parse date (YYmmDD format, assuming 25 = 2025)
       const year = 2000 + parseInt(dateStr.substring(0, 2));
@@ -115,21 +116,21 @@ export class AttendanceService {
           }
           
           // Update attendance based on status
-          if (parsed.status === 'D000') {
-            // Clock in - only update if this is earlier than existing clock-in time
-            // This ensures we keep the first entry when someone goes into office multiple times
-            if (!attendance.clockInTime || parsed.time < attendance.clockInTime) {
-              attendance.clockInRawRecord = parsed.rawRecord;
-              attendance.clockInTime = parsed.time;
-              attendance.clockInStatus = parsed.status;
-            }
-          } else if (parsed.status === 'D900') {
+          if (parsed.status === 'D900') {
             // Clock out - only update if this is later than existing clock-out time
             // This ensures we keep the last exit when someone leaves multiple times
             if (!attendance.clockOutTime || parsed.time > attendance.clockOutTime) {
               attendance.clockOutRawRecord = parsed.rawRecord;
               attendance.clockOutTime = parsed.time;
               attendance.clockOutStatus = parsed.status;
+            }
+          } else {
+            // Clock in - only update if this is earlier than existing clock-in time
+            // This ensures we keep the first entry when someone goes into office multiple times
+            if (!attendance.clockInTime || parsed.time < attendance.clockInTime) {
+              attendance.clockInRawRecord = parsed.rawRecord;
+              attendance.clockInTime = parsed.time;
+              attendance.clockInStatus = parsed.status;
             }
           }
           
