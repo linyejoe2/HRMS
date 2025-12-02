@@ -7,9 +7,7 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Grid,
-  FormControlLabel,
-  Checkbox
+  Grid
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -31,7 +29,7 @@ const AttendanceTab: React.FC = () => {
   const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showUnknownEmployees, setShowUnknownEmployees] = useState(true);
+  const [showUnknownEmployees, setShowUnknownEmployees] = useState(false);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -122,7 +120,7 @@ const AttendanceTab: React.FC = () => {
 
   //   try {
   //     const response = await attendanceAPI.importByDate(selectedDate);
-      
+
   //     if (response.data.imported > 0) {
   //       // Reload records after import
   //       await loadAttendanceRecords();
@@ -254,71 +252,71 @@ const AttendanceTab: React.FC = () => {
   ];
 
   return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          出勤管理
-        </Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        出勤管理
+      </Typography>
 
-        {/* Date Range Selection and Controls */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent sx={{
+      {/* Date Range Selection and Controls */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{
           "&:last-child": {
-              p: 2
+            p: 2
           }
         }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={2}>
-                <TextField
-                  label="開始日期"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <TextField
-                  label="結束日期"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={() => setDateRange(0)}
-                  >
-                    今天
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={() => setDateRange(7)}
-                  >
-                    7天
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={() => setDateRange(30)}
-                  >
-                    30天
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={loadAttendanceRecords}
-                    disabled={loading}
-                  >
-                    重新載入
-                  </Button>
-                  {isAdminOrHr && (
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="開始日期"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="結束日期"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => setDateRange(0)}
+                >
+                  今天
+                </Button>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => setDateRange(7)}
+                >
+                  7天
+                </Button>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => setDateRange(30)}
+                >
+                  30天
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={loadAttendanceRecords}
+                  disabled={loading}
+                >
+                  重新載入
+                </Button>
+                {isAdminOrHr && (
                   <Button
                     variant="contained"
                     startIcon={<DownloadIcon />}
@@ -327,143 +325,138 @@ const AttendanceTab: React.FC = () => {
                   >
                     {importing ? '更新中...' : '更新資料'}
                   </Button>
-                  )}
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Typography variant="body2" color="text.secondary">
-                  {startDate && endDate ? `${startDate} 至 ${endDate} 出勤記錄` : '請選擇日期範圍'}
-                </Typography>
-              </Grid>
+                )}
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <Typography variant="body2" color="text.secondary">
+                {startDate && endDate ? `${startDate} 至 ${endDate} 出勤記錄` : '請選擇日期範圍'}
+              </Typography>
+            </Grid>
 
-              {/* Second Line: Filter Controls for Admin/HR/Manager */}
-              {isAdminOrHrOrManager && (
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={showOnlyMyRecords}
-                          onChange={(e) => setShowOnlyMyRecords(e.target.checked)}
-                          size="small"
-                        />
-                      }
-                      label="只看自己"
-                    />
-                    <TextField
-                      label="搜尋"
-                      placeholder="輸入卡號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      size="small"
-                      sx={{ minWidth: 300, flex: 1 }}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={showUnknownEmployees}
-                          onChange={(e) => setShowUnknownEmployees(e.target.checked)}
-                          size="small"
-                        />
-                      }
-                      label="顯示不明員工"
-                    />
+            {/* Second Line: Filter Controls for Admin/HR/Manager */}
+            {isAdminOrHrOrManager && (
+              <>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="搜尋"
+                    placeholder="輸入卡號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={8}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                      variant={showOnlyMyRecords ? "contained" : "outlined"}
+                      onClick={() => setShowOnlyMyRecords(!showOnlyMyRecords)}
+                    >
+                      只看自己
+                    </Button>
+                    <Button
+                      variant={showUnknownEmployees ? "contained" : "outlined"}
+                      onClick={() => setShowUnknownEmployees(!showUnknownEmployees)}
+                    >
+                      顯示不明員工
+                    </Button>
                   </Box>
                 </Grid>
-              )}
-            </Grid>
-          </CardContent>
-        </Card>
+              </>
+            )}
+          </Grid>
+        </CardContent>
+      </Card>
 
-        
-        {/* Loading */}
-        {loading && (
-          <Box display="flex" justifyContent="center" sx={{ mb: 3 }}>
-            <CircularProgress />
-          </Box>
-        )}
 
-        {/* Attendance Records DataGrid */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              出勤記錄 ({attendanceRecords.length} 筆)
-            </Typography>
+      {/* Loading */}
+      {loading && (
+        <Box display="flex" justifyContent="center" sx={{ mb: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
 
-            <Box sx={{ width: '100%' }}>
-              <DataGrid
-                rows={attendanceRecords
-                  .filter(record => {
-                    // Filter: Only show my records if checked
-                    if (showOnlyMyRecords && record.cardID !== user?.cardID) {
-                      return false;
-                    }
+      {/* Attendance Records DataGrid */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            出勤記錄 ({attendanceRecords.length} 筆)
+          </Typography>
 
-                    // Filter: Show/hide unknown employees
-                    if (!showUnknownEmployees && !record.employeeName) {
-                      return false;
-                    }
-
-                    // Filter: Fuzzy search by cardID, empID, employeeName, department
-                    const empID = getEmpIDByCardID(record.cardID);
-                    if (!fuzzySearchAttendance(record, searchQuery, empID)) {
-                      return false;
-                    }
-
-                    return true;
-                  })
-                  .map((record, index) => ({
-                    id: record._id || index,
-                    ...record
-                  }))}
-                columns={columns}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 50 },
-                  },
-                  filter: {
-                    filterModel: {
-                      items: [{ field: 'employeeName', operator: 'doesNotContain', value: '-' }]
-                    }
+          <Box sx={{ width: '100%' }}>
+            <DataGrid
+              rows={attendanceRecords
+                .filter(record => {
+                  // Filter: Only show my records if checked
+                  if (showOnlyMyRecords && record.cardID !== user?.cardID) {
+                    return false;
                   }
-                }}
-                pageSizeOptions={[10, 25, 50, 100]}
-                checkboxSelection={false}
-                disableRowSelectionOnClick
-                loading={loading}
-                sx={{
-                  '& .MuiDataGrid-cell': {
-                    borderRight: 1,
-                    borderColor: 'divider',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: 'action.hover',
-                    borderBottom: 2,
-                    borderColor: 'divider',
-                  },
-                }}
-                slots={{
-                  noRowsOverlay: () => (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100%',
-                      }}
-                    >
-                      <Typography color="text.secondary">
-                        {loading ? '載入中...' : '該日期範圍無出勤記錄'}
-                      </Typography>
-                    </Box>
-                  ),
-                }}
-              />
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+
+                  // Filter: Show/hide unknown employees
+                  if (!showUnknownEmployees && !record.employeeName) {
+                    return false;
+                  }
+
+                  // Filter: Fuzzy search by cardID, empID, employeeName, department
+                  const empID = getEmpIDByCardID(record.cardID);
+                  if (!fuzzySearchAttendance(record, searchQuery, empID)) {
+                    return false;
+                  }
+
+                  return true;
+                })
+                .map((record, index) => ({
+                  id: record._id || index,
+                  ...record
+                }))}
+              columns={columns}
+              initialState={{
+                pagination: {
+                  paginationModel: { page: 0, pageSize: 50 },
+                },
+                // filter: {
+                //   filterModel: {
+                //     items: [{ field: 'employeeName', operator: 'doesNotContain', value: '-' }]
+                //   }
+                // }
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+              checkboxSelection={false}
+              disableRowSelectionOnClick
+              loading={loading}
+              sx={{
+                '& .MuiDataGrid-cell': {
+                  borderRight: 1,
+                  borderColor: 'divider',
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'action.hover',
+                  borderBottom: 2,
+                  borderColor: 'divider',
+                },
+              }}
+              slots={{
+                noRowsOverlay: () => (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                    }}
+                  >
+                    <Typography color="text.secondary">
+                      {loading ? '載入中...' : '該日期範圍無出勤記錄'}
+                    </Typography>
+                  </Box>
+                ),
+              }}
+            />
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
