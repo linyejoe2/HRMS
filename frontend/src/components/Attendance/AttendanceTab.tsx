@@ -19,6 +19,8 @@ import { AttendanceRecord, UserLevel, Employee } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
+import { fuzzySearchAttendance } from '../../utility';
+
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
   const [startDate, setStartDate] = useState<string>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 7 days ago
@@ -28,6 +30,8 @@ const AttendanceTab: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showUnknownEmployees, setShowUnknownEmployees] = useState(true);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -324,18 +328,6 @@ const AttendanceTab: React.FC = () => {
                     {importing ? '更新中...' : '更新資料'}
                   </Button>
                   )}
-                  {isAdminOrHrOrManager && (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={showOnlyMyRecords}
-                        onChange={(e) => setShowOnlyMyRecords(e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label="只看自己"
-                  />
-                  )}
                 </Box>
               </Grid>
               <Grid item xs={12} md={2}>
@@ -343,6 +335,43 @@ const AttendanceTab: React.FC = () => {
                   {startDate && endDate ? `${startDate} 至 ${endDate} 出勤記錄` : '請選擇日期範圍'}
                 </Typography>
               </Grid>
+
+              {/* Second Line: Filter Controls for Admin/HR/Manager */}
+              {isAdminOrHrOrManager && (
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={showOnlyMyRecords}
+                          onChange={(e) => setShowOnlyMyRecords(e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label="只看自己"
+                    />
+                    <TextField
+                      label="搜尋"
+                      placeholder="輸入卡號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      size="small"
+                      sx={{ minWidth: 300, flex: 1 }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={showUnknownEmployees}
+                          onChange={(e) => setShowUnknownEmployees(e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label="顯示不明員工"
+                    />
+                  </Box>
+                </Grid>
+              )}
             </Grid>
           </CardContent>
         </Card>
@@ -365,7 +394,25 @@ const AttendanceTab: React.FC = () => {
             <Box sx={{ width: '100%' }}>
               <DataGrid
                 rows={attendanceRecords
-                  .filter(record => !showOnlyMyRecords || record.cardID === user?.cardID)
+                  .filter(record => {
+                    // Filter: Only show my records if checked
+                    if (showOnlyMyRecords && record.cardID !== user?.cardID) {
+                      return false;
+                    }
+
+                    // Filter: Show/hide unknown employees
+                    if (!showUnknownEmployees && !record.employeeName) {
+                      return false;
+                    }
+
+                    // Filter: Fuzzy search by cardID, empID, employeeName, department
+                    const empID = getEmpIDByCardID(record.cardID);
+                    if (!fuzzySearchAttendance(record, searchQuery, empID)) {
+                      return false;
+                    }
+
+                    return true;
+                  })
                   .map((record, index) => ({
                     id: record._id || index,
                     ...record

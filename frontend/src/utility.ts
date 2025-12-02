@@ -225,3 +225,56 @@ export const errorToString = (error: any, prefix: string = ''): string => {
 
   return (res += 'Internal Server Error.');
 };
+
+/**
+ * Fuzzy search function for attendance records.
+ * Searches across cardID, empID, employeeName, and department fields.
+ * Multiple keywords are separated by spaces and ALL must match (AND logic).
+ * Each keyword must match at least one of the searchable fields.
+ *
+ * @param {object} record - The attendance record to search
+ * @param {string} searchQuery - The search query with space-separated keywords
+ * @param {string} empID - The employee ID to search in
+ * @returns {boolean} - True if all keywords match, false otherwise
+ *
+ * @example
+ * fuzzySearchAttendance(record, "林 1263", "A540")
+ * // Returns true if record contains "林" AND "1263" in any searchable field
+ */
+export const fuzzySearchAttendance = (
+  record: {
+    cardID?: string;
+    employeeName?: string;
+    department?: string;
+  },
+  searchQuery: string,
+  empID: string
+): boolean => {
+  if (!searchQuery || searchQuery.trim() === '') {
+    return true; // No filter, show all
+  }
+
+  // Split search query by spaces and filter out empty strings
+  const keywords = searchQuery.trim().toLowerCase().split(/\s+/).filter(k => k.length > 0);
+
+  if (keywords.length === 0) {
+    return true;
+  }
+
+  // Get searchable fields
+  const cardID = (record.cardID || '').toLowerCase();
+  const employeeName = (record.employeeName || '').toLowerCase();
+  const department = (record.department || '').toLowerCase();
+  const employeeID = empID.toLowerCase();
+
+  // All keywords must match (AND logic)
+  return keywords.every(keyword => {
+    // Each keyword must match at least one field
+    return (
+      cardID.includes(keyword) ||
+      employeeID.includes(keyword) ||
+      employeeName.includes(keyword) ||
+      department.includes(keyword)
+    );
+  });
+};
