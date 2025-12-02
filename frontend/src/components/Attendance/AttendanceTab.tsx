@@ -14,8 +14,8 @@ import {
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
-import { attendanceAPI } from '../../services/api';
-import { AttendanceRecord, UserLevel } from '../../types';
+import { attendanceAPI, employeeAPI } from '../../services/api';
+import { AttendanceRecord, UserLevel, Employee } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
@@ -27,6 +27,7 @@ const AttendanceTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -47,6 +48,12 @@ const AttendanceTab: React.FC = () => {
     const wholeHours = Math.floor(duration / 60);
     const minutes = Math.round(duration % 60);
     return `${wholeHours}h ${minutes}m`;
+  };
+
+  // Lookup empID by cardID
+  const getEmpIDByCardID = (cardID: string): string => {
+    const employee = employees.find(emp => emp.cardID === cardID);
+    return employee?.empID || '...';
   };
 
   // Load attendance records for selected date range
@@ -126,6 +133,22 @@ const AttendanceTab: React.FC = () => {
   //   }
   // };
 
+  // Load employees on mount
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        const response = await employeeAPI.getAll(1, 9999); // Get all employees
+        if (!response.data.error) {
+          setEmployees(response.data.data.employees);
+        }
+      } catch (err: any) {
+        console.error('Failed to load employees:', err);
+        // Don't show error toast as this is a background operation
+      }
+    };
+    loadEmployees();
+  }, []);
+
   // Load records when date range changes
   useEffect(() => {
     loadAttendanceRecords();
@@ -151,6 +174,13 @@ const AttendanceTab: React.FC = () => {
       // width: 120,
       flex: 1,
       valueGetter: (_, row) => row.cardID || '-'
+    },
+    {
+      field: 'empID',
+      headerName: '員工編號',
+      // width: 120,
+      flex: 1,
+      valueGetter: (_, row) => getEmpIDByCardID(row.cardID)
     },
     {
       field: 'employeeName',
