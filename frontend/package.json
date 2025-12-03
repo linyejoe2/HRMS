@@ -31,6 +31,7 @@
     "react-toastify": "^11.0.5",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
+    "xlsx": "^0.18.5",
     "yup": "^1.4.0"
   },
   "devDependencies": {

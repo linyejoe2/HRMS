@@ -12,7 +12,9 @@ import {
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { attendanceAPI, employeeAPI } from '../../services/api';
+import * as XLSX from 'xlsx';
 import { AttendanceRecord, UserLevel, Employee } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -108,6 +110,84 @@ const AttendanceTab: React.FC = () => {
       toast.error(err.response?.data?.message || '更新出勤資料失敗');
     } finally {
       setImporting(false);
+    }
+  }
+
+  // Download attendance records as Excel
+  const downloadAsExcel = () => {
+    try {
+      // Filter records based on current filters
+      const filteredRecords = attendanceRecords.filter(record => {
+        // Filter: Only show my records if checked
+        if (showOnlyMyRecords && record.cardID !== user?.cardID) {
+          return false;
+        }
+
+        // Filter: Show/hide unknown employees
+        if (!showUnknownEmployees && !record.employeeName) {
+          return false;
+        }
+
+        // Filter: Fuzzy search by cardID, empID, employeeName, department
+        const empID = getEmpIDByCardID(record.cardID);
+        if (!fuzzySearchAttendance(record, searchQuery, empID)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (filteredRecords.length === 0) {
+        toast.warning('沒有資料可以下載');
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = filteredRecords.map(record => ({
+        '卡號': record.cardID || '-',
+        '員工編號': getEmpIDByCardID(record.cardID),
+        '員工姓名': record.employeeName || '-',
+        '部門名稱': record.department || '-',
+        '出勤日期': formatDate(new Date(record.date)),
+        '上班出勤時間': formatTime(record.clockInTime),
+        '上班出勤狀態': record.clockInStatus === 'D000' ? '打卡' : record.clockInStatus || '-',
+        '下班出勤時間': formatTime(record.clockOutTime),
+        '下班出勤狀態': record.clockOutStatus === 'D900' ? '打卡' : record.clockOutStatus || '-',
+        '工作時數': formatWorkDuration(record.workDuration),
+      }));
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 12 }, // 卡號
+        { wch: 12 }, // 員工編號
+        { wch: 15 }, // 員工姓名
+        { wch: 15 }, // 部門名稱
+        { wch: 12 }, // 出勤日期
+        { wch: 15 }, // 上班出勤時間
+        { wch: 15 }, // 上班出勤狀態
+        { wch: 15 }, // 下班出勤時間
+        { wch: 15 }, // 下班出勤狀態
+        { wch: 12 }, // 工作時數
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '出勤記錄');
+
+      // Generate filename
+      const filename = `${startDate}_${endDate}_attendance_record.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(`成功下載 ${filteredRecords.length} 筆記錄`);
+    } catch (err: any) {
+      console.error('Excel download error:', err);
+      toast.error('下載 Excel 檔案失敗');
     }
   }
 
@@ -326,6 +406,15 @@ const AttendanceTab: React.FC = () => {
                     {importing ? '更新中...' : '更新資料'}
                   </Button>
                 )}
+                <Button
+                  variant="outlined"
+                  color="success"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={downloadAsExcel}
+                  disabled={loading || attendanceRecords.length === 0}
+                >
+                  下載成 Excel
+                </Button>
               </Box>
             </Grid>
             <Grid item xs={12} md={2}>

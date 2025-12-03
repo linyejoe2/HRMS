@@ -183,6 +183,7 @@ export interface AttendanceRecord {
   rawRecord: string;
   createdAt: string;
   updatedAt: string;
+  workDuration: number;
 }
 
 export interface AttendanceResponse {
