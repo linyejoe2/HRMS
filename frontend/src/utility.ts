@@ -278,3 +278,52 @@ export const fuzzySearchAttendance = (
     );
   });
 };
+
+/**
+ * Fuzzy search function for approval lists (leave, postclock, business trip).
+ * Searches across sequenceNumber, name, and department fields.
+ * Multiple keywords are separated by spaces and ALL must match (AND logic).
+ * Each keyword must match at least one of the searchable fields.
+ *
+ * @param {object} record - The approval record to search
+ * @param {string} searchQuery - The search query with space-separated keywords
+ * @returns {boolean} - True if all keywords match, false otherwise
+ *
+ * @example
+ * fuzzySearchApproval({ sequenceNumber: 123, name: "林承慶", department: "研發課" }, "林 研發")
+ * // Returns true if record contains "林" AND "研發" in any searchable field
+ */
+export const fuzzySearchApproval = (
+  record: {
+    sequenceNumber?: number;
+    name?: string;
+    department?: string;
+  },
+  searchQuery: string
+): boolean => {
+  if (!searchQuery || searchQuery.trim() === '') {
+    return true; // No filter, show all
+  }
+
+  // Split search query by spaces and filter out empty strings
+  const keywords = searchQuery.trim().toLowerCase().split(/\s+/).filter(k => k.length > 0);
+
+  if (keywords.length === 0) {
+    return true;
+  }
+
+  // Get searchable fields
+  const sequenceNumber = (record.sequenceNumber?.toString() || '').toLowerCase();
+  const name = (record.name || '').toLowerCase();
+  const department = (record.department || '').toLowerCase();
+
+  // All keywords must match (AND logic)
+  return keywords.every(keyword => {
+    // Each keyword must match at least one field
+    return (
+      sequenceNumber.includes(keyword) ||
+      name.includes(keyword) ||
+      department.includes(keyword)
+    );
+  });
+};

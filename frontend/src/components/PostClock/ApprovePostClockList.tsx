@@ -26,6 +26,7 @@ import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockReques
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import { fuzzySearchApproval } from '../../utility';
 
 const ApprovePostClockList: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);
@@ -35,7 +36,7 @@ const ApprovePostClockList: React.FC = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PostClockRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
-  const [searchSequence, setSearchSequence] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
@@ -139,11 +140,9 @@ const ApprovePostClockList: React.FC = () => {
     setStatusFilter(newValue);
   };
 
-  const filteredPostClockRequests = postClockRequests.filter(request => {
-    if (!searchSequence) return true;
-    const sequenceStr = request.sequenceNumber?.toString() || '';
-    return sequenceStr.includes(searchSequence);
-  });
+  const filteredPostClockRequests = postClockRequests.filter(request =>
+    fuzzySearchApproval(request, searchQuery)
+  );
 
   const columns: GridColDef[] = [
     {
@@ -343,9 +342,9 @@ const ApprovePostClockList: React.FC = () => {
 
             <TextField
               size="small"
-              placeholder="搜尋申請編號..."
-              value={searchSequence}
-              onChange={(e) => setSearchSequence(e.target.value)}
+              placeholder="搜尋編號、姓名或部門 (空格分隔多個關鍵字)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -353,7 +352,7 @@ const ApprovePostClockList: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 400 }}
             />
           </Box>
         </CardContent>

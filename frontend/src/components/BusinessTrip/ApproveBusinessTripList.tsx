@@ -26,6 +26,7 @@ import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
+import { fuzzySearchApproval } from '../../utility';
 
 const ApproveBusinessTripList: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);
@@ -35,7 +36,7 @@ const ApproveBusinessTripList: React.FC = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BusinessTripRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
-  const [searchSequence, setSearchSequence] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
@@ -135,11 +136,9 @@ const ApproveBusinessTripList: React.FC = () => {
     setStatusFilter(newValue);
   };
 
-  const filteredBusinessTripRequests = businessTripRequests.filter(request => {
-    if (!searchSequence) return true;
-    const sequenceStr = request.sequenceNumber?.toString() || '';
-    return sequenceStr.includes(searchSequence);
-  });
+  const filteredBusinessTripRequests = businessTripRequests.filter(request =>
+    fuzzySearchApproval(request, searchQuery)
+  );
 
   const columns: GridColDef[] = [
     {
@@ -351,9 +350,9 @@ const ApproveBusinessTripList: React.FC = () => {
 
             <TextField
               size="small"
-              placeholder="搜尋申請編號..."
-              value={searchSequence}
-              onChange={(e) => setSearchSequence(e.target.value)}
+              placeholder="搜尋編號、姓名或部門 (空格分隔多個關鍵字)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -361,7 +360,7 @@ const ApproveBusinessTripList: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 400 }}
             />
           </Box>
         </CardContent>

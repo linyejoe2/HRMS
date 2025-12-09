@@ -33,7 +33,7 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fetchUserLeaveData } from '../../services/leaveService';
-import { calcWorkingDurent, errorToString } from '@/utility';
+import { calcWorkingDurent, errorToString, fuzzySearchApproval } from '@/utility';
 import { Link } from 'react-router-dom';
 
 const ApproveLeaveList: React.FC = () => {
@@ -44,7 +44,7 @@ const ApproveLeaveList: React.FC = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
-  const [searchSequence, setSearchSequence] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
@@ -223,11 +223,9 @@ const ApproveLeaveList: React.FC = () => {
     setStatusFilter(newValue);
   };
 
-  const filteredLeaveRequests = leaveRequests.filter(request => {
-    if (!searchSequence) return true;
-    const sequenceStr = request.sequenceNumber?.toString() || '';
-    return sequenceStr.includes(searchSequence);
-  });
+  const filteredLeaveRequests = leaveRequests.filter(request =>
+    fuzzySearchApproval(request, searchQuery)
+  );
 
   const columns: GridColDef[] = [
     {
@@ -440,9 +438,9 @@ const ApproveLeaveList: React.FC = () => {
 
             <TextField
               size="small"
-              placeholder="搜尋申請編號..."
-              value={searchSequence}
-              onChange={(e) => setSearchSequence(e.target.value)}
+              placeholder="搜尋編號、姓名或部門 (空格分隔多個關鍵字)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -450,7 +448,7 @@ const ApproveLeaveList: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 400 }}
             />
           </Box>
         </CardContent>
