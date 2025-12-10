@@ -7,3 +7,4 @@ export { PostClock, IPostClock } from './PostClock';
 export { BusinessTrip, IBusinessTrip } from './BusinessTrip';
 export { Counter, ICounter } from './Counter';
 export { LeaveAdjustment, ILeaveAdjustment } from './LeaveAdjustment';
+export { KanbanTask, IKanbanTask, IKanbanHistoryEntry, KanbanStatus } from './KanbanTask';

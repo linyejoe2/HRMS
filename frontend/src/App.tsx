@@ -12,6 +12,7 @@ import AskLeaveTab from './components/Leave/AskLeaveTab';
 import ApproveLeaveTab from './components/Leave/ApproveLeaveTab';
 import PostClockTab from './components/PostClock/PostClockTab';
 import BusinessTripTab from './components/BusinessTrip/BusinessTripTab';
+import { KanbanPage } from './pages/KanbanPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -91,7 +92,17 @@ const App: React.FC = () => {
         <Route path="business-trip" element={<BusinessTripTab />} />
         <Route path="settings" element={<SettingsTab />} />
       </Route>
-      
+
+      {/* Kanban route - standalone, not in main layout */}
+      <Route
+        path="/kanban"
+        element={
+          <ProtectedRoute>
+            <KanbanPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
