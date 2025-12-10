@@ -260,11 +260,25 @@ export class AttendanceController {
   // Run file scan manually
   runScanNow = asyncHandler(async (req: Request, res: Response) => {
     const result = await fileScanService.scanDataFolder();
-    
+
     res.status(200).json({
       error: false,
       message: '手動掃描完成',
       data: result
+    });
+  });
+
+  // Clean up holiday (weekend) attendance records
+  cleanHolidayRecords = asyncHandler(async (req: Request, res: Response) => {
+    const result = await attendanceService.cleanHolidayRecords();
+
+    res.status(200).json({
+      error: false,
+      message: '假日出勤紀錄清理完成',
+      data: {
+        deletedCount: result.deletedCount,
+        errors: result.errors
+      }
     });
   });
 }

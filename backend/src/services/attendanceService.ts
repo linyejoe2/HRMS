@@ -339,6 +339,56 @@ export class AttendanceService {
       averageWorkHours
     };
   }
+
+  /**
+   * Clean up attendance records created on holidays (weekends)
+   * Deletes all attendance records where the date falls on Saturday or Sunday
+   */
+  async cleanHolidayRecords(): Promise<{
+    deletedCount: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let deletedCount = 0;
+
+    try {
+      // Get all attendance records
+      const allRecords = await Attendance.find({});
+
+      console.log(`📋 Found ${allRecords.length} total attendance records to check`);
+
+      // Filter records that fall on weekends
+      const weekendRecords = allRecords.filter(record => {
+        const date = new Date(record.date);
+        const dayOfWeek = date.getDay();
+        return dayOfWeek === 0 || dayOfWeek === 6; // Sunday = 0, Saturday = 6
+      });
+
+      console.log(`🗑️  Found ${weekendRecords.length} weekend records to delete`);
+
+      // Delete weekend records
+      for (const record of weekendRecords) {
+        try {
+          await Attendance.deleteOne({ _id: record._id });
+          deletedCount++;
+        } catch (error) {
+          errors.push(`Error deleting record ${record._id}: ${error}`);
+          console.error(`Error deleting record:`, error);
+        }
+      }
+
+      console.log(`✅ Deleted ${deletedCount} weekend attendance records`);
+
+      return { deletedCount, errors };
+
+    } catch (error) {
+      errors.push(`General error in cleanHolidayRecords: ${error}`);
+      return {
+        deletedCount,
+        errors
+      };
+    }
+  }
 }
 
 export function calcWorkDuration(inTime: Date, outTime: Date): {

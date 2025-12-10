@@ -148,6 +148,18 @@ export class CronService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      // Check if today is a weekend (Saturday = 6, Sunday = 0)
+      const dayOfWeek = today.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        console.log(`⏭️  Skipping attendance creation - Today is ${dayOfWeek === 0 ? 'Sunday' : 'Saturday'} (holiday)`);
+        return {
+          date: today,
+          employeeCount: 0,
+          createdCount: 0,
+          errors: ['Skipped: Weekend/Holiday']
+        };
+      }
+
       // Get all active employees
       const employees = await Employee.find({ isActive: true });
       const employeeCount = employees.length;

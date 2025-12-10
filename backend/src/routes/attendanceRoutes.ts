@@ -18,6 +18,7 @@ router.use(attendanceLimiter);
 router.get('/create-attendance-record', async (_, res) => {
   res.status(200).json(await cronService.runCreateAttendanceNow())
 });
+router.get('/clean-holidays', attendanceController.cleanHolidayRecords);
 
 // All routes require authentication
 router.use(authenticateToken);
