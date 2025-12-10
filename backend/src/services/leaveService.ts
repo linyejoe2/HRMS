@@ -189,6 +189,7 @@ export class LeaveService {
         // Create new attendance record
         attendance = new Attendance({
           cardID: employee.cardID,
+          empID: employee.empID,
           employeeName: employee.name,
           department: employee.department,
           date: date,

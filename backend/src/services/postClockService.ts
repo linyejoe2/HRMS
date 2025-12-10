@@ -125,6 +125,7 @@ export class PostClockService {
       // Create new attendance record
       const newAttendance: any = {
         cardID: employee.cardID,
+        empID: employee.empID,
         employeeName: employee.name,
         department: employee.department,
         date: date,

@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IAttendance extends Document {
   cardID: string; // 8-digit employee ID from access system
+  empID?: string; // Employee ID from Employee collection
   employeeName?: string; // Employee name from Employee collection
   department?: string; // Department from Employee collection
   date: Date; // Attendance date (YYYY-MM-DD)
@@ -34,6 +35,10 @@ const AttendanceSchema = new Schema<IAttendance>({
   cardID: {
     type: String,
     required: true,
+    index: true
+  },
+  empID: {
+    type: String,
     index: true
   },
   employeeName: {
