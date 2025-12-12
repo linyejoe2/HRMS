@@ -6,3 +6,5 @@ export { cronService, CronService } from './cronService';
 export { BusinessTripService } from './businessTripService';
 export { kanbanService, KanbanService } from './kanbanService';
 export { departmentSeedService, DepartmentSeedService } from './departmentSeedService';
+export { variableService, VariableService } from './variableService';
+export { variableSeedService, VariableSeedService } from './variableSeedService';

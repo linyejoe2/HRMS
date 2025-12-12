@@ -38,6 +38,7 @@ export interface IEmployee extends Document {
 
   // 職務/公司資訊
   shift?: string; // 班別
+  jobType?: number; // 職別
   jobTitle?: string; // 職稱 (e.g. 董事長)
   jobLevel?: string; // 職等
   endDate?: Date; // 離職日期

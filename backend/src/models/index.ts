@@ -8,3 +8,4 @@ export { BusinessTrip, IBusinessTrip } from './BusinessTrip';
 export { Counter, ICounter } from './Counter';
 export { LeaveAdjustment, ILeaveAdjustment } from './LeaveAdjustment';
 export { KanbanTask, IKanbanTask, IKanbanHistoryEntry, KanbanStatus } from './KanbanTask';
+export { Variable, IVariable } from './Variable';
