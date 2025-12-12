@@ -1,10 +1,10 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 // 圖片中的欄位選項（用於 Enum 類型）
 export type Education = '博士' | '碩士" | "大專" | "高中" | "高中以下'; // 擴充學歷選項
 export type Gender = 'M' | 'W' | 'U'; // Male / Woman / Unknown
 export type BloodType = 'A' | 'B' | 'O' | 'AB'; // 血型
-export type Depertment = '管理部' | '研發課' | '財務部' | '業務部' | '稽核室' | '總經理室';
+
 
 export interface IEmployee extends Document {
   // 員工基本資訊 (既有欄位)
@@ -15,7 +15,7 @@ export interface IEmployee extends Document {
   isActive: boolean;
   role: 'admin' | 'hr' | 'employee' | 'manager';
   lastLogin?: Date;
-  department?: string;
+  department?: string; // Department code reference (e.g., "2000", "8000")
   hireDate?: Date; // 到職日期 (入職日期)
   salary?: number;
   createdAt: Date;
@@ -101,8 +101,9 @@ const EmployeeSchema = new Schema<IEmployee>({
   lastLogin: {
     type: Date
   },
-  department: { // 部門名稱
+  department: { // Department code (references Department.code)
     type: String,
+    ref: 'Department',
     trim: true
   },
   hireDate: { // 到職日期
