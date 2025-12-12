@@ -14,7 +14,13 @@ export class EmployeeService {
   }
 
   async findByIdWithSensitive(id: string): Promise<IEmployee | null> {
-    return Employee.findById(id).select('+salary');
+    return Employee.findById(id).select(
+      '+salary +baseSalary +jobAllowance +dutyAllowance +professionalAllowance ' +
+      '+specialAllowance +workSubsidy +laborInsuranceSalary +laborInsurancePremium ' +
+      '+addLaborInsurancePremium +healthInsuranceSalary +healthInsurancePremium ' +
+      '+addHealthInsurancePremium +laborRetirementSalary +selfContributionRatio ' +
+      '+selfContributionAmount +companyContributionAmount'
+    );
   }
 
   async verifyPassword(id: string, password: string): Promise<boolean> {

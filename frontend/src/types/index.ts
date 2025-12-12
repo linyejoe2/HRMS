@@ -38,6 +38,49 @@ export interface Employee {
   salary?: number; // 薪水
   createdAt?: string;
   updatedAt?: string;
+
+  // Extended basic information
+  birthPlace?: string; // 籍貫
+  idNumber?: string; // 身份證號
+  dateOfBirth?: string; // 出生日期
+  education?: string; // 學歷
+  bloodType?: string; // 血型
+  isMarried?: boolean; // 婚姻狀態
+  gender?: string; // 性別 M/W/U
+  phone?: string; // 電話
+  address?: string; // 住址
+  bankAccount?: string; // 銀行帳號
+
+  // Job information
+  shift?: string; // 班別
+  jobTitle?: string; // 職稱
+  jobLevel?: string; // 職等
+  endDate?: string; // 離職日期
+
+  // Salary breakdown (sensitive)
+  baseSalary?: number; // 底薪
+  jobAllowance?: number; // 職務加給
+  dutyAllowance?: number; // 職等加給
+  professionalAllowance?: number; // 專業加給
+  specialAllowance?: number; // 特別加給
+  workSubsidy?: number; // 工作津貼
+
+  // Insurance information (sensitive)
+  laborInsuranceSalary?: number; // 勞保薪資
+  laborInsurancePremium?: number; // 勞保費
+  addLaborInsurancePremium?: number; // 加勞保費
+  healthInsuranceSalary?: number; // 健保薪資
+  healthInsurancePremium?: number; // 健保費
+  addHealthInsurancePremium?: number; // 加健保費
+  insuredDependents?: number; // 眷保人數
+  insuranceJoinDate?: string; // 加保日期
+  dependentsCount?: number; // 扶養人數
+
+  // Retirement information (sensitive)
+  laborRetirementSalary?: number; // 勞退薪資
+  selfContributionRatio?: number; // 自提勞退比例
+  selfContributionAmount?: number; // 自提勞退金
+  companyContributionAmount?: number; // 公提勞退金
 }
 
 export interface LeaveRequestForm {

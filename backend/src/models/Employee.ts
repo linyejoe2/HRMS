@@ -1,7 +1,7 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 // 圖片中的欄位選項（用於 Enum 類型）
-export type Education = '博士' | '碩士" | "大專" | "高中" | "高中以下'; // 擴充學歷選項
+export type Education = '博士' | '碩士' | '大專' | '高中' | '高中以下'; // 擴充學歷選項
 export type Gender = 'M' | 'W' | 'U'; // Male / Woman / Unknown
 export type BloodType = 'A' | 'B' | 'O' | 'AB'; // 血型
 
@@ -135,7 +135,7 @@ const EmployeeSchema = new Schema<IEmployee>({
   },
   bloodType: { // 血型
     type: String,
-    enum: ['A', 'B', 'O', 'AB', 'RH-', 'D', 'E', 'U'], // 這裡使用標準血型，並包含圖片中的 A/B/C/D/E 的擴充項
+    enum: ['A', 'B', 'O', 'AB'], // 這裡使用標準血型，並包含圖片中的 A/B/C/D/E 的擴充項
     trim: true
   },
   isMarried: { // 婚姻 T/F

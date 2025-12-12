@@ -55,7 +55,45 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     role: UserLevel.EMPLOYEE,
     isActive: true,
     hireDate: '',
-    salary: ''
+    salary: '',
+    // Extended basic information
+    birthPlace: '',
+    idNumber: '',
+    dateOfBirth: '',
+    education: '',
+    bloodType: '',
+    isMarried: false,
+    gender: '',
+    phone: '',
+    address: '',
+    bankAccount: '',
+    // Job information
+    shift: '',
+    jobTitle: '',
+    jobLevel: '',
+    endDate: '',
+    // Salary breakdown
+    baseSalary: '',
+    jobAllowance: '',
+    dutyAllowance: '',
+    professionalAllowance: '',
+    specialAllowance: '',
+    workSubsidy: '',
+    // Insurance information
+    laborInsuranceSalary: '',
+    laborInsurancePremium: '',
+    addLaborInsurancePremium: '',
+    healthInsuranceSalary: '',
+    healthInsurancePremium: '',
+    addHealthInsurancePremium: '',
+    insuredDependents: '',
+    insuranceJoinDate: '',
+    dependentsCount: '',
+    // Retirement information
+    laborRetirementSalary: '',
+    selfContributionRatio: '',
+    selfContributionAmount: '',
+    companyContributionAmount: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -153,11 +191,30 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const sensitiveEmployee = response.data.data.user;
       setSensitiveData(sensitiveEmployee);
 
-      // Update form data with sensitive information
+      // Update form data with all sensitive information
       setFormData(prev => ({
         ...prev,
         hireDate: sensitiveEmployee.hireDate ? sensitiveEmployee.hireDate.split('T')[0] : '',
-        salary: sensitiveEmployee.salary ? sensitiveEmployee.salary.toString() : ''
+        salary: sensitiveEmployee.salary ? sensitiveEmployee.salary.toString() : '',
+        // Salary breakdown
+        baseSalary: sensitiveEmployee.baseSalary ? sensitiveEmployee.baseSalary.toString() : '',
+        jobAllowance: sensitiveEmployee.jobAllowance ? sensitiveEmployee.jobAllowance.toString() : '',
+        dutyAllowance: sensitiveEmployee.dutyAllowance ? sensitiveEmployee.dutyAllowance.toString() : '',
+        professionalAllowance: sensitiveEmployee.professionalAllowance ? sensitiveEmployee.professionalAllowance.toString() : '',
+        specialAllowance: sensitiveEmployee.specialAllowance ? sensitiveEmployee.specialAllowance.toString() : '',
+        workSubsidy: sensitiveEmployee.workSubsidy ? sensitiveEmployee.workSubsidy.toString() : '',
+        // Insurance information
+        laborInsuranceSalary: sensitiveEmployee.laborInsuranceSalary ? sensitiveEmployee.laborInsuranceSalary.toString() : '',
+        laborInsurancePremium: sensitiveEmployee.laborInsurancePremium ? sensitiveEmployee.laborInsurancePremium.toString() : '',
+        addLaborInsurancePremium: sensitiveEmployee.addLaborInsurancePremium ? sensitiveEmployee.addLaborInsurancePremium.toString() : '',
+        healthInsuranceSalary: sensitiveEmployee.healthInsuranceSalary ? sensitiveEmployee.healthInsuranceSalary.toString() : '',
+        healthInsurancePremium: sensitiveEmployee.healthInsurancePremium ? sensitiveEmployee.healthInsurancePremium.toString() : '',
+        addHealthInsurancePremium: sensitiveEmployee.addHealthInsurancePremium ? sensitiveEmployee.addHealthInsurancePremium.toString() : '',
+        // Retirement information
+        laborRetirementSalary: sensitiveEmployee.laborRetirementSalary ? sensitiveEmployee.laborRetirementSalary.toString() : '',
+        selfContributionRatio: sensitiveEmployee.selfContributionRatio ? sensitiveEmployee.selfContributionRatio.toString() : '',
+        selfContributionAmount: sensitiveEmployee.selfContributionAmount ? sensitiveEmployee.selfContributionAmount.toString() : '',
+        companyContributionAmount: sensitiveEmployee.companyContributionAmount ? sensitiveEmployee.companyContributionAmount.toString() : ''
       }));
 
       setShowSensitive(true);
@@ -222,7 +279,45 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         role: employee.role || UserLevel.EMPLOYEE,
         isActive: employee.isActive ?? true,
         hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
-        salary: employee.salary ? employee.salary.toString() : ''
+        salary: employee.salary ? employee.salary.toString() : '',
+        // Extended basic information
+        birthPlace: employee.birthPlace || '',
+        idNumber: employee.idNumber || '',
+        dateOfBirth: employee.dateOfBirth ? employee.dateOfBirth.split('T')[0] : '',
+        education: employee.education || '',
+        bloodType: employee.bloodType || '',
+        isMarried: employee.isMarried ?? false,
+        gender: employee.gender || '',
+        phone: employee.phone || '',
+        address: employee.address || '',
+        bankAccount: employee.bankAccount || '',
+        // Job information
+        shift: employee.shift || '',
+        jobTitle: employee.jobTitle || '',
+        jobLevel: employee.jobLevel || '',
+        endDate: employee.endDate ? employee.endDate.split('T')[0] : '',
+        // Salary breakdown
+        baseSalary: employee.baseSalary ? employee.baseSalary.toString() : '',
+        jobAllowance: employee.jobAllowance ? employee.jobAllowance.toString() : '',
+        dutyAllowance: employee.dutyAllowance ? employee.dutyAllowance.toString() : '',
+        professionalAllowance: employee.professionalAllowance ? employee.professionalAllowance.toString() : '',
+        specialAllowance: employee.specialAllowance ? employee.specialAllowance.toString() : '',
+        workSubsidy: employee.workSubsidy ? employee.workSubsidy.toString() : '',
+        // Insurance information
+        laborInsuranceSalary: employee.laborInsuranceSalary ? employee.laborInsuranceSalary.toString() : '',
+        laborInsurancePremium: employee.laborInsurancePremium ? employee.laborInsurancePremium.toString() : '',
+        addLaborInsurancePremium: employee.addLaborInsurancePremium ? employee.addLaborInsurancePremium.toString() : '',
+        healthInsuranceSalary: employee.healthInsuranceSalary ? employee.healthInsuranceSalary.toString() : '',
+        healthInsurancePremium: employee.healthInsurancePremium ? employee.healthInsurancePremium.toString() : '',
+        addHealthInsurancePremium: employee.addHealthInsurancePremium ? employee.addHealthInsurancePremium.toString() : '',
+        insuredDependents: employee.insuredDependents ? employee.insuredDependents.toString() : '',
+        insuranceJoinDate: employee.insuranceJoinDate ? employee.insuranceJoinDate.split('T')[0] : '',
+        dependentsCount: employee.dependentsCount ? employee.dependentsCount.toString() : '',
+        // Retirement information
+        laborRetirementSalary: employee.laborRetirementSalary ? employee.laborRetirementSalary.toString() : '',
+        selfContributionRatio: employee.selfContributionRatio ? employee.selfContributionRatio.toString() : '',
+        selfContributionAmount: employee.selfContributionAmount ? employee.selfContributionAmount.toString() : '',
+        companyContributionAmount: employee.companyContributionAmount ? employee.companyContributionAmount.toString() : ''
       });
 
       // Fetch leave information for this employee
@@ -238,7 +333,45 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         role: UserLevel.EMPLOYEE,
         isActive: true,
         hireDate: '',
-        salary: ''
+        salary: '',
+        // Extended basic information
+        birthPlace: '',
+        idNumber: '',
+        dateOfBirth: '',
+        education: '',
+        bloodType: '',
+        isMarried: false,
+        gender: '',
+        phone: '',
+        address: '',
+        bankAccount: '',
+        // Job information
+        shift: '',
+        jobTitle: '',
+        jobLevel: '',
+        endDate: '',
+        // Salary breakdown
+        baseSalary: '',
+        jobAllowance: '',
+        dutyAllowance: '',
+        professionalAllowance: '',
+        specialAllowance: '',
+        workSubsidy: '',
+        // Insurance information
+        laborInsuranceSalary: '',
+        laborInsurancePremium: '',
+        addLaborInsurancePremium: '',
+        healthInsuranceSalary: '',
+        healthInsurancePremium: '',
+        addHealthInsurancePremium: '',
+        insuredDependents: '',
+        insuranceJoinDate: '',
+        dependentsCount: '',
+        // Retirement information
+        laborRetirementSalary: '',
+        selfContributionRatio: '',
+        selfContributionAmount: '',
+        companyContributionAmount: ''
       });
     }
     setErrors({});
@@ -303,13 +436,52 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         isActive: formData.isActive
       };
 
+      // Add extended basic information
+      if (formData.birthPlace) payload.birthPlace = formData.birthPlace.trim();
+      if (formData.idNumber) payload.idNumber = formData.idNumber.trim();
+      if (formData.dateOfBirth) payload.dateOfBirth = formData.dateOfBirth;
+      if (formData.education) payload.education = formData.education;
+      if (formData.bloodType) payload.bloodType = formData.bloodType;
+      payload.isMarried = formData.isMarried;
+      if (formData.gender) payload.gender = formData.gender;
+      if (formData.phone) payload.phone = formData.phone.trim();
+      if (formData.address) payload.address = formData.address.trim();
+      if (formData.bankAccount) payload.bankAccount = formData.bankAccount.trim();
+
+      // Add job information
+      if (formData.shift) payload.shift = formData.shift.trim();
+      if (formData.jobTitle) payload.jobTitle = formData.jobTitle.trim();
+      if (formData.jobLevel) payload.jobLevel = formData.jobLevel.trim();
+      if (formData.endDate) payload.endDate = formData.endDate;
+
       // Add sensitive fields if provided
-      if (formData.hireDate) {
-        payload.hireDate = formData.hireDate;
-      }
-      if (formData.salary) {
-        payload.salary = Number(formData.salary);
-      }
+      if (formData.hireDate) payload.hireDate = formData.hireDate;
+      if (formData.salary) payload.salary = Number(formData.salary);
+
+      // Add salary breakdown
+      if (formData.baseSalary) payload.baseSalary = Number(formData.baseSalary);
+      if (formData.jobAllowance) payload.jobAllowance = Number(formData.jobAllowance);
+      if (formData.dutyAllowance) payload.dutyAllowance = Number(formData.dutyAllowance);
+      if (formData.professionalAllowance) payload.professionalAllowance = Number(formData.professionalAllowance);
+      if (formData.specialAllowance) payload.specialAllowance = Number(formData.specialAllowance);
+      if (formData.workSubsidy) payload.workSubsidy = Number(formData.workSubsidy);
+
+      // Add insurance information
+      if (formData.laborInsuranceSalary) payload.laborInsuranceSalary = Number(formData.laborInsuranceSalary);
+      if (formData.laborInsurancePremium) payload.laborInsurancePremium = Number(formData.laborInsurancePremium);
+      if (formData.addLaborInsurancePremium) payload.addLaborInsurancePremium = Number(formData.addLaborInsurancePremium);
+      if (formData.healthInsuranceSalary) payload.healthInsuranceSalary = Number(formData.healthInsuranceSalary);
+      if (formData.healthInsurancePremium) payload.healthInsurancePremium = Number(formData.healthInsurancePremium);
+      if (formData.addHealthInsurancePremium) payload.addHealthInsurancePremium = Number(formData.addHealthInsurancePremium);
+      if (formData.insuredDependents) payload.insuredDependents = Number(formData.insuredDependents);
+      if (formData.insuranceJoinDate) payload.insuranceJoinDate = formData.insuranceJoinDate;
+      if (formData.dependentsCount) payload.dependentsCount = Number(formData.dependentsCount);
+
+      // Add retirement information
+      if (formData.laborRetirementSalary) payload.laborRetirementSalary = Number(formData.laborRetirementSalary);
+      if (formData.selfContributionRatio) payload.selfContributionRatio = Number(formData.selfContributionRatio);
+      if (formData.selfContributionAmount) payload.selfContributionAmount = Number(formData.selfContributionAmount);
+      if (formData.companyContributionAmount) payload.companyContributionAmount = Number(formData.companyContributionAmount);
 
       if (employee?._id) {
         // Update existing employee
@@ -497,6 +669,196 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
               </Box>
             </Grid>
 
+            {/* Extended Basic Information Section */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }}>
+                <Chip label="詳細資料" color="primary" size="small" />
+              </Divider>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="身份證號"
+                value={formData.idNumber}
+                onChange={(e) => handleInputChange('idNumber', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="出生日期"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                disabled={loading}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>性別</InputLabel>
+                <Select
+                  value={formData.gender}
+                  label="性別"
+                  onChange={(e) => handleInputChange('gender', e.target.value)}
+                  disabled={loading}
+                >
+                  <MenuItem value="M">男</MenuItem>
+                  <MenuItem value="W">女</MenuItem>
+                  <MenuItem value="U">未指定</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>學歷</InputLabel>
+                <Select
+                  value={formData.education}
+                  label="學歷"
+                  onChange={(e) => handleInputChange('education', e.target.value)}
+                  disabled={loading}
+                >
+                  <MenuItem value="博士">博士</MenuItem>
+                  <MenuItem value="碩士">碩士</MenuItem>
+                  <MenuItem value="大專">大專</MenuItem>
+                  <MenuItem value="高中">高中</MenuItem>
+                  <MenuItem value="高中以下">高中以下</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>血型</InputLabel>
+                <Select
+                  value={formData.bloodType}
+                  label="血型"
+                  onChange={(e) => handleInputChange('bloodType', e.target.value)}
+                  disabled={loading}
+                >
+                  <MenuItem value="A">A型</MenuItem>
+                  <MenuItem value="B">B型</MenuItem>
+                  <MenuItem value="O">O型</MenuItem>
+                  <MenuItem value="AB">AB型</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="籍貫"
+                value={formData.birthPlace}
+                onChange={(e) => handleInputChange('birthPlace', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="電話"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="銀行帳號"
+                value={formData.bankAccount}
+                onChange={(e) => handleInputChange('bankAccount', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="住址"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                disabled={loading}
+                multiline
+                rows={2}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ pt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isMarried}
+                      onChange={(e) => handleInputChange('isMarried', e.target.checked)}
+                      disabled={loading}
+                    />
+                  }
+                  label="婚姻狀態"
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
+                  {formData.isMarried ? '已婚' : '未婚'}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Job Information Section */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }}>
+                <Chip label="職務資訊" color="primary" size="small" />
+              </Divider>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="職稱"
+                value={formData.jobTitle}
+                onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                disabled={loading}
+                helperText="例如：董事長、經理、工程師"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="職等"
+                value={formData.jobLevel}
+                onChange={(e) => handleInputChange('jobLevel', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="班別"
+                value={formData.shift}
+                onChange={(e) => handleInputChange('shift', e.target.value)}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="離職日期"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                disabled={loading}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
             {/* Sensitive Information Section */}
             {showSensitive && sensitiveData && (
               <>
@@ -539,28 +901,300 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="薪水"
+                    label="薪水（總計）"
                     type="number"
                     value={formData.salary}
                     onChange={(e) => handleInputChange('salary', e.target.value)}
                     error={!!errors.salary}
-                    helperText={errors.salary || 'NT$ 月薪'}
+                    helperText={errors.salary || 'NT$ 月薪總計'}
                     disabled={loading}
                     inputProps={{
                       min: 0,
                       step: 1000
                     }}
-                  // sx={{
-                  //   '& .MuiOutlinedInput-root': {
-                  //     '& fieldset': {
-                  //       borderColor: '#1976d2',
-                  //     },
-                  //   },
-                  //   '& .MuiInputBase-input': {
-                  //     color: '#1976d2',
-                  //     fontWeight: 'bold',
-                  //   },
-                  // }}
+                  />
+                </Grid>
+
+                {/* Salary Breakdown Section */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>
+                    <Chip
+                      label="薪資明細"
+                      color="secondary"
+                      size="small"
+                      icon={<LockIcon />}
+                    />
+                  </Divider>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="底薪"
+                    type="number"
+                    value={formData.baseSalary}
+                    onChange={(e) => handleInputChange('baseSalary', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1000 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="職務加給"
+                    type="number"
+                    value={formData.jobAllowance}
+                    onChange={(e) => handleInputChange('jobAllowance', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 100 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="職等加給"
+                    type="number"
+                    value={formData.dutyAllowance}
+                    onChange={(e) => handleInputChange('dutyAllowance', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 100 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="專業加給"
+                    type="number"
+                    value={formData.professionalAllowance}
+                    onChange={(e) => handleInputChange('professionalAllowance', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 100 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="特別加給"
+                    type="number"
+                    value={formData.specialAllowance}
+                    onChange={(e) => handleInputChange('specialAllowance', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 100 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="工作津貼"
+                    type="number"
+                    value={formData.workSubsidy}
+                    onChange={(e) => handleInputChange('workSubsidy', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 100 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                {/* Insurance Information Section */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>
+                    <Chip
+                      label="保險資訊"
+                      color="secondary"
+                      size="small"
+                      icon={<LockIcon />}
+                    />
+                  </Divider>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="勞保薪資"
+                    type="number"
+                    value={formData.laborInsuranceSalary}
+                    onChange={(e) => handleInputChange('laborInsuranceSalary', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1000 }}
+                    helperText="NT$ 投保薪資"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="勞保費"
+                    type="number"
+                    value={formData.laborInsurancePremium}
+                    onChange={(e) => handleInputChange('laborInsurancePremium', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="加勞保費"
+                    type="number"
+                    value={formData.addLaborInsurancePremium}
+                    onChange={(e) => handleInputChange('addLaborInsurancePremium', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="健保薪資"
+                    type="number"
+                    value={formData.healthInsuranceSalary}
+                    onChange={(e) => handleInputChange('healthInsuranceSalary', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1000 }}
+                    helperText="NT$ 投保薪資"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="健保費"
+                    type="number"
+                    value={formData.healthInsurancePremium}
+                    onChange={(e) => handleInputChange('healthInsurancePremium', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="加健保費"
+                    type="number"
+                    value={formData.addHealthInsurancePremium}
+                    onChange={(e) => handleInputChange('addHealthInsurancePremium', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="眷保人數"
+                    type="number"
+                    value={formData.insuredDependents}
+                    onChange={(e) => handleInputChange('insuredDependents', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="人"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="加保日期"
+                    type="date"
+                    value={formData.insuranceJoinDate}
+                    onChange={(e) => handleInputChange('insuranceJoinDate', e.target.value)}
+                    disabled={loading}
+                    InputLabelProps={{ shrink: true }}
+                    helperText="勞健保加保日期"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="扶養人數"
+                    type="number"
+                    value={formData.dependentsCount}
+                    onChange={(e) => handleInputChange('dependentsCount', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1 }}
+                    helperText="人"
+                  />
+                </Grid>
+
+                {/* Retirement Information Section */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>
+                    <Chip
+                      label="退休金資訊"
+                      color="secondary"
+                      size="small"
+                      icon={<LockIcon />}
+                    />
+                  </Divider>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="勞退薪資"
+                    type="number"
+                    value={formData.laborRetirementSalary}
+                    onChange={(e) => handleInputChange('laborRetirementSalary', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 1000 }}
+                    helperText="NT$ 提繳工資"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="自提勞退比例"
+                    type="number"
+                    value={formData.selfContributionRatio}
+                    onChange={(e) => handleInputChange('selfContributionRatio', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, max: 100, step: 0.1 }}
+                    helperText="%"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="自提勞退金"
+                    type="number"
+                    value={formData.selfContributionAmount}
+                    onChange={(e) => handleInputChange('selfContributionAmount', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="公提勞退金"
+                    type="number"
+                    value={formData.companyContributionAmount}
+                    onChange={(e) => handleInputChange('companyContributionAmount', e.target.value)}
+                    disabled={loading}
+                    inputProps={{ min: 0, step: 10 }}
+                    helperText="NT$"
                   />
                 </Grid>
               </>
