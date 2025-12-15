@@ -23,8 +23,8 @@ import {
   Visibility as VisibilityIcon,
   Lock as LockIcon
 } from '@mui/icons-material';
-import { Employee, UserLevel } from '../../types';
-import { employeeAPI, authAPI } from '../../services/api';
+import { Employee, UserLevel, Variable } from '../../types';
+import { employeeAPI, authAPI, variableAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { getLeaveColorByHours } from '../../utils/leaveCalculations';
@@ -62,7 +62,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     dateOfBirth: '',
     education: '',
     bloodType: '',
-    isMarried: false,
+    maritalStatus: '',
     gender: '',
     phone: '',
     address: '',
@@ -134,20 +134,26 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     }
   });
 
-  // Department options
-  // 管理部、業務部、研發課、財務部、稽核室、總經理室
-  const departments = [
-    '管理部',
-    '研發課',
-    '財務部',
-    '業務部',
-    '稽核室',
-    '總經理室',
-    // '製造部',
-    // '品管部',
-    // '採購部',
-    // '法務部'
-  ];
+  // Variables state
+  const [variables, setVariables] = useState<{
+    bloodType: Variable[];
+    education: Variable[];
+    gender: Variable[];
+    jobLevel: Variable[];
+    jobType: Variable[];
+    maritalStatus: Variable[];
+    shift: Variable[];
+    department: Variable[];
+  }>({
+    bloodType: [],
+    education: [],
+    gender: [],
+    jobLevel: [],
+    jobType: [],
+    maritalStatus: [],
+    shift: [],
+    department: []
+  });
 
   // Role options
   const roleOptions = [
@@ -234,6 +240,31 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     setVerifyingPassword(false);
   };
 
+  // Fetch variables
+  const fetchVariables = async () => {
+    try {
+      const response = await variableAPI.getAll(undefined, false); // Only get active variables
+      const allVariables = response.data.data.variables;
+
+      // Group variables by section
+      const grouped = {
+        bloodType: allVariables.filter((v: Variable) => v.section === 'bloodType'),
+        education: allVariables.filter((v: Variable) => v.section === 'education'),
+        gender: allVariables.filter((v: Variable) => v.section === 'gender'),
+        jobLevel: allVariables.filter((v: Variable) => v.section === 'jobLevel'),
+        jobType: allVariables.filter((v: Variable) => v.section === 'jobType'),
+        maritalStatus: allVariables.filter((v: Variable) => v.section === 'maritalStatus'),
+        shift: allVariables.filter((v: Variable) => v.section === 'shift'),
+        department: allVariables.filter((v: Variable) => v.section === 'department')
+      };
+
+      setVariables(grouped);
+    } catch (error) {
+      console.error('Error fetching variables:', error);
+      toast.error('載入選項資料失敗');
+    }
+  };
+
   // Fetch remaining leave information
   const fetchLeaveInfo = async (empId: string, hireDate?: string) => {
     if (!hireDate) {
@@ -286,7 +317,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         dateOfBirth: employee.dateOfBirth ? employee.dateOfBirth.split('T')[0] : '',
         education: employee.education || '',
         bloodType: employee.bloodType || '',
-        isMarried: employee.isMarried ?? false,
+        maritalStatus: employee.maritalStatus || '',
         gender: employee.gender || '',
         phone: employee.phone || '',
         address: employee.address || '',
@@ -340,7 +371,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         dateOfBirth: '',
         education: '',
         bloodType: '',
-        isMarried: false,
+        maritalStatus: '',
         gender: '',
         phone: '',
         address: '',
@@ -378,6 +409,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     setShowSensitive(false);
     setSensitiveData(null);
   }, [employee, open]);
+
+  // Fetch variables on component mount
+  useEffect(() => {
+    fetchVariables();
+  }, []);
 
   // Handle input change
   const handleInputChange = (field: string, value: any) => {
@@ -442,16 +478,16 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       if (formData.dateOfBirth) payload.dateOfBirth = formData.dateOfBirth;
       if (formData.education) payload.education = formData.education;
       if (formData.bloodType) payload.bloodType = formData.bloodType;
-      payload.isMarried = formData.isMarried;
+      if (formData.maritalStatus) payload.maritalStatus = formData.maritalStatus;
       if (formData.gender) payload.gender = formData.gender;
       if (formData.phone) payload.phone = formData.phone.trim();
       if (formData.address) payload.address = formData.address.trim();
       if (formData.bankAccount) payload.bankAccount = formData.bankAccount.trim();
 
       // Add job information
-      if (formData.shift) payload.shift = formData.shift.trim();
-      if (formData.jobTitle) payload.jobTitle = formData.jobTitle.trim();
-      if (formData.jobLevel) payload.jobLevel = formData.jobLevel.trim();
+      if (formData.shift) payload.shift = formData.shift;
+      if (formData.jobTitle) payload.jobTitle = formData.jobTitle;
+      if (formData.jobLevel) payload.jobLevel = formData.jobLevel;
       if (formData.endDate) payload.endDate = formData.endDate;
 
       // Add sensitive fields if provided
@@ -614,9 +650,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   onChange={(e) => handleInputChange('department', e.target.value)}
                   disabled={loading}
                 >
-                  {departments.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
+                  {variables.department.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
                     </MenuItem>
                   ))}
                 </Select>
@@ -707,9 +743,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   onChange={(e) => handleInputChange('gender', e.target.value)}
                   disabled={loading}
                 >
-                  <MenuItem value="M">男</MenuItem>
-                  <MenuItem value="W">女</MenuItem>
-                  <MenuItem value="U">未指定</MenuItem>
+                  {variables.gender.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -723,11 +761,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   onChange={(e) => handleInputChange('education', e.target.value)}
                   disabled={loading}
                 >
-                  <MenuItem value="博士">博士</MenuItem>
-                  <MenuItem value="碩士">碩士</MenuItem>
-                  <MenuItem value="大專">大專</MenuItem>
-                  <MenuItem value="高中">高中</MenuItem>
-                  <MenuItem value="高中以下">高中以下</MenuItem>
+                  {variables.education.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -741,10 +779,11 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   onChange={(e) => handleInputChange('bloodType', e.target.value)}
                   disabled={loading}
                 >
-                  <MenuItem value="A">A型</MenuItem>
-                  <MenuItem value="B">B型</MenuItem>
-                  <MenuItem value="O">O型</MenuItem>
-                  <MenuItem value="AB">AB型</MenuItem>
+                  {variables.bloodType.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -792,21 +831,21 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <Box sx={{ pt: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isMarried}
-                      onChange={(e) => handleInputChange('isMarried', e.target.checked)}
-                      disabled={loading}
-                    />
-                  }
+              <FormControl fullWidth>
+                <InputLabel>婚姻狀態</InputLabel>
+                <Select
+                  value={formData.maritalStatus}
                   label="婚姻狀態"
-                />
-                <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
-                  {formData.isMarried ? '已婚' : '未婚'}
-                </Typography>
-              </Box>
+                  onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                  disabled={loading}
+                >
+                  {variables.maritalStatus.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             {/* Job Information Section */}
@@ -817,34 +856,57 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="職稱"
-                value={formData.jobTitle}
-                onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                disabled={loading}
-                helperText="例如：董事長、經理、工程師"
-              />
+              <FormControl fullWidth>
+                <InputLabel>職稱</InputLabel>
+                <Select
+                  value={formData.jobTitle}
+                  label="職稱"
+                  onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                  disabled={loading}
+                >
+                  {variables.jobType.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="職等"
-                value={formData.jobLevel}
-                onChange={(e) => handleInputChange('jobLevel', e.target.value)}
-                disabled={loading}
-              />
+              <FormControl fullWidth>
+                <InputLabel>職等</InputLabel>
+                <Select
+                  value={formData.jobLevel}
+                  label="職等"
+                  onChange={(e) => handleInputChange('jobLevel', e.target.value)}
+                  disabled={loading}
+                >
+                  {variables.jobLevel.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="班別"
-                value={formData.shift}
-                onChange={(e) => handleInputChange('shift', e.target.value)}
-                disabled={loading}
-              />
+              <FormControl fullWidth>
+                <InputLabel>班別</InputLabel>
+                <Select
+                  value={formData.shift}
+                  label="班別"
+                  onChange={(e) => handleInputChange('shift', e.target.value)}
+                  disabled={loading}
+                >
+                  {variables.shift.map((variable) => (
+                    <MenuItem key={variable._id} value={variable.code}>
+                      {variable.description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12} sm={6}>

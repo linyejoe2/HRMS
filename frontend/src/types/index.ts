@@ -45,8 +45,8 @@ export interface Employee {
   dateOfBirth?: string; // 出生日期
   education?: string; // 學歷
   bloodType?: string; // 血型
-  isMarried?: boolean; // 婚姻狀態
-  gender?: string; // 性別 M/W/U
+  maritalStatus?: string; // 婚姻狀態
+  gender?: string; // 性別
   phone?: string; // 電話
   address?: string; // 住址
   bankAccount?: string; // 銀行帳號

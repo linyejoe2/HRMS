@@ -26,7 +26,8 @@ const sectionMap = {
   jobLevel: "職等",
   jobType: "職稱",
   maritalStatus: "婚姻",
-  shift: "班別"
+  shift: "班別",
+  department: "部門"
 };
 
 interface AddEditVariableDialogProps {

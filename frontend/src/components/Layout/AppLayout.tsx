@@ -149,7 +149,10 @@ const AppLayout: React.FC = () => {
         icon: <EmployeeIcon />,
         path: '/employees'
       });
+    }
 
+       // Variable Management for Admin only
+    if (user?.role === UserLevel.ADMIN) {
       baseItems.push({
         text: '變數管理',
         icon: <VariableIcon />,

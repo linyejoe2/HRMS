@@ -28,8 +28,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { employeeAPI } from '../../services/api';
-import { Employee, UserLevel } from '../../types';
+import { employeeAPI, variableAPI } from '../../services/api';
+import { Employee, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 import { toast } from 'react-toastify';
@@ -45,7 +45,8 @@ const EmployeeManagement: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [selectedDepartment, setSelectedDepartment] = useState('');
-  
+  const [departments, setDepartments] = useState<Variable[]>([]);
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -64,6 +65,18 @@ const EmployeeManagement: React.FC = () => {
 
   // Check permissions
   const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
+
+  // Fetch departments
+  const fetchDepartments = async () => {
+    try {
+      const response = await variableAPI.getAll(undefined, false); // Only get active variables
+      const allVariables = response.data.data.variables;
+      const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+      setDepartments(departmentVars);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
 
   // Load employees
   const loadEmployees = async (currentPage: number = page) => {
@@ -251,6 +264,18 @@ const EmployeeManagement: React.FC = () => {
     return new Date(dateString).toLocaleDateString('zh-TW');
   };
 
+  // Get department description from code
+  const getDepartmentDescription = (code?: string) => {
+    if (!code) return '-';
+    const dept = departments.find(d => d.code === code);
+    return dept ? dept.description : code;
+  };
+
+  // Fetch departments on mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
   // Load employees on mount and when department filter changes
   useEffect(() => {
     loadEmployees(1);
@@ -307,12 +332,11 @@ const EmployeeManagement: React.FC = () => {
                 SelectProps={{ native: true }}
               >
                 <option value="">所有部門</option>
-                <option value="管理部">管理部</option>
-                <option value="研發課">研發課</option>
-                <option value="財務部">財務部</option>
-                <option value="業務部">業務部</option>
-                <option value="稽核室">稽核室</option>
-                <option value="總經理室">總經理室</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept.code}>
+                    {dept.description}
+                  </option>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} md={3}>
@@ -380,7 +404,7 @@ const EmployeeManagement: React.FC = () => {
                     <TableRow key={employee._id} hover>
                       <TableCell>{employee.empID}</TableCell>
                       <TableCell>{employee.name}</TableCell>
-                      <TableCell>{employee.department || '-'}</TableCell>
+                      <TableCell>{getDepartmentDescription(employee.department)}</TableCell>
                       <TableCell>
                         <Chip
                           label={getRoleText(employee.role)}

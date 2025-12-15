@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import app from './app';
 import connectDB from './config/database';
 import { config } from './config';
-import { cronService, departmentSeedService } from './services';
+import { cronService } from './services';
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +13,6 @@ const startServer = async (): Promise<void> => {
     await connectDB();
 
     // Initialize departments (seed data)
-    await departmentSeedService.initializeDepartments();
 
     // Create upload directory if it doesn't exist
     const fs = require('fs');

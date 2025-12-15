@@ -64,6 +64,13 @@ export class VariableSeedService {
         // Marital Status (婚姻狀態)
         { section: 'maritalStatus', code: '1', description: '已婚', isActive: true },
         { section: 'maritalStatus', code: '0', description: '未婚', isActive: true },
+
+        { section: "department", description: '管理部', code: '2000' },
+        { section: "department", description: '財務部', code: '8000' },
+        { section: "department", description: '研發課', code: '5006' },
+        { section: "department", description: '業務部', code: '4200' },
+        { section: "department", description: '稽核室', code: '1700' },
+        { section: "department", description: '總經理室', code: '1300' }
       ];
 
       await Variable.insertMany(variables);
