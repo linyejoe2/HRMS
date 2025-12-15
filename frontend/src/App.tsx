@@ -12,6 +12,7 @@ import AskLeaveTab from './components/Leave/AskLeaveTab';
 import ApproveLeaveTab from './components/Leave/ApproveLeaveTab';
 import PostClockTab from './components/PostClock/PostClockTab';
 import BusinessTripTab from './components/BusinessTrip/BusinessTripTab';
+import VariableManagement from './components/Variable/VariableManagement';
 import { KanbanPage } from './pages/KanbanPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -90,6 +91,7 @@ const App: React.FC = () => {
         <Route path="leave/approve" element={<ApproveLeaveTab />} />
         <Route path="postclock" element={<PostClockTab />} />
         <Route path="business-trip" element={<BusinessTripTab />} />
+        <Route path="variables" element={<VariableManagement />} />
         <Route path="settings" element={<SettingsTab />} />
       </Route>
 

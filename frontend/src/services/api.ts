@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment, Variable } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -511,3 +511,50 @@ export const approveBusinessTripRequest = businessTripAPI.approve;
 export const rejectBusinessTripRequest = businessTripAPI.reject;
 export const cancelBusinessTripRequest = businessTripAPI.cancel;
 export const getCancelledBusinessTripRequests = businessTripAPI.getCancelled;
+
+// Variable API
+export const variableAPI = {
+  // Get all variables
+  getAll: (section?: string, includeInactive?: boolean): Promise<AxiosResponse<{ error: boolean, message: string, data: { variables: Variable[] } }>> =>
+    api.get(`/variables?${section ? `section=${section}&` : ''}${includeInactive ? 'includeInactive=true' : ''}`),
+
+  // Get all unique sections
+  getSections: (): Promise<AxiosResponse<{ error: boolean, message: string, data: { sections: string[] } }>> =>
+    api.get('/variables/sections'),
+
+  // Get variables by section
+  getBySection: (section: string, includeInactive?: boolean): Promise<AxiosResponse<{ error: boolean, message: string, data: { variables: Variable[] } }>> =>
+    api.get(`/variables/section/${section}${includeInactive ? '?includeInactive=true' : ''}`),
+
+  // Get variable by ID
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { variable: Variable } }>> =>
+    api.get(`/variables/${id}`),
+
+  // Get variable by section and code
+  getByCode: (section: string, code: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { variable: Variable } }>> =>
+    api.get(`/variables/code/${section}/${code}`),
+
+  // Create new variable (HR/Admin only)
+  create: (data: Partial<Variable>): Promise<AxiosResponse<{ error: boolean, message: string, data: { variable: Variable } }>> =>
+    api.post('/variables', data),
+
+  // Bulk create variables (HR/Admin only)
+  bulkCreate: (variables: Partial<Variable>[]): Promise<AxiosResponse<{ error: boolean, message: string, data: { variables: Variable[] } }>> =>
+    api.post('/variables/bulk', { variables }),
+
+  // Update variable (HR/Admin only)
+  update: (id: string, data: Partial<Variable>): Promise<AxiosResponse<{ error: boolean, message: string, data: { variable: Variable } }>> =>
+    api.put(`/variables/${id}`, data),
+
+  // Delete variable (Admin only)
+  delete: (id: string, hardDelete?: boolean): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
+    api.delete(`/variables/${id}${hardDelete ? '?hard=true' : ''}`),
+
+  // Seed initial data (Admin only)
+  seed: (): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
+    api.post('/variables/seed'),
+
+  // Reseed data (Admin only)
+  reseed: (): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
+    api.post('/variables/reseed')
+};

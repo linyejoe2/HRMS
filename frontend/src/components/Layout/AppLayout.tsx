@@ -30,6 +30,7 @@ import {
   Assignment as ApprovalIcon,
   EditCalendar as PostClockIcon,
   Work as BusinessTripIcon,
+  Storage as VariableIcon,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
@@ -147,6 +148,12 @@ const AppLayout: React.FC = () => {
         text: '員工管理',
         icon: <EmployeeIcon />,
         path: '/employees'
+      });
+
+      baseItems.push({
+        text: '變數管理',
+        icon: <VariableIcon />,
+        path: '/variables'
       });
     }
 

@@ -318,3 +318,15 @@ export interface LeaveAdjustment {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface Variable {
+  _id?: string;
+  section: string; // Section name (e.g., 'jobType', 'department')
+  code: string; // Primary code (e.g., '01', '02')
+  code2?: string; // Secondary code (optional)
+  description: string; // Human-readable description (e.g., '董事長')
+  memo?: string; // Additional notes (optional)
+  isActive: boolean; // Enable/disable flag
+  createdAt?: string;
+  updatedAt?: string;
+}
