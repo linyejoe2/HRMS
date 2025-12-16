@@ -808,25 +808,13 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid sx={{ display: "none" }} item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="銀行帳號"
                 value={formData.bankAccount}
                 onChange={(e) => handleInputChange('bankAccount', e.target.value)}
                 disabled={loading}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="住址"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                disabled={loading}
-                multiline
-                rows={2}
               />
             </Grid>
 
@@ -846,6 +834,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="住址"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                disabled={loading}
+                multiline
+                rows={2}
+              />
             </Grid>
 
             {/* Job Information Section */}
@@ -912,6 +912,20 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                label="入職日期"
+                type="date"
+                value={formData.hireDate}
+                onChange={(e) => handleInputChange('hireDate', e.target.value)}
+                disabled={loading}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
                 label="離職日期"
                 type="date"
                 value={formData.endDate}
@@ -924,40 +938,17 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
             {/* Sensitive Information Section */}
             {showSensitive && sensitiveData && (
               <>
+
+                {/* Salary Breakdown Section */}
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }}>
                     <Chip
-                      label="敏感資訊"
+                      label="薪資明細"
                       color="secondary"
                       size="small"
                       icon={<LockIcon />}
                     />
                   </Divider>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="入職日期"
-                    type="date"
-                    value={formData.hireDate}
-                    onChange={(e) => handleInputChange('hireDate', e.target.value)}
-                    disabled={loading}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  // sx={{
-                  //   '& .MuiOutlinedInput-root': {
-                  //     '& fieldset': {
-                  //       borderColor: '#1976d2',
-                  //     },
-                  //   },
-                  //   '& .MuiInputBase-input': {
-                  //     color: '#1976d2',
-                  //     fontWeight: 'bold',
-                  //   },
-                  // }}
-                  />
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
@@ -975,18 +966,6 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                       step: 1000
                     }}
                   />
-                </Grid>
-
-                {/* Salary Breakdown Section */}
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }}>
-                    <Chip
-                      label="薪資明細"
-                      color="secondary"
-                      size="small"
-                      icon={<LockIcon />}
-                    />
-                  </Divider>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
