@@ -125,10 +125,10 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                 <Controller
                   name="date"
                   control={control}
-                  rules={{ required: '請選擇補卡日期' }}
+                  rules={{ required: '請選擇補單日期' }}
                   render={({ field: { onChange, value } }) => (
                     <DatePicker
-                      label="補卡日期"
+                      label="補單日期"
                       value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
@@ -150,10 +150,10 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                 <Controller
                   name="time"
                   control={control}
-                  rules={{ required: '請選擇補卡時間' }}
+                  rules={{ required: '請選擇補單時間' }}
                   render={({ field: { onChange, value } }) => (
                     <TimePicker
-                      label="補卡時間"
+                      label="補單時間"
                       value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
@@ -198,17 +198,17 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                 <Controller
                   name="reason"
                   control={control}
-                  rules={{ required: '請填寫補卡原因' }}
+                  rules={{ required: '請填寫補單原因' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="補卡原因"
+                      label="補單原因"
                       multiline
                       rows={3}
                       fullWidth
                       error={!!errors.reason}
                       helperText={errors.reason?.message}
-                      placeholder="請說明為何需要補卡..."
+                      placeholder="請說明為何需要補單..."
                       required
                     />
                   )}
@@ -220,7 +220,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   files={files}
                   onFilesChange={setFiles}
                   label="佐證資料 (選填)"
-                  helperText="可上傳多個檔案作為補卡證明"
+                  helperText="可上傳多個檔案作為補單證明"
                   disabled={loading}
                 />
               </Grid>

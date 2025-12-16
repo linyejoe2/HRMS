@@ -139,7 +139,7 @@ const AppLayout: React.FC = () => {
         path: '/leave/approve?tab=leave',
         subItems: [
           { text: '請假審核', path: '/leave/approve?tab=leave' },
-          { text: '補卡審核', path: '/leave/approve?tab=postclock' },
+          { text: '補單審核', path: '/leave/approve?tab=postclock' },
           { text: '出差審核', path: '/leave/approve?tab=travel' },
         ]
       });

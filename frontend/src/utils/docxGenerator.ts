@@ -132,7 +132,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     const link = document.createElement('a');
     link.href = URL.createObjectURL(output);
     const dateStr = new Date(postClockRequest.date).toLocaleDateString('zh-TW').replace(/\//g, '_');
-    link.download = `補卡單_${dateStr}_${postClockRequest.name}.docx`;
+    link.download = `補單單_${dateStr}_${postClockRequest.name}.docx`;
 
     // Trigger download
     document.body.appendChild(link);

@@ -115,14 +115,14 @@ const PostClockTab: React.FC = () => {
     },
     {
       field: 'date',
-      headerName: '補卡日期',
+      headerName: '補單日期',
       flex: 1.5,
       valueGetter: (_, row) => new Date(row.date).toLocaleDateString('zh-TW'),
       sortable: true
     },
     {
       field: 'time',
-      headerName: '補卡時間',
+      headerName: '補單時間',
       flex: 1.5,
       valueGetter: (_, row) => new Date(row.time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
       sortable: true
@@ -322,7 +322,7 @@ const PostClockTab: React.FC = () => {
         open={fileDialogOpen}
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
-        title="補卡佐證資料"
+        title="補單佐證資料"
       />
     </Box>
   );

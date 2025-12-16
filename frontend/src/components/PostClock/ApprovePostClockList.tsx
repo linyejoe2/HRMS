@@ -166,14 +166,14 @@ const ApprovePostClockList: React.FC = () => {
     },
     {
       field: 'date',
-      headerName: '補卡日期',
+      headerName: '補單日期',
       flex: 1.5,
       valueGetter: (_, row) => new Date(row.date).toLocaleDateString('zh-TW'),
       sortable: true
     },
     {
       field: 'time',
-      headerName: '補卡時間',
+      headerName: '補單時間',
       flex: 1.5,
       valueGetter: (_, row) => new Date(row.time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
       sortable: true
@@ -416,13 +416,13 @@ const ApprovePostClockList: React.FC = () => {
                 員工: {selectedRequest.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡類型: {getClockTypeLabel(selectedRequest.clockType)}
+                補單類型: {getClockTypeLabel(selectedRequest.clockType)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡日期: {new Date(selectedRequest.date).toLocaleDateString('zh-TW')}
+                補單日期: {new Date(selectedRequest.date).toLocaleDateString('zh-TW')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡時間: {new Date(selectedRequest.time).toLocaleTimeString('zh-TW')}
+                補單時間: {new Date(selectedRequest.time).toLocaleTimeString('zh-TW')}
               </Typography>
             </Box>
           )
@@ -448,13 +448,13 @@ const ApprovePostClockList: React.FC = () => {
                 員工: {selectedRequest.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡類型: {getClockTypeLabel(selectedRequest.clockType)}
+                補單類型: {getClockTypeLabel(selectedRequest.clockType)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡日期: {new Date(selectedRequest.date).toLocaleDateString('zh-TW')}
+                補單日期: {new Date(selectedRequest.date).toLocaleDateString('zh-TW')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡時間: {new Date(selectedRequest.time).toLocaleTimeString('zh-TW')}
+                補單時間: {new Date(selectedRequest.time).toLocaleTimeString('zh-TW')}
               </Typography>
             </Box>
           )
@@ -480,14 +480,14 @@ const ApprovePostClockList: React.FC = () => {
                 員工: {selectedRequest.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                補卡類型: {getClockTypeLabel(selectedRequest.clockType)}
+                補單類型: {getClockTypeLabel(selectedRequest.clockType)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 當前狀態: {getStatusChip(selectedRequest.status)}
               </Typography>
               <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-                {selectedRequest.status === 'approved' && '注意：此補卡已核准，抽單將撤銷核准狀態'}
-                {selectedRequest.status === 'rejected' && '注意：此補卡已拒絕，抽單將移除此記錄'}
+                {selectedRequest.status === 'approved' && '注意：此補單已核准，抽單將撤銷核准狀態'}
+                {selectedRequest.status === 'rejected' && '注意：此補單已拒絕，抽單將移除此記錄'}
               </Typography>
             </Box>
           )
@@ -499,7 +499,7 @@ const ApprovePostClockList: React.FC = () => {
         open={fileDialogOpen}
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
-        title="補卡佐證資料"
+        title="補單佐證資料"
       />
     </Box>
   );

@@ -85,7 +85,7 @@ const ApproveLeaveTab: React.FC = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="審核類型">
           <Tab label="請假審核" {...a11yProps(0)} />
-          <Tab label="補卡審核" {...a11yProps(1)} />
+          <Tab label="補單審核" {...a11yProps(1)} />
           <Tab label="出差審核" {...a11yProps(2)} />
         </Tabs>
       </Box>

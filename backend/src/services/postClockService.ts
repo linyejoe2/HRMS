@@ -98,10 +98,10 @@ export class PostClockService {
       // Update clock in/out time based on clockType
       if (postClock.clockType === 'in') {
         attendance.clockInTime = postClock.time;
-        attendance.clockInStatus = '補卡'; // Mark as manual entry
+        attendance.clockInStatus = '補單'; // Mark as manual entry
       } else {
         attendance.clockOutTime = postClock.time;
-        attendance.clockOutStatus = '補卡'; // Mark as manual entry
+        attendance.clockOutStatus = '補單'; // Mark as manual entry
       }
 
       if (attendance.clockInTime && attendance.clockOutTime) {
@@ -136,10 +136,10 @@ export class PostClockService {
       // Set clock in/out time based on clockType
       if (postClock.clockType === 'in') {
         newAttendance.clockInTime = postClock.time;
-        newAttendance.clockInStatus = '補卡'; // Mark as manual entry
+        newAttendance.clockInStatus = '補單'; // Mark as manual entry
       } else {
         newAttendance.clockOutTime = postClock.time;
-        newAttendance.clockOutStatus = '補卡'; // Mark as manual entry
+        newAttendance.clockOutStatus = '補單'; // Mark as manual entry
       }
 
       attendance = new Attendance(newAttendance);
@@ -221,10 +221,10 @@ export class PostClockService {
       attendance.postclocks = attendance.postclocks.filter(seq => seq !== postClock.sequenceNumber);
 
       // Reset clock time if it was set by this postclock
-      if (postClock.clockType === 'in' && attendance.clockInStatus === '補卡') {
+      if (postClock.clockType === 'in' && attendance.clockInStatus === '補單') {
         attendance.clockInTime = undefined;
         attendance.clockInStatus = undefined;
-      } else if (postClock.clockType === 'out' && attendance.clockOutStatus === '補卡') {
+      } else if (postClock.clockType === 'out' && attendance.clockOutStatus === '補單') {
         attendance.clockOutTime = undefined;
         attendance.clockOutStatus = undefined;
       }
