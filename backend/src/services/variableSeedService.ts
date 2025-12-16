@@ -65,12 +65,13 @@ export class VariableSeedService {
         { section: 'maritalStatus', code: '1', description: '已婚', isActive: true },
         { section: 'maritalStatus', code: '0', description: '未婚', isActive: true },
 
-        { section: "department", description: '管理部', code: '2000' },
-        { section: "department", description: '財務部', code: '8000' },
-        { section: "department", description: '研發課', code: '5006' },
-        { section: "department", description: '業務部', code: '4200' },
-        { section: "department", description: '稽核室', code: '1700' },
-        { section: "department", description: '總經理室', code: '1300' }
+        // Departments (部門)
+        { section: 'department', code: '2000', description: '管理部', isActive: true },
+        { section: 'department', code: '8000', description: '財務部', isActive: true },
+        { section: 'department', code: '5006', description: '研發課', isActive: true },
+        { section: 'department', code: '4200', description: '業務部', isActive: true },
+        { section: 'department', code: '1700', description: '稽核室', isActive: true },
+        { section: 'department', code: '1300', description: '總經理室', isActive: true }
       ];
 
       await Variable.insertMany(variables);

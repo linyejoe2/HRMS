@@ -666,10 +666,10 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>職位</InputLabel>
+                <InputLabel>系統等級</InputLabel>
                 <Select
                   value={formData.role}
-                  label="職位"
+                  label="系統等級"
                   onChange={(e) => handleInputChange('role', e.target.value as UserLevel)}
                   disabled={loading}
                 >

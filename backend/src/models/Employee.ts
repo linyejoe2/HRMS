@@ -1,9 +1,7 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-// 圖片中的欄位選項（用於 Enum 類型）
-export type Education = '博士' | '碩士' | '大專' | '高中' | '高中以下'; // 擴充學歷選項
-export type Gender = 'M' | 'W' | 'U'; // Male / Woman / Unknown
-export type BloodType = 'A' | 'B' | 'O' | 'AB'; // 血型
+// Note: These fields now store variable codes from the Variable table
+// No longer using enums as values are dynamic
 
 
 export interface IEmployee extends Document {
@@ -27,20 +25,19 @@ export interface IEmployee extends Document {
   birthPlace?: string; // 籍貫
   idNumber?: string; // 身份證號
   dateOfBirth?: Date; // 出生日期
-  education?: Education; // 學歷 (e.g. C-大專)
-  bloodType?: BloodType; // 血型 (A/B/C/D/E) -> 這裡使用常見的血型 enum
-  isMarried?: boolean; // 婚姻 T/F
-  gender?: Gender; // 性別 M/W
+  education?: string; // 學歷 - stores variable code
+  bloodType?: string; // 血型 - stores variable code
+  maritalStatus?: string; // 婚姻狀態 - stores variable code
+  gender?: string; // 性別 - stores variable code
   photoURL?: string; // 相片 (儲存照片的 URL 或檔案路徑)
   address?: string; // 住址
   phone?: string; // 電話
   bankAccount?: string; // 帳號
 
   // 職務/公司資訊
-  shift?: string; // 班別
-  jobType?: number; // 職別
-  jobTitle?: string; // 職稱 (e.g. 董事長)
-  jobLevel?: string; // 職等
+  shift?: string; // 班別 - stores variable code
+  jobTitle?: string; // 職稱 - stores variable code
+  jobLevel?: string; // 職等 - stores variable code
   endDate?: Date; // 離職日期
 
   // 薪資/保險/退休相關
@@ -129,22 +126,21 @@ const EmployeeSchema = new Schema<IEmployee>({
   dateOfBirth: { // 出生日期
     type: Date
   },
-  education: { // 學歷
+  education: { // 學歷 - stores variable code
     type: String,
-    enum: ['C-大專', '高中', '碩士', '博士', '其他'],
     trim: true
   },
-  bloodType: { // 血型
+  bloodType: { // 血型 - stores variable code
     type: String,
-    enum: ['A', 'B', 'O', 'AB'], // 這裡使用標準血型，並包含圖片中的 A/B/C/D/E 的擴充項
     trim: true
   },
-  isMarried: { // 婚姻 T/F
-    type: Boolean
-  },
-  gender: { // 性別 M/W
+  maritalStatus: { // 婚姻狀態 - stores variable code
     type: String,
-    enum: ['M', 'W', 'U']
+    trim: true
+  },
+  gender: { // 性別 - stores variable code
+    type: String,
+    trim: true
   },
   photoURL: { // 相片 URL
     type: String

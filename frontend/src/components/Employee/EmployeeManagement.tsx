@@ -383,7 +383,7 @@ const EmployeeManagement: React.FC = () => {
                   <TableCell>員工編號</TableCell>
                   <TableCell>姓名</TableCell>
                   <TableCell>部門</TableCell>
-                  <TableCell>職位</TableCell>
+                  <TableCell>系統等級</TableCell>
                   <TableCell>狀態</TableCell>
                   <TableCell>最後登入</TableCell>
                   <TableCell>入職日</TableCell>
