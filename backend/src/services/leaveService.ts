@@ -1,6 +1,15 @@
 import { Leave, ILeave, Employee, Attendance } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { calcWorkingDurent, isWeekend } from '../utility';
+import { isWeekend } from '../utility';
+import { calcWorkingDuration } from './workingTimeCalcService';
+
+export type DurentObject = {
+  minuteFormat: number;
+  hourFormat: number
+  crossBreaktime: number;
+  crossNight: number;
+  crossholiday: number;
+}
 
 export class LeaveService {
   static async checkLeaveRequestDidntRepeat(leave: ILeave): Promise<boolean> {
@@ -61,14 +70,11 @@ export class LeaveService {
     const leaveStart = new Date(leaveData.leaveStart);
     const leaveEnd = new Date(leaveData.leaveEnd);
 
-    const timeDiff = calcWorkingDurent(leaveData.leaveStart, leaveData.leaveEnd);
+    const timeDiff = calcWorkingDuration(leaveData.leaveStart, leaveData.leaveEnd, { useStandard4HourBlocks: true });
+
     const totalMinutes = Math.floor(timeDiff.minuteFormat);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    console.log(timeDiff)
-    console.log(totalMinutes)
-    console.log(hours)
-    console.log(minutes)
 
     const createdDate = new Date();
     const YYYY = String(createdDate.getFullYear());
@@ -94,7 +100,7 @@ export class LeaveService {
 
     const isNotOverlapping = await this.checkLeaveRequestDidntRepeat(leave);
     if (!isNotOverlapping) {
-      throw new APIError('請假時間重複!', 409);      
+      throw new APIError('請假時間重複!', 409);
     }
 
     const savedLeave = await leave.save();

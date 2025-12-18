@@ -11,9 +11,12 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  AlertTitle
+  AlertTitle,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -51,6 +54,23 @@ const leaveTypes = [
   '育嬰留職停薪'
 ];
 
+const startTimeOptions = [
+  { value: '08:30', label: '08:30' },
+  { value: '13:00', label: '13:00' }
+];
+
+const endTimeOptions = [
+  { value: '12:00', label: '12:00' },
+  { value: '17:30', label: '17:30' }
+];
+
+interface LeaveFormData extends Omit<LeaveRequestForm, 'leaveStart' | 'leaveEnd'> {
+  leaveStartDate: string;
+  leaveStartTime: string;
+  leaveEndDate: string;
+  leaveEndTime: string;
+}
+
 const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
@@ -64,17 +84,66 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
     handleSubmit,
     reset,
     watch,
+    setError,
+    clearErrors,
     formState: { errors }
-  } = useForm<LeaveRequestForm>({
+  } = useForm<LeaveFormData>({
     defaultValues: {
       leaveType: '',
       reason: '',
-      leaveStart: dayjs().hour(8).minute(30).second(0).toISOString(),
-      leaveEnd: dayjs().hour(17).minute(20).second(0).toISOString()
+      leaveStartDate: dayjs().format('YYYY-MM-DD'),
+      leaveStartTime: '08:30',
+      leaveEndDate: dayjs().format('YYYY-MM-DD'),
+      leaveEndTime: '17:30'
     }
   });
 
-  const leaveStart = watch('leaveStart');
+  const leaveStartDate = watch('leaveStartDate');
+  const leaveStartTime = watch('leaveStartTime');
+  const leaveEndDate = watch('leaveEndDate');
+  const leaveEndTime = watch('leaveEndTime');
+
+  // Validate date/time combination
+  React.useEffect(() => {
+    if (!leaveStartDate || !leaveEndDate || !leaveStartTime || !leaveEndTime) {
+      return;
+    }
+
+    const startDate = dayjs(leaveStartDate);
+    const endDate = dayjs(leaveEndDate);
+
+    // Check if end date is before start date
+    if (endDate.isBefore(startDate, 'day')) {
+      setError('leaveEndDate', {
+        type: 'manual',
+        message: '結束日期不能早於開始日期'
+      });
+      return;
+    } else {
+      clearErrors('leaveEndDate');
+    }
+
+    // If same date, check time
+    if (startDate.isSame(endDate, 'day')) {
+      const [startHour, startMinute] = leaveStartTime.split(':').map(Number);
+      const [endHour, endMinute] = leaveEndTime.split(':').map(Number);
+
+      const startTimeMinutes = startHour * 60 + startMinute;
+      const endTimeMinutes = endHour * 60 + endMinute;
+
+      if (endTimeMinutes <= startTimeMinutes) {
+        setError('leaveEndTime', {
+          type: 'manual',
+          message: '同一天的結束時間必須晚於開始時間'
+        });
+        return;
+      } else {
+        clearErrors('leaveEndTime');
+      }
+    } else {
+      clearErrors('leaveEndTime');
+    }
+  }, [leaveStartDate, leaveStartTime, leaveEndDate, leaveEndTime, setError, clearErrors]);
 
   // Check leave balance
   const checkLeaveBalance = async (data: LeaveRequestForm): Promise<boolean> => {
@@ -127,7 +196,30 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
     }
   };
 
-  const onSubmit = async (data: LeaveRequestForm) => {
+  const onSubmit = async (formData: LeaveFormData) => {
+    // Combine date and time into ISO format
+    const [startHour, startMinute] = formData.leaveStartTime.split(':').map(Number);
+    const [endHour, endMinute] = formData.leaveEndTime.split(':').map(Number);
+
+    const leaveStart = dayjs(formData.leaveStartDate)
+      .hour(startHour)
+      .minute(startMinute)
+      .second(0)
+      .toISOString();
+
+    const leaveEnd = dayjs(formData.leaveEndDate)
+      .hour(endHour)
+      .minute(endMinute)
+      .second(0)
+      .toISOString();
+
+    const data: LeaveRequestForm = {
+      leaveType: formData.leaveType,
+      reason: formData.reason,
+      leaveStart,
+      leaveEnd
+    };
+
     // Check leave balance first
     const hasSufficientBalance = await checkLeaveBalance(data);
 
@@ -151,7 +243,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       };
       await createLeaveRequest(submitData);
       toast.success('請假申請已成功送出');
-      reset();
+      reset({
+        leaveType: '',
+        reason: '',
+        leaveStartDate: dayjs().format('YYYY-MM-DD'),
+        leaveStartTime: '08:30',
+        leaveEndDate: dayjs().format('YYYY-MM-DD'),
+        leaveEndTime: '17:30'
+      });
       clearFiles();
       setPendingSubmitData(null);
       onClose();
@@ -173,7 +272,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
 
   const handleClose = () => {
     if (!loading) {
-      reset();
+      reset({
+        leaveType: '',
+        reason: '',
+        leaveStartDate: dayjs().format('YYYY-MM-DD'),
+        leaveStartTime: '08:30',
+        leaveEndDate: dayjs().format('YYYY-MM-DD'),
+        leaveEndTime: '17:30'
+      });
       clearFiles();
       onClose();
     }
@@ -198,7 +304,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
-            <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid container rowSpacing={3} columnSpacing={1} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <Controller
                   name="leaveType"
@@ -244,23 +350,23 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <Controller
-                  name="leaveStart"
+                  name="leaveStartDate"
                   control={control}
-                  rules={{ required: '請選擇請假開始時間' }}
+                  rules={{ required: '請選擇請假開始日期' }}
                   render={({ field: { onChange, value } }) => (
-                    <DateTimePicker
-                      label="請假開始時間"
+                    <DatePicker
+                      label="請假開始日期"
                       value={dayjs(value)}
                       onChange={(newValue) => {
-                        onChange(newValue?.toISOString() || '');
+                        onChange(newValue?.format('YYYY-MM-DD') || '');
                       }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
-                          error: !!errors.leaveStart,
-                          helperText: errors.leaveStart?.message,
+                          error: !!errors.leaveStartDate,
+                          helperText: errors.leaveStartDate?.message,
                           required: true
                         }
                       }}
@@ -269,28 +375,84 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={2}>
                 <Controller
-                  name="leaveEnd"
+                  name="leaveStartTime"
                   control={control}
-                  rules={{ required: '請選擇請假結束時間' }}
+                  rules={{ required: '請選擇開始時間' }}
+                  render={({ field }) => (
+                    <FormControl fullWidth required error={!!errors.leaveStartTime}>
+                      <InputLabel>開始時間</InputLabel>
+                      <Select
+                        {...field}
+                        label="開始時間"
+                      >
+                        {startTimeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.leaveStartTime && (
+                        <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                          {errors.leaveStartTime.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="leaveEndDate"
+                  control={control}
+                  rules={{ required: '請選擇請假結束日期' }}
                   render={({ field: { onChange, value } }) => (
-                    <DateTimePicker
-                      label="請假結束時間"
+                    <DatePicker
+                      label="請假結束日期"
                       value={dayjs(value)}
                       onChange={(newValue) => {
-                        onChange(newValue?.toISOString() || '');
+                        onChange(newValue?.format('YYYY-MM-DD') || '');
                       }}
-                      minDateTime={leaveStart ? dayjs(leaveStart) : undefined}
+                      minDate={leaveStartDate ? dayjs(leaveStartDate) : undefined}
                       slotProps={{
                         textField: {
                           fullWidth: true,
-                          error: !!errors.leaveEnd,
-                          helperText: errors.leaveEnd?.message,
+                          error: !!errors.leaveEndDate,
+                          helperText: errors.leaveEndDate?.message,
                           required: true
                         }
                       }}
                     />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={2}>
+                <Controller
+                  name="leaveEndTime"
+                  control={control}
+                  rules={{ required: '請選擇結束時間' }}
+                  render={({ field }) => (
+                    <FormControl fullWidth required error={!!errors.leaveEndTime}>
+                      <InputLabel>結束時間</InputLabel>
+                      <Select
+                        {...field}
+                        label="結束時間"
+                      >
+                        {endTimeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.leaveEndTime && (
+                        <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                          {errors.leaveEndTime.message}
+                        </Typography>
+                      )}
+                    </FormControl>
                   )}
                 />
               </Grid>

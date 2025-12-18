@@ -16,10 +16,10 @@ export const validateLeaveRule = async (req: AuthRequest, res: Response, next: N
     const leaveStartDayjs = toDayjs(leaveStart)
     const leaveEndDayjs = toDayjs(leaveEnd)
 
-    if (isWeekend(leaveStart)) 
+    if (isWeekend(leaveStart))
       return res.status(400).json({ error: true, message: "不得開始於假日" });
 
-    if (isWeekend(leaveEnd)) 
+    if (isWeekend(leaveEnd))
       return res.status(400).json({ error: true, message: "不得結束於假日" });
 
     if (leaveEndDayjs.isBefore(leaveStartDayjs))
@@ -33,11 +33,13 @@ export const validateLeaveRule = async (req: AuthRequest, res: Response, next: N
     if (parseInt(leaveEndObject.H + leaveEndObject.mm) > 1830)
       return res.status(400).json({ error: true, message: "結束時間不得晚於下班時間 18:30" });
 
-    // 3. 不得從 13:00 開始或結束請假
-    if (parseInt(leaveStartObject.H + leaveStartObject.mm) == 1300)
-      return res.status(400).json({ error: true, message: "不得從 13:00 開始請假，應從 12:00 開始。" });
+    // 3. 不得從 13:00 結束請假
     if (parseInt(leaveEndObject.H + leaveEndObject.mm) == 1300)
       return res.status(400).json({ error: true, message: "不得請假到 13:00 ，應請假到 12:00 。" });
+
+    // 4. 不得從 12:00 開始請假
+    if (parseInt(leaveStartObject.H + leaveStartObject.mm) == 1200)
+      return res.status(400).json({ error: true, message: "不得從 12:00 開始請假，應從 13:00 開始。" });
 
     next();
   } catch (error) {

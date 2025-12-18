@@ -10,11 +10,11 @@ export interface ILeave extends Document {
   reason: string;
   leaveStart: Date;
   leaveEnd: Date;
-  YYYY: string;
-  mm: string;
-  DD: string;
-  hour: string;
-  minutes: string;
+  YYYY: string; // 請假的年份
+  mm: string; // 請假的月份
+  DD: string; // 請假的日期
+  hour: string; // 請假時數
+  minutes: string; // 請假時數(分鐘)
   supportingInfo?: string[]; // Array of file paths or URLs to supporting documents (佐證資料)
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;

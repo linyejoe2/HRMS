@@ -1,6 +1,6 @@
-// version 0.0.7
+// version 0.0.8
 // by Randy Lin
-// 2025/11/13
+// 2025/12/17
 
 /**
  * need to install these depandancy
@@ -121,95 +121,6 @@ export function toSeparatVariable(date?: string, timeZone: string = "tw"): DateO
     s: d.format("s"),
   };
 }
-
-export function calcWorkingDurent(
-  from: string,
-  to: string
-): {
-  minuteFormat: number;
-  hourFormat: number
-  crossBreaktime: number;
-  crossNight: number;
-  crossholiday: number;
-} {
-  let output = {
-    minuteFormat: 0,
-    hourFormat: 0,
-    crossBreaktime: 0,
-    crossNight: 0,
-    crossholiday: 0
-  }
-  const start = dayjs(from).tz("Asia/Taipei");
-  const end = dayjs(to).tz("Asia/Taipei");
-
-  if (!start.isValid() || !end.isValid()) {
-    throw new Error("Invalid date format");
-  }
-  if (end.isBefore(start)) {
-    return output;
-  }
-
-
-
-  // 定義每天的工作時段
-  const WORK_PERIODS: [string, string][] = [
-    ["08:30", "12:00"],
-    ["13:00", "17:30"],
-  ];
-
-  // 遍歷每一天
-  let cursor = start.startOf("day");
-  while (cursor.isBefore(end)) {
-    const dayOfWeek = cursor.day(); // 0=Sun, 6=Sat
-
-    // 處理週末
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      output.crossholiday += 24 * 60;
-      cursor = cursor.add(1, "day");
-      continue;
-    }
-
-    // 處理工作區間
-    for (const [startStr, endStr] of WORK_PERIODS) {
-      const [sh, sm] = startStr.split(":").map(Number);
-      const [eh, em] = endStr.split(":").map(Number);
-
-      const periodStart = cursor.hour(sh).minute(sm).second(0).millisecond(0);
-      const periodEnd = cursor.hour(eh).minute(em).second(0).millisecond(0);
-
-      const overlapStart = dayjs.max(start, periodStart);
-      const overlapEnd = dayjs.min(end, periodEnd);
-
-      if (overlapEnd.isAfter(overlapStart)) {
-        output.minuteFormat += overlapEnd.diff(overlapStart, "minute");
-      }
-    }
-
-    // 判斷跨日 → 每天有 15 小時不算工時
-    if (end.isAfter(cursor.endOf("day"))) {
-      output.crossNight += 15 * 60;
-    }
-
-    cursor = cursor.add(1, "day");
-
-    // 判斷是否跨過午休 12:00–13:00
-    const lunchStart = start.hour(12).minute(0).second(0).millisecond(0);
-    const lunchEnd = start.hour(13).minute(0).second(0).millisecond(0);
-    if (start.isBefore(lunchEnd) && end.isAfter(lunchStart)) {
-      output.crossBreaktime = 60;
-    }
-  }
-
-  // 👉 若結束時間正好是 17:20，補 10 分鐘
-  if (end.format("HH:mm") === "17:20") {
-    output.minuteFormat += 10;
-  }
-
-  output.hourFormat = Math.round(output.minuteFormat / 60)
-
-  return output;
-}
-
 
 /**
  * Converts an error object to a string with an optional prefix.
