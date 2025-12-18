@@ -29,7 +29,7 @@ import FileUploadField from '../common/FileUploadField';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
 import { fetchUserLeaveData } from '../../services/leaveService';
-import { calcWorkingDurent } from '@/utility';
+import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -158,7 +158,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
 
     try {
       const leaveData = await fetchUserLeaveData(user.empID, user.hireDate);
-      const workingDurentObj = calcWorkingDurent(data.leaveStart, data.leaveEnd);
+      const workingDurentObj = calcWorkingDuration(data.leaveStart, data.leaveEnd, { useStandard4HourBlocks: true });
       const requestedHours = workingDurentObj.hourFormat
 
       let remainingHours = 0;

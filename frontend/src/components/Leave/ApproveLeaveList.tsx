@@ -33,7 +33,8 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fetchUserLeaveData } from '../../services/leaveService';
-import { calcWorkingDurent, errorToString, fuzzySearchApproval } from '@/utility';
+import { errorToString, fuzzySearchApproval } from '@/utility';
+import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
 
 const ApproveLeaveList: React.FC = () => {
@@ -85,7 +86,7 @@ const ApproveLeaveList: React.FC = () => {
       }
 
       const leaveData = await fetchUserLeaveData(request.empID, employee.hireDate);
-      const workingDurentObj = calcWorkingDurent(request.leaveStart, request.leaveEnd);
+      const workingDurentObj = calcWorkingDuration(request.leaveStart, request.leaveEnd, { useStandard4HourBlocks: true });
       const requestedHours = workingDurentObj.hourFormat
 
       let remainingHours = 0;

@@ -15,7 +15,7 @@
   },
   "include": [
     "src/**/*"
-  ],
+, "../frontend/src/services/workingTimeCalcService.ts"  ],
   "exclude": [
     "node_modules",
     "dist"
