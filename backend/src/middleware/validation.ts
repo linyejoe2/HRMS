@@ -56,10 +56,7 @@ export const leaveRequestSchema = Joi.object({
     'string.empty': '請假類型為必填項目',
     'any.required': '請假類型為必填項目'
   }),
-  reason: Joi.string().required().messages({
-    'string.empty': '請假原因為必填項目',
-    'any.required': '請假原因為必填項目'
-  }),
+  reason: Joi.string().optional().allow(''),
   leaveStart: Joi.string().isoDate().required().messages({
     'string.empty': '開始日期為必填項目',
     'string.isoDate': '開始日期必須是有效的 ISO 日期格式',

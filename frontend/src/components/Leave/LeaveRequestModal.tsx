@@ -215,7 +215,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
 
     const data: LeaveRequestForm = {
       leaveType: formData.leaveType,
-      reason: formData.reason,
+      reason: formData.reason ?? "",
       leaveStart,
       leaveEnd
     };
@@ -334,7 +334,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                 <Controller
                   name="reason"
                   control={control}
-                  rules={{ required: '請填寫請假原因' }}
+                  // rules={{ required: '請填寫請假原因' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -344,7 +344,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
                       fullWidth
                       error={!!errors.reason}
                       helperText={errors.reason?.message}
-                      required
+                    // required
                     />
                   )}
                 />

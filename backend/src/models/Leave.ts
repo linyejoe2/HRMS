@@ -47,7 +47,7 @@ const leaveSchema = new Schema<ILeave>({
   },
   reason: {
     type: String,
-    required: true
+    // required: true
   },
   leaveStart: {
     type: Date,
