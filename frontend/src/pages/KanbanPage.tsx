@@ -103,7 +103,25 @@ export const KanbanPage: React.FC = () => {
     }
 
     const taskId = active.id as string;
-    const newStatus = over.id as KanbanStatus;
+
+    // Determine the new status - if dropped on a card, find its column; if dropped on column, use column id
+    let newStatus: KanbanStatus;
+    const overId = over.id as string;
+
+    // Check if over.id is a valid status (column id)
+    const validStatuses = columns.map(col => col.key);
+    if (validStatuses.includes(overId as KanbanStatus)) {
+      // Dropped on column empty space
+      newStatus = overId as KanbanStatus;
+    } else {
+      // Dropped on another task - find which column that task is in
+      const targetTask = findTaskById(overId);
+      if (!targetTask) {
+        setActiveTask(null);
+        return;
+      }
+      newStatus = targetTask.status;
+    }
 
     const task = findTaskById(taskId);
 
