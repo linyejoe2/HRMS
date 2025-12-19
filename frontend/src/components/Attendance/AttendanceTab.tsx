@@ -13,9 +13,9 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { attendanceAPI, employeeAPI } from '../../services/api';
+import { attendanceAPI, employeeAPI, variableAPI } from '../../services/api';
 import * as XLSX from 'xlsx';
-import { AttendanceRecord, UserLevel, Employee } from '../../types';
+import { AttendanceRecord, UserLevel, Employee, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
@@ -32,6 +32,7 @@ const AttendanceTab: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showUnknownEmployees, setShowUnknownEmployees] = useState(false);
+  const [departments, setDepartments] = useState<Variable[]>([]);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -58,6 +59,13 @@ const AttendanceTab: React.FC = () => {
   const getEmpIDByCardID = (cardID: string): string => {
     const employee = employees.find(emp => emp.cardID === cardID);
     return employee?.empID || '...';
+  };
+
+  // Lookup department description by code
+  const getDepartmentDescription = (departmentCode?: string): string => {
+    if (!departmentCode) return '-';
+    const department = departments.find(dept => dept.code === departmentCode);
+    return department?.description || departmentCode;
   };
 
   // Load attendance records for selected date range
@@ -147,7 +155,7 @@ const AttendanceTab: React.FC = () => {
         '卡號': record.cardID || '-',
         '員工編號': getEmpIDByCardID(record.cardID),
         '員工姓名': record.employeeName || '-',
-        '部門名稱': record.department || '-',
+        '部門名稱': getDepartmentDescription(record.department),
         '出勤日期': formatDate(new Date(record.date)),
         '上班出勤時間': formatTime(record.clockInTime),
         '上班出勤狀態': record.clockInStatus === 'D000' ? '打卡' : record.clockInStatus || '-',
@@ -231,6 +239,22 @@ const AttendanceTab: React.FC = () => {
     loadEmployees();
   }, []);
 
+  // Load departments on mount
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const response = await variableAPI.getAll(undefined, false); // Only get active variables
+        const allVariables = response.data.data.variables;
+        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+        setDepartments(departmentVars);
+      } catch (err: any) {
+        console.error('Failed to load departments:', err);
+        // Don't show error toast as this is a background operation
+      }
+    };
+    loadDepartments();
+  }, []);
+
   // Load records when date range changes
   useEffect(() => {
     loadAttendanceRecords();
@@ -276,7 +300,7 @@ const AttendanceTab: React.FC = () => {
       headerName: '部門名稱',
       // width: 150,
       flex: 1,
-      valueGetter: (_, row) => row.department || '-'
+      valueGetter: (_, row) => getDepartmentDescription(row.department)
     },
     {
       field: 'date',

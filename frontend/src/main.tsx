@@ -11,8 +11,8 @@ import { theme } from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 
 // Display version information
-const VERSION = 'v25.12.16.1157';
-console.log(`%c HRMS Frontend ${VERSION} `, 'background: #aed650ff; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 60px;');
+const VERSION = 'v25.12.19.1004';
+console.log(`%c HRMS Frontend ${VERSION} `, 'background: #d65083ff; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 60px;');
 
 const queryClient = new QueryClient({
   defaultOptions: {
