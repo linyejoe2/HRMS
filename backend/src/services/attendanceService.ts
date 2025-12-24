@@ -88,12 +88,7 @@ export class AttendanceService {
         // console.log(parsed)
 
         try {
-          // Find employee info
-          const employee = await Employee.findOne({ cardID: parsed.cardID });
-
-          // Find or create attendance record for this employee and date
-          // const dateStr = parsed.date.toISOString().split('T')[0];
-          // console.log(dateStr)
+          // Find or create attendance record for this cardID and date
           let attendance = await Attendance.findOne({
             cardID: parsed.cardID,
             date: parsed.date
@@ -102,20 +97,11 @@ export class AttendanceService {
           if (!attendance) {
             attendance = new Attendance({
               cardID: parsed.cardID,
-              empID: employee?.empID,
-              employeeName: employee?.name,
-              department: employee?.department,
               date: parsed.date
             });
-          } else {
-            // Update existing attendance record with latest employee data
-            if (employee) {
-              attendance.cardID = employee.cardID;
-              attendance.empID = employee.empID;
-              attendance.employeeName = employee.name;
-              attendance.department = employee.department;
-            }
           }
+
+          const now = new Date();
 
           // Update attendance based on status
           if (parsed.status === 'D900') {
@@ -125,6 +111,7 @@ export class AttendanceService {
               attendance.clockOutRawRecord = parsed.rawRecord;
               attendance.clockOutTime = parsed.time;
               attendance.clockOutStatus = parsed.status;
+              attendance.clockOutUpdateTime = now;
             }
           } else {
             // Clock in - only update if this is earlier than existing clock-in time
@@ -133,26 +120,8 @@ export class AttendanceService {
               attendance.clockInRawRecord = parsed.rawRecord;
               attendance.clockInTime = parsed.time;
               attendance.clockInStatus = parsed.status;
+              attendance.clockInUpdateTime = now;
             }
-          }
-
-          // Calculate work hours if both times are available
-          if (attendance.clockInTime && attendance.clockOutTime) {
-            const workDurationObj = calcWorkDuration(attendance.clockInTime, attendance.clockOutTime);
-            console.log("workDurationObj")
-            console.log(JSON.stringify(workDurationObj))
-
-            attendance.workDuration = workDurationObj.duration
-            attendance.lateMinute = workDurationObj.lateMinute
-            attendance.isLate = workDurationObj.isLate
-            attendance.isEarlyLeave = workDurationObj.isEarlyLeave
-          }
-
-          // Check if absent (no clock in by end of day)
-          if (!attendance.clockInTime || !attendance.clockOutTime) {
-            attendance.isAbsent = true
-          } else {
-            attendance.isAbsent = false
           }
 
           await attendance.save();
@@ -304,42 +273,6 @@ export class AttendanceService {
     }
 
     return Attendance.find(query).sort({ date: -1 });
-  }
-
-  /**
-   * Get attendance summary for a date range
-   */
-  async getAttendanceSummary(startDate: string, endDate: string): Promise<{
-    totalEmployees: number;
-    presentEmployees: number;
-    absentEmployees: number;
-    lateEmployees: number;
-    averageWorkHours: number;
-  }> {
-    const start = new Date(startDate + 'T00:00:00.000Z');
-    const end = new Date(endDate + 'T23:59:59.999Z');
-
-    const records = await Attendance.find({
-      date: { $gte: start, $lte: end }
-    });
-
-    const totalEmployees = await Employee.countDocuments({ isActive: true });
-    const presentEmployees = records.filter(r => !r.isAbsent).length;
-    const absentEmployees = records.filter(r => r.isAbsent).length;
-    const lateEmployees = records.filter(r => r.isLate).length;
-
-    const totalWorkHours = records
-      .filter(r => r.workDuration)
-      .reduce((sum, r) => sum + (r.workDuration || 0) / 60, 0);
-    const averageWorkHours = records.length > 0 ? totalWorkHours / records.length : 0;
-
-    return {
-      totalEmployees,
-      presentEmployees,
-      absentEmployees,
-      lateEmployees,
-      averageWorkHours
-    };
   }
 
   /**

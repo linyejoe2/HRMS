@@ -13,9 +13,9 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { attendanceAPI, employeeAPI, variableAPI } from '../../services/api';
+import { attendanceAPI, variableAPI, employeeAPI } from '../../services/api';
 import * as XLSX from 'xlsx';
-import { AttendanceRecord, UserLevel, Employee, Variable } from '../../types';
+import { AttendanceRecord, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
@@ -29,7 +29,6 @@ const AttendanceTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showUnknownEmployees, setShowUnknownEmployees] = useState(false);
   const [departments, setDepartments] = useState<Variable[]>([]);
@@ -55,12 +54,6 @@ const AttendanceTab: React.FC = () => {
     return `${wholeHours}h ${minutes}m`;
   };
 
-  // Lookup empID by cardID
-  const getEmpIDByCardID = (cardID: string): string => {
-    const employee = employees.find(emp => emp.cardID === cardID);
-    return employee?.empID || '...';
-  };
-
   // Lookup department description by code
   const getDepartmentDescription = (departmentCode?: string): string => {
     if (!departmentCode) return '-';
@@ -81,12 +74,107 @@ const AttendanceTab: React.FC = () => {
 
     try {
       const response = await attendanceAPI.getByDateRange(startDate, endDate);
-      setAttendanceRecords(response.data.data.records);
-      if (response.data.data.records.length === 0) {
+      const data = response.data.data as any;
+
+      // Separate data sets from API
+      const attendanceRecords = data.attendance.records || [];
+      const businessTrips = data.businesstrip.records || [];
+      const postClocks = data.postclock.records || [];
+      const holidays = data.holiday.records || [];
+
+      // Fetch all employees to map cardID to employee info
+      const employeesResponse = await employeeAPI.getAll(1, 10000); // High limit to get all employees
+      const employees = employeesResponse.data.data.employees;
+      const employeeMap = new Map(employees.map((e: any) => [e.cardID, e]));
+
+      // Create holiday map for quick lookup
+      const holidayMap = new Map(holidays.map((h: any) => [h.date.split('T')[0], h]));
+
+      // Process and aggregate attendance records
+      const aggregated = attendanceRecords.map((att: any) => {
+        const employee = employeeMap.get(att.cardID);
+        const dateStr = new Date(att.date).toISOString().split('T')[0];
+
+        // Initialize with attendance data
+        let clockInTime = att.clockInTime;
+        let clockOutTime = att.clockOutTime;
+        let clockInSource: '打卡' | '補單' | '出差' = '打卡';
+        let clockOutSource: '打卡' | '補單' | '出差' = '打卡';
+
+        // Check postClock for manual entries
+        const dayPostClocks = postClocks.filter((pc: any) =>
+          employee && pc.empID === employee.empID &&
+          new Date(pc.date).toISOString().split('T')[0] === dateStr
+        );
+
+        if (dayPostClocks.length > 0) {
+          const clockInPC = dayPostClocks.find((pc: any) => pc.clockType === 'in');
+          const clockOutPC = dayPostClocks.find((pc: any) => pc.clockType === 'out');
+
+          if (clockInPC && !clockInTime) {
+            clockInTime = clockInPC.time;
+            clockInSource = '補單';
+          }
+          if (clockOutPC && !clockOutTime) {
+            clockOutTime = clockOutPC.time;
+            clockOutSource = '補單';
+          }
+        }
+
+        // Check businessTrip for trip entries
+        const dayBusinessTrips = businessTrips.filter((bt: any) =>
+          employee && bt.empID === employee.empID &&
+          new Date(bt.tripStart).toISOString().split('T')[0] <= dateStr &&
+          new Date(bt.tripEnd).toISOString().split('T')[0] >= dateStr
+        );
+
+        if (dayBusinessTrips.length > 0) {
+          const trip = dayBusinessTrips[0];
+          if (!clockInTime) {
+            clockInTime = trip.tripStart;
+            clockInSource = '出差';
+          }
+          if (!clockOutTime) {
+            clockOutTime = trip.tripEnd;
+            clockOutSource = '出差';
+          }
+        }
+
+        // Calculate work duration: (out - in) - 1hr + 10min
+        let workDuration: number | undefined;
+        if (clockInTime && clockOutTime) {
+          const inTime = new Date(clockInTime).getTime();
+          const outTime = new Date(clockOutTime).getTime();
+          const durationMinutes = (outTime - inTime) / (1000 * 60);
+          workDuration = durationMinutes - 60 + 10; // -1hr lunch, +10min bonus
+        }
+
+        // Check if date is a holiday
+        const holiday = holidayMap.get(dateStr) as any;
+
+        return {
+          _id: att._id,
+          cardID: att.cardID,
+          empID: employee?.empID,
+          employeeName: employee?.name,
+          department: employee?.department,
+          date: att.date,
+          clockInTime,
+          clockOutTime,
+          clockInSource,
+          clockOutSource,
+          workDuration,
+          status: holiday ? (holiday.name || '國定假日') : undefined,
+          holidayName: holiday?.name
+        };
+      });
+
+      setAttendanceRecords(aggregated);
+      if (aggregated.length === 0) {
         toast.info('該日期範圍無出勤記錄');
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || '載入出勤記錄失敗');
+      toast.error(err.response?.data?.message || '載入出勤記錄失敗');
       setAttendanceRecords([]);
     } finally {
       setLoading(false);
@@ -137,8 +225,7 @@ const AttendanceTab: React.FC = () => {
         }
 
         // Filter: Fuzzy search by cardID, empID, employeeName, department
-        const empID = getEmpIDByCardID(record.cardID);
-        if (!fuzzySearchAttendance(record, searchQuery, empID)) {
+        if (!fuzzySearchAttendance(record, searchQuery, record.empID ?? "")) {
           return false;
         }
 
@@ -153,15 +240,16 @@ const AttendanceTab: React.FC = () => {
       // Prepare data for Excel
       const excelData = filteredRecords.map(record => ({
         '卡號': record.cardID || '-',
-        '員工編號': getEmpIDByCardID(record.cardID),
+        '員工編號': record.empID || '-',
         '員工姓名': record.employeeName || '-',
         '部門名稱': getDepartmentDescription(record.department),
         '出勤日期': formatDate(new Date(record.date)),
         '上班出勤時間': formatTime(record.clockInTime),
-        '上班出勤狀態': record.clockInStatus === 'D000' ? '打卡' : record.clockInStatus || '-',
+        '上班出勤狀態': record.clockInSource || '-',
         '下班出勤時間': formatTime(record.clockOutTime),
-        '下班出勤狀態': record.clockOutStatus === 'D900' ? '打卡' : record.clockOutStatus || '-',
+        '下班出勤狀態': record.clockOutSource || '-',
         '工作時數': formatWorkDuration(record.workDuration),
+        '狀態': record.holidayName ? record.status || record.holidayName : ''
       }));
 
       // Create worksheet
@@ -223,22 +311,6 @@ const AttendanceTab: React.FC = () => {
   //   }
   // };
 
-  // Load employees on mount
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const response = await employeeAPI.getAll(1, 9999); // Get all employees
-        if (!response.data.error) {
-          setEmployees(response.data.data.employees);
-        }
-      } catch (err: any) {
-        console.error('Failed to load employees:', err);
-        // Don't show error toast as this is a background operation
-      }
-    };
-    loadEmployees();
-  }, []);
-
   // Load departments on mount
   useEffect(() => {
     const loadDepartments = async () => {
@@ -277,81 +349,88 @@ const AttendanceTab: React.FC = () => {
     {
       field: 'cardID',
       headerName: '卡號',
-      // width: 120,
       flex: 1,
       valueGetter: (_, row) => row.cardID || '-'
     },
     {
       field: 'empID',
       headerName: '員工編號',
-      // width: 120,
       flex: 1,
-      valueGetter: (_, row) => getEmpIDByCardID(row.cardID)
+      valueGetter: (_, row) => row.empID || '-'
     },
     {
       field: 'employeeName',
       headerName: '員工姓名',
-      // width: 150,
       flex: 1,
       valueGetter: (_, row) => row.employeeName || '-'
     },
     {
       field: 'department',
       headerName: '部門名稱',
-      // width: 150,
       flex: 1,
       valueGetter: (_, row) => getDepartmentDescription(row.department)
     },
     {
       field: 'date',
       headerName: '出勤日期',
-      // width: 120,
       flex: 1,
       valueGetter: (_, row) => formatDate(new Date(row.date))
     },
     {
       field: 'clockInTime',
       headerName: '上班出勤時間',
-      // width: 140,
       flex: 1,
       valueGetter: (_, row) => formatTime(row.clockInTime)
     },
     {
-      field: 'clockInStatus',
+      field: 'clockInSource',
       headerName: '上班出勤狀態',
-      // width: 140,
       flex: 1,
-      valueGetter: (_, row) => row.clockInStatus === 'D000' ? '打卡' : row.clockInStatus || '-'
+      valueGetter: (_, row) => row.clockInSource || '-'
     },
     {
       field: 'clockOutTime',
       headerName: '下班出勤時間',
-      // width: 140,
       flex: 1,
       valueGetter: (_, row) => formatTime(row.clockOutTime)
     },
     {
-      field: 'clockOutStatus',
+      field: 'clockOutSource',
       headerName: '下班出勤狀態',
-      // width: 140,
       flex: 1,
-      valueGetter: (_, row) => row.clockOutStatus === 'D900' ? '打卡' : row.clockOutStatus || '-'
+      valueGetter: (_, row) => row.clockOutSource || '-'
     },
     {
       field: 'workDuration',
       headerName: '工作時數',
-      // width: 120,
       flex: 1,
       valueGetter: (_, row) => formatWorkDuration(row.workDuration)
     },
     {
       field: 'status',
       headerName: '出勤狀態',
-      // width: 120,
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => (
-        <StatusChip log={params.row} />
-      ),
+      renderCell: (params: GridRenderCellParams) => {
+        // If it's a holiday, display holiday name with red background
+        if (params.row.holidayName) {
+          return (
+            <Box
+              sx={{
+                backgroundColor: '#f44336',
+                color: 'white',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: '0.875rem',
+                fontWeight: 500
+              }}
+            >
+              {params.row.status || params.row.holidayName}
+            </Box>
+          );
+        }
+        return <StatusChip log={params.row} />;
+      },
     },
   ];
 
@@ -512,15 +591,14 @@ const AttendanceTab: React.FC = () => {
                   }
 
                   // Filter: Fuzzy search by cardID, empID, employeeName, department
-                  const empID = getEmpIDByCardID(record.cardID);
-                  if (!fuzzySearchAttendance(record, searchQuery, empID)) {
+                  if (!fuzzySearchAttendance(record, searchQuery, record.empID ?? "")) {
                     return false;
                   }
 
                   return true;
                 })
                 .map((record, index) => ({
-                  id: record._id || index,
+                  id: `${record.cardID}_${record.date}` || index,
                   ...record
                 }))}
               columns={columns}

@@ -1,30 +1,24 @@
 import { Schema, model, Document } from 'mongoose';
 
+/**
+ * Attendance model - stores ONLY raw scan data from file scanner
+ * All employee info, calculations, and aggregations are done at query time
+ */
 export interface IAttendance extends Document {
   cardID: string; // 8-digit employee ID from access system
-  empID?: string; // Employee ID from Employee collection
-  employeeName?: string; // Employee name from Employee collection
-  department?: string; // Department from Employee collection
   date: Date; // Attendance date (YYYY-MM-DD)
+
+  // Clock in data
   clockInRawRecord?: string; // Original raw data for debugging
   clockInTime?: Date; // Clock in time
   clockInStatus?: string; // Clock in status (D000=in, D900=out)
+  clockInUpdateTime?: Date; // When clock in was last updated
+
+  // Clock out data
   clockOutRawRecord?: string; // Original raw data for debugging
-  clockOutTime?: Date; // Clock out time  
+  clockOutTime?: Date; // Clock out time
   clockOutStatus?: string; // Clock out status
-  
-  // Calculated fields
-  workDuration?: number; // Total work minute
-  lateMinute?: number;
-  isLate?: boolean; // Is late for work
-  isEarlyLeave?: boolean;
-  isAbsent?: boolean; // Is absent
-
-  // Leave tracking
-  leaves?: number[]; // Array of leave sequenceNumbers for this attendance record
-
-  // PostClock tracking
-  postclocks?: number[]; // Array of postclock sequenceNumbers for this attendance record
+  clockOutUpdateTime?: Date; // When clock out was last updated
 
   // Audit fields
   createdAt: Date;
@@ -36,16 +30,6 @@ const AttendanceSchema = new Schema<IAttendance>({
     type: String,
     required: true,
     index: true
-  },
-  empID: {
-    type: String,
-    index: true
-  },
-  employeeName: {
-    type: String
-  },
-  department: {
-    type: String
   },
   date: {
     type: Date,
@@ -61,6 +45,9 @@ const AttendanceSchema = new Schema<IAttendance>({
   clockInStatus: {
     type: String
   },
+  clockInUpdateTime: {
+    type: Date
+  },
   clockOutRawRecord: {
     type: String
   },
@@ -70,34 +57,15 @@ const AttendanceSchema = new Schema<IAttendance>({
   clockOutStatus: {
     type: String
   },
-  workDuration: {
-    type: Number
-  },
-  lateMinute: {
-    type: Number
-  },
-  isLate: {
-    type: Boolean,
-    default: false
-  },
-  isEarlyLeave: {
-    type: Boolean,
-    default: false
-  },
-  isAbsent: {
-    type: Boolean,
-    default: false
-  },
-  leaves: {
-    type: [Number],
-    default: []
-  },
-  postclocks: {
-    type: [Number],
-    default: []
+  clockOutUpdateTime: {
+    type: Date
   }
 }, {
   timestamps: true
 });
+
+// Compound index for efficient queries
+AttendanceSchema.index({ cardID: 1, date: 1 }, { unique: true });
+AttendanceSchema.index({ date: 1 });
 
 export const Attendance = model<IAttendance>('Attendance', AttendanceSchema);

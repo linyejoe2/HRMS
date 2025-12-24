@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, AttendanceSummary, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment, Variable } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment, Variable } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -234,11 +234,7 @@ export const attendanceAPI = {
 
   // Get attendance records for an employee (admin/hr only)
   getEmployeeAttendance: (empID: string, startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
-    api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`),
-
-  // Get attendance summary (admin/hr only)
-  getSummary: (startDate: string, endDate: string): Promise<AxiosResponse<{ summary: AttendanceSummary }>> =>
-    api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`)
+    api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`)
 };
 
 export const employeeAPI = {

@@ -211,22 +211,21 @@ export interface UpdateProfileRequest {
 }
 
 export interface AttendanceRecord {
-  _id: string;
+  _id?: string;
   cardID: string;
+  empID?: string;
   employeeName?: string;
   department?: string;
   date: string;
   clockInTime?: string;
-  clockInStatus?: string;
+  clockInSource?: '打卡' | '補單' | '出差';
   clockOutTime?: string;
-  clockOutStatus?: string;
-  workHours?: number;
-  isLate?: boolean;
-  isAbsent?: boolean;
-  rawRecord: string;
-  createdAt: string;
-  updatedAt: string;
-  workDuration: number;
+  clockOutSource?: '打卡' | '補單' | '出差';
+  workDuration?: number; // in minutes
+  status?: string; // Holiday status if applicable
+  holidayName?: string; // Holiday name if applicable
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AttendanceResponse {

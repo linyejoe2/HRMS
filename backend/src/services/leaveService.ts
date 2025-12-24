@@ -137,74 +137,7 @@ export class LeaveService {
 
     const savedLeave = await leave.save();
 
-    // Update related attendance records with leave sequenceNumber
-    await this.updateAttendanceRecordsForLeave(leave);
-
     return savedLeave;
-  }
-
-  /**
-   * Update attendance records for a leave period
-   * Creates missing records and adds leave sequenceNumber to leaves array
-   */
-  private static async updateAttendanceRecordsForLeave(leave: ILeave): Promise<void> {
-    const startDate = new Date(leave.leaveStart);
-    const endDate = new Date(leave.leaveEnd);
-
-    // Normalize to start of day for comparison
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    // Get employee details for creating attendance records
-    const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
-    if (!employee) {
-      throw new APIError('Employee not found', 404);
-    }
-
-    // Generate all dates in the leave period
-    const dates: Date[] = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      dates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    // Process each date
-    for (const date of dates) {
-      if (isWeekend(date)) {
-        continue;
-      }
-
-      // Try to find existing attendance record
-      let attendance = await Attendance.findOne({
-        cardID: employee.cardID,
-        date: date
-      });
-
-      if (attendance) {
-        // Update existing record: add sequenceNumber to leaves array if not already present
-        if (!attendance.leaves) {
-          attendance.leaves = [];
-        }
-
-        if (!attendance.leaves.includes(leave.sequenceNumber)) {
-          attendance.leaves.push(leave.sequenceNumber);
-          await attendance.save();
-        }
-      } else {
-        // Create new attendance record
-        attendance = new Attendance({
-          cardID: employee.cardID,
-          empID: employee.empID,
-          employeeName: employee.name,
-          department: employee.department,
-          date: date,
-          leaves: [leave.sequenceNumber],
-          isAbsent: false // Mark as not absent since it's approved leave
-        });
-        await attendance.save();
-      }
-    }
   }
 
   static async rejectLeaveRequest(leaveId: string, rejectionReason: string, rejectedBy: string): Promise<ILeave> {
@@ -243,12 +176,6 @@ export class LeaveService {
       throw new APIError('Leave request already cancelled', 400);
     }
 
-    // Allow cancelling from any state (created, approved, rejected) with reason
-    // Update attendance records if cancelling an approved leave
-    if (leave.status === 'approved') {
-      await this.removeAttendanceRecordsForLeave(leave);
-    }
-
     leave.status = 'cancel';
     leave.approvedBy = cancelledBy;
     if (reason) {
@@ -256,47 +183,6 @@ export class LeaveService {
     }
 
     return await leave.save();
-  }
-
-  /**
-   * Remove attendance records for a cancelled leave period
-   * Removes leave sequenceNumber from leaves array
-   */
-  private static async removeAttendanceRecordsForLeave(leave: ILeave): Promise<void> {
-    const startDate = new Date(leave.leaveStart);
-    const endDate = new Date(leave.leaveEnd);
-
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    const employee = await Employee.findOne({ empID: leave.empID, isActive: true });
-    if (!employee) {
-      return;
-    }
-
-    const dates: Date[] = [];
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      dates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    for (const date of dates) {
-      if (isWeekend(date)) {
-        continue;
-      }
-
-      const attendance = await Attendance.findOne({
-        cardID: employee.cardID,
-        date: date
-      });
-
-      if (attendance && attendance.leaves) {
-        // Remove sequenceNumber from leaves array
-        attendance.leaves = attendance.leaves.filter(seq => seq !== leave.sequenceNumber);
-        await attendance.save();
-      }
-    }
   }
 
   static async getCancelLeaveRequests(employeeID?: string): Promise<ILeave[]> {

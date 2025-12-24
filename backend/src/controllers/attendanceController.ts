@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { attendanceService, fileScanService } from '../services';
+import { attendanceAggregationService } from '../services/attendanceAggregationService';
 import { asyncHandler, AuthRequest } from '../middleware';
 
 export class AttendanceController {
@@ -61,11 +62,12 @@ export class AttendanceController {
     });
   });
 
-  // Get attendance records for a date range
+  // Get aggregated attendance records for a date range
+  // Includes attendance, leave, business trip, post clock, and holiday data
   getByDateRange = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { startDate, endDate } = req.query;
     const user = req.user;
-    
+
     if (!startDate || !endDate) {
       res.status(400).json({
         error: true,
@@ -81,24 +83,20 @@ export class AttendanceController {
       });
       return;
     }
-    
-    const records = await attendanceService.getAttendanceByDateRange(
+
+    const aggregatedData = await attendanceAggregationService.getAggregatedAttendance(
       startDate as string,
       endDate as string,
       user.role,
       user.empID,
+      user.cardID,
       user.department
     );
-    
+
     res.status(200).json({
       error: false,
       message: '已成功取得出勤紀錄',
-      data: {
-        startDate,
-        endDate,
-        count: records.length,
-        records
-      }
+      data: aggregatedData
     });
   });
   
@@ -190,33 +188,6 @@ export class AttendanceController {
         endDate,
         count: records.length,
         records
-      }
-    });
-  });
-
-  // Get attendance summary for a date range
-  getSummary = asyncHandler(async (req: Request, res: Response) => {
-    const { startDate, endDate } = req.query;
-
-    if (!startDate || !endDate) {
-      res.status(400).json({
-        error: true,
-        message: '開始日期和結束日期為必填'
-      });
-      return;
-    }
-    
-    const summary = await attendanceService.getAttendanceSummary(
-      startDate as string,
-      endDate as string
-    );
-    
-    res.status(200).json({
-      error: false,
-      message: '已成功取得出勤統計',
-      data: {
-        period: { startDate, endDate },
-        summary
       }
     });
   });

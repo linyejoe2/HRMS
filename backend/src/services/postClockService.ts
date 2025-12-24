@@ -1,6 +1,5 @@
-import { PostClock, IPostClock, Employee, Attendance } from '../models';
+import { PostClock, IPostClock, Employee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { calcWorkDuration } from './attendanceService';
 
 export class PostClockService {
   static async createPostClockRequest(empID: string, postClockData: {
@@ -60,92 +59,12 @@ export class PostClockService {
     const savedPostClock = await postClock.save();
 
     // Update related attendance record with postclock sequenceNumber
-    await this.updateAttendanceRecordForPostClock(postClock);
+    // await this.updateAttendanceRecordForPostClock(postClock);
 
     return savedPostClock;
   }
 
-  /**
-   * Update attendance record for a postclock request
-   * Creates missing record if needed and adds postclock sequenceNumber to postclocks array
-   */
-  private static async updateAttendanceRecordForPostClock(postClock: IPostClock): Promise<void> {
-    const date = new Date(postClock.date);
-    date.setHours(0, 0, 0, 0);
 
-    // Get employee details
-    const employee = await Employee.findOne({ empID: postClock.empID, isActive: true });
-    if (!employee) {
-      throw new APIError('Employee not found', 404);
-    }
-
-    // Try to find existing attendance record
-    let attendance = await Attendance.findOne({
-      cardID: employee.cardID,
-      date: date
-    });
-
-    if (attendance) {
-      // Update existing record: add sequenceNumber to postclocks array if not already present
-      if (!attendance.postclocks) {
-        attendance.postclocks = [];
-      }
-
-      if (!attendance.postclocks.includes(postClock.sequenceNumber)) {
-        attendance.postclocks.push(postClock.sequenceNumber);
-      }
-
-      // Update clock in/out time based on clockType
-      if (postClock.clockType === 'in') {
-        attendance.clockInTime = postClock.time;
-        attendance.clockInStatus = '補單'; // Mark as manual entry
-      } else {
-        attendance.clockOutTime = postClock.time;
-        attendance.clockOutStatus = '補單'; // Mark as manual entry
-      }
-
-      if (attendance.clockInTime && attendance.clockOutTime) {
-        const workDurationObj = calcWorkDuration(attendance.clockInTime, attendance.clockOutTime)
-
-        attendance.workDuration = workDurationObj.duration
-        attendance.lateMinute = workDurationObj.lateMinute
-        attendance.isLate = workDurationObj.isLate
-        attendance.isEarlyLeave = workDurationObj.isEarlyLeave
-      }
-
-      // Check if absent (no clock in by end of day)
-      if (!attendance.clockInTime || !attendance.clockOutTime){
-        attendance.isAbsent = true
-      } else {
-        attendance.isAbsent = false
-      }
-
-      await attendance.save();
-    } else {
-      // Create new attendance record
-      const newAttendance: any = {
-        cardID: employee.cardID,
-        empID: employee.empID,
-        employeeName: employee.name,
-        department: employee.department,
-        date: date,
-        postclocks: [postClock.sequenceNumber],
-        isAbsent: false
-      };
-
-      // Set clock in/out time based on clockType
-      if (postClock.clockType === 'in') {
-        newAttendance.clockInTime = postClock.time;
-        newAttendance.clockInStatus = '補單'; // Mark as manual entry
-      } else {
-        newAttendance.clockOutTime = postClock.time;
-        newAttendance.clockOutStatus = '補單'; // Mark as manual entry
-      }
-
-      attendance = new Attendance(newAttendance);
-      await attendance.save();
-    }
-  }
 
   static async rejectPostClockRequest(postClockId: string, rejectionReason: string, rejectedBy: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
@@ -183,12 +102,6 @@ export class PostClockService {
       throw new APIError('PostClock request already cancelled', 400);
     }
 
-    // Allow cancelling from any state (created, approved, rejected) with reason
-    // Update attendance records if cancelling an approved postclock
-    if (postClock.status === 'approved') {
-      await this.removeAttendanceRecordForPostClock(postClock);
-    }
-
     postClock.status = 'cancel';
     postClock.approvedBy = cancelledBy;
     if (reason) {
@@ -196,57 +109,6 @@ export class PostClockService {
     }
 
     return await postClock.save();
-  }
-
-  /**
-   * Remove attendance record for a cancelled postclock request
-   * Removes postclock sequenceNumber from postclocks array and resets clock time
-   */
-  private static async removeAttendanceRecordForPostClock(postClock: IPostClock): Promise<void> {
-    const date = new Date(postClock.date);
-    date.setHours(0, 0, 0, 0);
-
-    const employee = await Employee.findOne({ empID: postClock.empID, isActive: true });
-    if (!employee) {
-      return;
-    }
-
-    const attendance = await Attendance.findOne({
-      cardID: employee.cardID,
-      date: date
-    });
-
-    if (attendance && attendance.postclocks) {
-      // Remove sequenceNumber from postclocks array
-      attendance.postclocks = attendance.postclocks.filter(seq => seq !== postClock.sequenceNumber);
-
-      // Reset clock time if it was set by this postclock
-      if (postClock.clockType === 'in' && attendance.clockInStatus === '補單') {
-        attendance.clockInTime = undefined;
-        attendance.clockInStatus = undefined;
-      } else if (postClock.clockType === 'out' && attendance.clockOutStatus === '補單') {
-        attendance.clockOutTime = undefined;
-        attendance.clockOutStatus = undefined;
-      }
-
-      // Recalculate work duration
-      if (attendance.clockInTime && attendance.clockOutTime) {
-        const workDurationObj = calcWorkDuration(attendance.clockInTime, attendance.clockOutTime);
-        attendance.workDuration = workDurationObj.duration;
-        attendance.lateMinute = workDurationObj.lateMinute;
-        attendance.isLate = workDurationObj.isLate;
-        attendance.isEarlyLeave = workDurationObj.isEarlyLeave;
-      } else {
-        attendance.workDuration = undefined;
-      }
-
-      // Check if absent
-      if (!attendance.clockInTime || !attendance.clockOutTime) {
-        attendance.isAbsent = true;
-      }
-
-      await attendance.save();
-    }
   }
 
   static async getCancelPostClockRequests(employeeID?: string): Promise<IPostClock[]> {
