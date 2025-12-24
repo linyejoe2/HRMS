@@ -9,6 +9,7 @@ import businessTripRoutes from './businessTripRoutes';
 import leaveAdjustmentRoutes from './leaveAdjustmentRoutes';
 import kanbanRoutes from './kanbanRoutes';
 import variableRoutes from './variableRoutes';
+import holidayRoutes from './holidayRoutes';
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use('/postclock', postClockRoutes);
 router.use('/businesstrip', businessTripRoutes);
 router.use('/kanban', kanbanRoutes);
 router.use('/variables', variableRoutes);
+router.use('/holidays', holidayRoutes);
 
 export default router;

@@ -31,6 +31,7 @@ import {
   EditCalendar as PostClockIcon,
   Work as BusinessTripIcon,
   Storage as VariableIcon,
+  CalendarMonth as CalendarIcon,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
@@ -157,6 +158,15 @@ const AppLayout: React.FC = () => {
         text: '變數管理',
         icon: <VariableIcon />,
         path: '/variables'
+      });
+    }
+
+    // Holiday Management for HR and Admin only
+    if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
+      baseItems.push({
+        text: '假日管理',
+        icon: <CalendarIcon />,
+        path: '/calendar'
       });
     }
 
