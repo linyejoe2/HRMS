@@ -35,7 +35,7 @@ const AttendanceTab: React.FC = () => {
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('zh-TW');
+    return new Date(date.toLocaleDateString('zh-TW'));
   };
 
   // Format time for display
@@ -413,6 +413,7 @@ const AttendanceTab: React.FC = () => {
     },
     {
       field: 'date',
+      type: "date",
       headerName: '出勤日期',
       flex: 1,
       valueGetter: (_, row) => formatDate(new Date(row.date))
@@ -452,7 +453,12 @@ const AttendanceTab: React.FC = () => {
       headerName: '出勤狀態',
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
-        return <StatusChip log={params.row} />;
+        return <>
+          <Typography sx={{ display: "none" }}>
+            JSON.stringify(params.row)
+          </Typography>
+          <StatusChip log={params.row} />
+        </>;
       },
     },
   ];
