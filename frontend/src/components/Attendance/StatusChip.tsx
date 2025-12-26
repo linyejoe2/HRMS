@@ -36,7 +36,20 @@ interface StatusChipProps {
 const StatusChip: React.FC<StatusChipProps> = ({log}) => {
   const [modalOpen, setModalOpen] = useState(false);
 
-  const chips : ReactElement[] = []
+  const chips : ReactElement[] = [<Chip
+        key="holiday"
+        sx={{
+          display: "none",
+          mr: 1,
+          backgroundColor: '#f44336',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: '#d32f2f'
+          }
+        }}
+        label={JSON.stringify(log)}
+        size="small"
+      />]
 
   // Priority 1: Check for holidays (from AttendanceTab)
   if (log.holidayName) {

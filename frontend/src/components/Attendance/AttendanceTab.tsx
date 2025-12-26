@@ -19,7 +19,7 @@ import { AttendanceRecord, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
-import { fuzzySearchAttendance } from '../../utility';
+import { fuzzySearchAttendance, toTaipeiDate } from '../../utility';
 
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
@@ -105,7 +105,7 @@ const AttendanceTab: React.FC = () => {
             empID: empID,
             employeeName: employee?.name,
             department: employee?.department,
-            date: new Date(dateStr).toISOString(),
+            date: toTaipeiDate(dateStr),
             clockInTime: undefined,
             clockOutTime: undefined,
             clockInSource: undefined,
@@ -124,7 +124,7 @@ const AttendanceTab: React.FC = () => {
         const employee = employeeMap.get(att.cardID);
         if (!employee) return;
 
-        const dateStr = new Date(att.date).toISOString();
+        const dateStr = toTaipeiDate(att.date);
         const record = getOrCreateRecord(employee.empID, dateStr);
 
         record.clockInTime = att.clockInTime;
@@ -135,7 +135,7 @@ const AttendanceTab: React.FC = () => {
 
       // Process postClock records
       postClocks.forEach((pc: any) => {
-        const dateStr = new Date(pc.date).toISOString();
+        const dateStr = toTaipeiDate(pc.date);
         const record = getOrCreateRecord(pc.empID, dateStr);
 
         if (pc.clockType === 'in' && !record.clockInTime) {
@@ -154,7 +154,7 @@ const AttendanceTab: React.FC = () => {
 
         // Generate all dates in the trip range
         for (let d = new Date(tripStart); d <= tripEnd; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString();
+          const dateStr = toTaipeiDate(d);
           const record = getOrCreateRecord(bt.empID, dateStr);
 
           if (!record.clockInTime) {
@@ -175,7 +175,7 @@ const AttendanceTab: React.FC = () => {
 
         // Generate all dates in the leave range
         for (let d = new Date(leaveStart); d <= leaveEnd; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString();
+          const dateStr = toTaipeiDate(d);
           const record = getOrCreateRecord(leave.empID, dateStr);
 
           // Mark as leave and store sequence number
@@ -200,7 +200,7 @@ const AttendanceTab: React.FC = () => {
         }
 
         // Check if date is a holiday
-        const dateStr = new Date(record.date).toISOString();
+        const dateStr = toTaipeiDate(record.date);
         const holiday = holidayMap.get(dateStr) as any;
         if (holiday) {
           record.status = holiday.name || '國定假日';
