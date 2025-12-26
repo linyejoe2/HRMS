@@ -35,8 +35,7 @@ const AttendanceTab: React.FC = () => {
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('zh-TW')
-    return date.toISOString().split('T')[0];
+    return date.toLocaleDateString('zh-TW');
   };
 
   // Format time for display
@@ -86,87 +85,129 @@ const AttendanceTab: React.FC = () => {
       const employeesResponse = await employeeAPI.getAll(1, 10000); // High limit to get all employees
       const employees = employeesResponse.data.data.employees;
       const employeeMap = new Map(employees.map((e: any) => [e.cardID, e]));
+      const empIDToCardID = new Map(employees.map((e: any) => [e.empID, e.cardID]));
 
       // Create holiday map for quick lookup
       const holidayMap = new Map(holidays.map((h: any) => [h.date.split('T')[0], h]));
 
-      // Process and aggregate attendance records
-      const aggregated = attendanceRecords.map((att: any) => {
+      // Collect all unique employee-date combinations
+      const recordMap = new Map<string, any>();
+
+      // Helper function to get or create record
+      const getOrCreateRecord = (empID: string, dateStr: string) => {
+        const key = `${empID}_${dateStr}`;
+        if (!recordMap.has(key)) {
+          const cardID = empIDToCardID.get(empID);
+          const employee = cardID ? employeeMap.get(cardID) : null;
+          recordMap.set(key, {
+            _id: key,
+            cardID: cardID || '',
+            empID: empID,
+            employeeName: employee?.name,
+            department: employee?.department,
+            date: new Date(dateStr).toISOString(),
+            clockInTime: undefined,
+            clockOutTime: undefined,
+            clockInSource: undefined,
+            clockOutSource: undefined,
+            workDuration: undefined,
+            status: undefined,
+            holidayName: undefined,
+            leaves: []
+          });
+        }
+        return recordMap.get(key);
+      };
+
+      // Process attendance records
+      attendanceRecords.forEach((att: any) => {
         const employee = employeeMap.get(att.cardID);
-        const dateStr = new Date(att.date).toISOString().split('T')[0];
+        if (!employee) return;
 
-        // Initialize with attendance data
-        let clockInTime = att.clockInTime;
-        let clockOutTime = att.clockOutTime;
-        let clockInSource: '打卡' | '補單' | '出差' = '打卡';
-        let clockOutSource: '打卡' | '補單' | '出差' = '打卡';
+        const dateStr = new Date(att.date).toISOString();
+        const record = getOrCreateRecord(employee.empID, dateStr);
 
-        // Check postClock for manual entries
-        const dayPostClocks = postClocks.filter((pc: any) =>
-          employee && pc.empID === employee.empID &&
-          new Date(pc.date).toISOString().split('T')[0] === dateStr
-        );
+        record.clockInTime = att.clockInTime;
+        record.clockOutTime = att.clockOutTime;
+        record.clockInSource = '打卡';
+        record.clockOutSource = '打卡';
+      });
 
-        if (dayPostClocks.length > 0) {
-          const clockInPC = dayPostClocks.find((pc: any) => pc.clockType === 'in');
-          const clockOutPC = dayPostClocks.find((pc: any) => pc.clockType === 'out');
+      // Process postClock records
+      postClocks.forEach((pc: any) => {
+        const dateStr = new Date(pc.date).toISOString();
+        const record = getOrCreateRecord(pc.empID, dateStr);
 
-          if (clockInPC && !clockInTime) {
-            clockInTime = clockInPC.time;
-            clockInSource = '補單';
+        if (pc.clockType === 'in' && !record.clockInTime) {
+          record.clockInTime = pc.time;
+          record.clockInSource = '補單';
+        } else if (pc.clockType === 'out' && !record.clockOutTime) {
+          record.clockOutTime = pc.time;
+          record.clockOutSource = '補單';
+        }
+      });
+
+      // Process businessTrip records
+      businessTrips.forEach((bt: any) => {
+        const tripStart = new Date(bt.tripStart);
+        const tripEnd = new Date(bt.tripEnd);
+
+        // Generate all dates in the trip range
+        for (let d = new Date(tripStart); d <= tripEnd; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString();
+          const record = getOrCreateRecord(bt.empID, dateStr);
+
+          if (!record.clockInTime) {
+            record.clockInTime = bt.tripStart;
+            record.clockInSource = '出差';
           }
-          if (clockOutPC && !clockOutTime) {
-            clockOutTime = clockOutPC.time;
-            clockOutSource = '補單';
+          if (!record.clockOutTime) {
+            record.clockOutTime = bt.tripEnd;
+            record.clockOutSource = '出差';
           }
         }
+      });
 
-        // Check businessTrip for trip entries
-        const dayBusinessTrips = businessTrips.filter((bt: any) =>
-          employee && bt.empID === employee.empID &&
-          new Date(bt.tripStart).toISOString().split('T')[0] <= dateStr &&
-          new Date(bt.tripEnd).toISOString().split('T')[0] >= dateStr
-        );
+      // Process leave records - create records for leave days
+      data.leave.records.forEach((leave: any) => {
+        const leaveStart = new Date(leave.leaveStart);
+        const leaveEnd = new Date(leave.leaveEnd);
 
-        if (dayBusinessTrips.length > 0) {
-          const trip = dayBusinessTrips[0];
-          if (!clockInTime) {
-            clockInTime = trip.tripStart;
-            clockInSource = '出差';
+        // Generate all dates in the leave range
+        for (let d = new Date(leaveStart); d <= leaveEnd; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString();
+          const record = getOrCreateRecord(leave.empID, dateStr);
+
+          // Mark as leave and store sequence number
+          if (!record.status) {
+            record.status = leave.leaveType || '請假';
           }
-          if (!clockOutTime) {
-            clockOutTime = trip.tripEnd;
-            clockOutSource = '出差';
+          // Add leave sequence number to the leaves array
+          if (leave.sequenceNumber && !record.leaves.includes(leave.sequenceNumber)) {
+            record.leaves.push(leave.sequenceNumber);
           }
         }
+      });
 
-        // Calculate work duration: (out - in) - 1hr + 10min
-        let workDuration: number | undefined;
-        if (clockInTime && clockOutTime) {
-          const inTime = new Date(clockInTime).getTime();
-          const outTime = new Date(clockOutTime).getTime();
+      // Calculate work duration and add holiday info
+      const aggregated = Array.from(recordMap.values()).map((record: any) => {
+        // Calculate work duration if both clock times exist
+        if (record.clockInTime && record.clockOutTime) {
+          const inTime = new Date(record.clockInTime).getTime();
+          const outTime = new Date(record.clockOutTime).getTime();
           const durationMinutes = (outTime - inTime) / (1000 * 60);
-          workDuration = durationMinutes - 60 + 10; // -1hr lunch, +10min bonus
+          record.workDuration = durationMinutes - 60 + 10; // -1hr lunch, +10min bonus
         }
 
         // Check if date is a holiday
+        const dateStr = new Date(record.date).toISOString();
         const holiday = holidayMap.get(dateStr) as any;
+        if (holiday) {
+          record.status = holiday.name || '國定假日';
+          record.holidayName = holiday.name;
+        }
 
-        return {
-          _id: att._id,
-          cardID: att.cardID,
-          empID: employee?.empID,
-          employeeName: employee?.name,
-          department: employee?.department,
-          date: att.date,
-          clockInTime,
-          clockOutTime,
-          clockInSource,
-          clockOutSource,
-          workDuration,
-          status: holiday ? (holiday.name || '國定假日') : undefined,
-          holidayName: holiday?.name
-        };
+        return record;
       });
 
       setAttendanceRecords(aggregated);
@@ -411,24 +452,6 @@ const AttendanceTab: React.FC = () => {
       headerName: '出勤狀態',
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
-        // If it's a holiday, display holiday name with red background
-        if (params.row.holidayName) {
-          return (
-            <Box
-              sx={{
-                backgroundColor: '#f44336',
-                color: 'white',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: '0.875rem',
-                fontWeight: 500
-              }}
-            >
-              {params.row.status || params.row.holidayName}
-            </Box>
-          );
-        }
         return <StatusChip log={params.row} />;
       },
     },
@@ -605,6 +628,9 @@ const AttendanceTab: React.FC = () => {
               initialState={{
                 pagination: {
                   paginationModel: { page: 0, pageSize: 50 },
+                },
+                sorting: {
+                  sortModel: [{ field: 'date', sort: 'desc' }], // 'asc' or 'desc'
                 },
                 // filter: {
                 //   filterModel: {

@@ -26,6 +26,10 @@ interface StatusChipProps {
 
     // Leave tracking
     leaves?: number[]; // Array of leave sequenceNumbers
+
+    // Status and holiday fields from AttendanceTab
+    status?: string; // Can be leave type, holiday name, or other status
+    holidayName?: string; // Holiday name if date is a holiday
   }
 }
 
@@ -34,42 +38,89 @@ const StatusChip: React.FC<StatusChipProps> = ({log}) => {
 
   const chips : ReactElement[] = []
 
-  // Add leave chip if there are leave records
-  if (log.leaves && log.leaves.length > 0) {
+  // Priority 1: Check for holidays (from AttendanceTab)
+  if (log.holidayName) {
+    chips.push(
+      <Chip
+        key="holiday"
+        sx={{
+          mr: 1,
+          backgroundColor: '#f44336',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: '#d32f2f'
+          }
+        }}
+        label={log.status || log.holidayName}
+        size="small"
+      />
+    );
+    if (isToday(log.clockInTime)) chips.push(<span key="today">(今天)</span>)
+    return <>{chips}</>;
+  }
+
+  // Priority 2: Check for leave status or leave records
+  const hasLeaveStatus = log.status && !log.clockInTime && !log.clockOutTime;
+  const hasLeaveRecords = log.leaves && log.leaves.length > 0;
+
+  if (hasLeaveStatus || hasLeaveRecords) {
+    // Determine label: show leave type if available, otherwise "請假" with count if multiple
+    let label = '請假';
+    if (log.status) {
+      label = log.status;
+    }
+    if (hasLeaveRecords && log.leaves!.length > 1) {
+      label += ` (${log.leaves!.length})`;
+    }
+
     chips.push(
       <Chip
         key="leave"
-        sx={{mr:1, cursor: 'pointer'}}
-        label={`請假${log.leaves.length > 1 ? ` (${log.leaves.length})` : ''}`}
+        sx={{
+          mr: 1,
+          cursor: hasLeaveRecords ? 'pointer' : 'default'
+        }}
+        label={label}
         color="primary"
         size="small"
-        onClick={() => setModalOpen(true)}
+        onClick={hasLeaveRecords ? () => setModalOpen(true) : undefined}
       />
     );
+
+    if (isToday(log.clockInTime)) chips.push(<span key="today">(今天)</span>)
+    return <>
+      {chips}
+      {hasLeaveRecords && (
+        <LeaveDetailsModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          leaveSequenceNumbers={log.leaves!}
+          attendanceDate={new Date(log.date).toLocaleDateString('zh-TW')}
+        />
+      )}
+    </>;
   }
 
-  if (log.isAbsent) chips.push(<Chip key="absent" sx={{mr:1}} label="缺勤" color="error" size="small" />)
-  else {
+  // Priority 4: Check absence, late, early leave
+  // Check for absence: no clock in/out times and no leave
+  const hasNoClockTimes = !log.clockInTime && !log.clockOutTime;
+  const hasNoLeaveOrStatus = !log.status && (!log.leaves || log.leaves.length === 0);
+
+  if (log.isAbsent || (hasNoClockTimes && hasNoLeaveOrStatus)) {
+    chips.push(<Chip key="absent" sx={{mr:1}} label="缺勤" color="error" size="small" />)
+  } else {
     if (log.isLate) chips.push(<Chip key="late" sx={{mr:1}} label="遲到" color="warning" size="small" />)
     if (log.isEarlyLeave) chips.push(<Chip key="earlyLeave" sx={{mr:1}} label="早退" color="warning" size="small" />)
-    if (!log.isLate && !log.isEarlyLeave && (!log.leaves || log.leaves.length === 0)) {
+
+    // Only show "正常" if there are actual clock times or if none of the other conditions apply
+    if (!log.isLate && !log.isEarlyLeave && (!log.leaves || log.leaves.length === 0) && (log.clockInTime || log.clockOutTime)) {
       chips.push(<Chip key="normal" sx={{mr:1}} label="正常" color="success" size="small" />)
     }
   }
 
   if (isToday(log.clockInTime)) chips.push(<span key="today">(今天)</span>)
 
-  return <>
-    { chips }
-    {log.leaves && log.leaves.length > 0 && (
-      <LeaveDetailsModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        leaveSequenceNumbers={log.leaves}
-        attendanceDate={new Date(log.date).toLocaleDateString('zh-TW')}
-      />
-    )}
-  </>;
+  return <>{chips}</>;
 };
 
 export default StatusChip;
