@@ -19,7 +19,7 @@ export class CronService {
     // console.log('File scanning cron job start running');
 
     // this.attendanceFileScanJob = cron.schedule('*/5 * * * *', async () => {
-      
+
     //     console.warn('⏳ Skipping file scan - test');
     // })
     // return;
@@ -134,7 +134,7 @@ export class CronService {
     console.log('🤖 Automated file scanning started - runs every 5 minutes');
   }
 
-  async createAttendance(): Promise<{
+  async createAttendance(date?: Date): Promise<{
     date: Date;
     employeeCount: number;
     createdCount: number;
@@ -145,7 +145,7 @@ export class CronService {
 
     try {
       // Get current date (set to start of day for consistency)
-      const today = new Date();
+      const today = date ? new Date(date) : new Date();
       today.setHours(0, 0, 0, 0);
 
       // Check if today is a weekend (Saturday = 6, Sunday = 0)
@@ -215,14 +215,14 @@ export class CronService {
   /**
    * Run attendance creation immediately (manual trigger)
    */
-  async runCreateAttendanceNow(): Promise<{
+  async runCreateAttendanceNow(date: Date): Promise<{
     date: Date;
     employeeCount: number;
     createdCount: number;
     errors: string[];
   }> {
     console.log('🔄 Manual attendance creation triggered...');
-    const result = await this.createAttendance();
+    const result = await this.createAttendance(date);
     console.log(`✅ Manual attendance creation completed - Created ${result.createdCount} records for ${result.employeeCount} employees`);
     return result;
   }

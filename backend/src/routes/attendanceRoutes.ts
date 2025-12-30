@@ -15,8 +15,11 @@ const attendanceLimiter = rateLimit({
 });
 router.use(attendanceLimiter);
 
-router.get('/create-attendance-record', async (_, res) => {
-  res.status(200).json(await cronService.runCreateAttendanceNow())
+/**
+ * ex: http://localhost:5200/api/attendance/create-attendance-record/2025-12-25
+ */
+router.get('/create-attendance-record/:date', async (req, res) => {
+  res.status(200).json(await cronService.runCreateAttendanceNow(new Date(req.params.date)))
 });
 router.get('/clean-holidays', attendanceController.cleanHolidayRecords);
 
