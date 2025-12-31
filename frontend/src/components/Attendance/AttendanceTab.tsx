@@ -88,7 +88,7 @@ const AttendanceTab: React.FC = () => {
       const empIDToCardID = new Map(employees.map((e: any) => [e.empID, e.cardID]));
 
       // Create holiday map for quick lookup
-      const holidayMap = new Map(holidays.map((h: any) => [h.date.split('T')[0], h]));
+      const holidayMap = new Map(holidays.map((h: any) => [toTaipeiDate(h.date), h]));
 
       // Collect all unique employee-date combinations
       const recordMap = new Map<string, any>();
@@ -108,8 +108,8 @@ const AttendanceTab: React.FC = () => {
             date: toTaipeiDate(dateStr),
             clockInTime: undefined,
             clockOutTime: undefined,
-            clockInSource: undefined,
-            clockOutSource: undefined,
+            clockInSource: "缺勤",
+            clockOutSource: "缺勤",
             workDuration: undefined,
             status: undefined,
             holidayName: undefined,
@@ -129,8 +129,8 @@ const AttendanceTab: React.FC = () => {
 
         record.clockInTime = att.clockInTime;
         record.clockOutTime = att.clockOutTime;
-        record.clockInSource = '打卡';
-        record.clockOutSource = '打卡';
+        record.clockInSource = att.clockInTime ? '打卡' : "缺勤";
+        record.clockOutSource = att.clockOutTime ? '打卡' : "缺勤";
       });
 
       // Process postClock records

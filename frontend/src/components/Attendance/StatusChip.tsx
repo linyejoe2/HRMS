@@ -1,7 +1,7 @@
 // components/StatusChip.tsx
 import React, { ReactElement, useState } from 'react';
 import { Chip } from '@mui/material';
-import { isToday } from '@/utility';
+import { isToday, toTaipeiDate } from '@/utility';
 import LeaveDetailsModal from '../Leave/LeaveDetailsModal';
 import dayjs from 'dayjs';
 import utc from "dayjs/plugin/utc";
@@ -40,23 +40,23 @@ interface StatusChipProps {
   }
 }
 
-const StatusChip: React.FC<StatusChipProps> = ({log}) => {
+const StatusChip: React.FC<StatusChipProps> = ({ log }) => {
   const [modalOpen, setModalOpen] = useState(false);
 
-  const chips : ReactElement[] = [<Chip
-        key="holiday"
-        sx={{
-          display: "none",
-          mr: 1,
-          backgroundColor: '#f44336',
-          color: 'white',
-          '&:hover': {
-            backgroundColor: '#d32f2f'
-          }
-        }}
-        label={JSON.stringify(log)}
-        size="small"
-      />]
+  const chips: ReactElement[] = [<Chip
+    key="holiday"
+    sx={{
+      display: "none",
+      mr: 1,
+      backgroundColor: '#f44336',
+      color: 'white',
+      '&:hover': {
+        backgroundColor: '#d32f2f'
+      }
+    }}
+    label={JSON.stringify(log)}
+    size="small"
+  />]
 
   // Priority 1: Check for holidays (from AttendanceTab)
   if (log.holidayName) {
@@ -123,7 +123,7 @@ const StatusChip: React.FC<StatusChipProps> = ({log}) => {
 
   // Priority 3: Calculate attendance status based on clock times
   // Using same logic as backend calcWorkDuration()
-  const hasNoClockTimes = !log.clockInTime && !log.clockOutTime;
+  const hasNoClockTimes = !log.clockInTime || !log.clockOutTime;
   const hasNoLeaveOrStatus = !log.status && (!log.leaves || log.leaves.length === 0);
 
   let isLate = false;
@@ -175,18 +175,18 @@ const StatusChip: React.FC<StatusChipProps> = ({log}) => {
   }
 
   // Check for absence: no clock times and no leave/holiday
-  if (hasNoClockTimes && hasNoLeaveOrStatus) {
-    chips.push(<Chip key="absent" sx={{mr:1}} label="缺勤" color="error" size="small" />)
+  if (hasNoClockTimes && hasNoLeaveOrStatus && dayjs(log.date).isBefore(toTaipeiDate())) {
+    chips.push(<Chip key="absent" sx={{ mr: 1 }} label="缺勤" color="error" size="small" />)
   } else {
-    if (isLate) chips.push(<Chip key="late" sx={{mr:1}} label="遲到" color="warning" size="small" />)
-    if (isEarlyLeave) chips.push(<Chip key="earlyLeave" sx={{mr:1}} label="早退" color="warning" size="small" />)
+
+    if (isLate) chips.push(<Chip key="late" sx={{ mr: 1 }} label="遲到" color="warning" size="small" />)
+    if (isEarlyLeave) chips.push(<Chip key="earlyLeave" sx={{ mr: 1 }} label="早退" color="warning" size="small" />)
 
     // Only show "正常" if there are actual clock times and not late/early
-    if (!isLate && !isEarlyLeave && (log.clockInTime || log.clockOutTime)) {
-      chips.push(<Chip key="normal" sx={{mr:1}} label="正常" color="success" size="small" />)
+    if (!isLate && !isEarlyLeave && !hasNoClockTimes) {
+      chips.push(<Chip key="normal" sx={{ mr: 1 }} label="正常" color="success" size="small" />)
     }
   }
-
   if (isToday(log.clockInTime)) chips.push(<span key="today">(今天)</span>)
 
   return <>{chips}</>;

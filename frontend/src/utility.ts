@@ -60,7 +60,7 @@ export function toTaipeiString(date?: string): string {
 /**
  * 
  * @param date ex: 2025-08-10T07:42:00.000Z
- * @returns 2025/08/10 15:42
+ * @returns 2025/08/10
  */
 export function toTaipeiDate(date?: any): string {
   if (!date) return dayjs().locale("tw").format('YYYY/MM/DD')
