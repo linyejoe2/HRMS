@@ -1,0 +1,95 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: HRMS-db-test
+    restart: always
+    ports:
+      - "27020:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: good1234
+      MONGO_INITDB_DATABASE: HRMS_TEST
+    volumes:
+      - ./database/data/db-test:/data/db
+      # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - hrms-network-test
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
+
+  nginx:
+    image: nginx:alpine
+    container_name: HRMS-nginx-test
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - hrms-network-test
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: HRMS-backend-test
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV}
+      - TZ=Asia/Taipei
+    ports:
+      - "${BACKEND_PORT}:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - hrms-network-test
+    restart: unless-stopped
+    volumes:
+      - ${DATA}:/app/data
+      - ./backend/uploads-test:/app/uploads
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # platforms:
+      #   - "linux/amd64"
+    container_name: HRMS-frontend-test
+    expose:
+      - "${FRONTEND_PORT}:80"
+    environment:
+      - name=value
+      - TZ=Asia/Taipei
+    depends_on:
+      - backend
+    networks:
+      - hrms-network-test
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "4"
+
+networks:
+  hrms-network-test:
+    driver: bridge
