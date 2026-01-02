@@ -58,7 +58,7 @@ const VariableManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(true);
 
   // Dialog states
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);

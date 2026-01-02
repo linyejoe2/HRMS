@@ -144,8 +144,7 @@ const AddEditVariableDialog: React.FC<AddEditVariableDialogProps> = ({
       onSaved();
       onClose();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error ||
-        (variable ? '更新變數失敗' : '新增變數失敗');
+      const errorMessage = (variable ? '更新變數失敗: ' : '新增變數失敗: ') + err.response?.data?.message || "";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
