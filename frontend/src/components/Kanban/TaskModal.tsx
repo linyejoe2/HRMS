@@ -247,7 +247,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({ open, onClose, task, onSav
             value={content}
             onChange={(e) => setContent(e.target.value)}
             multiline
-            rows={4}
+            minRows={4}
+            maxRows={100}
             fullWidth
           />
 
