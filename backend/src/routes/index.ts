@@ -10,6 +10,7 @@ import leaveAdjustmentRoutes from './leaveAdjustmentRoutes';
 import kanbanRoutes from './kanbanRoutes';
 import variableRoutes from './variableRoutes';
 import holidayRoutes from './holidayRoutes';
+import { fixMulterChineseFileName } from '../middleware/upload';
 
 const router = Router();
 
@@ -21,6 +22,8 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+router.use(fixMulterChineseFileName);
 
 // API routes
 router.use('/auth', authRoutes);

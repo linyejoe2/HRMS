@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { config } from '../config';
+import { Request, Response, NextFunction } from 'express';
 
 // Ensure upload directories exist
 const postClockUploadDir = path.join(process.cwd(), config.uploadPath, 'postclock');
@@ -82,6 +83,48 @@ const businessTripStorage = multer.diskStorage({
     cb(null, `${sanitizedBasename}-${uniqueSuffix}${ext}`);
   }
 });
+
+/**
+ * 修正 Multer 中文亂碼的 Middleware (TS 版本)
+ */
+export const fixMulterChineseFileName = (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+): void => {
+  console.log("in fixMulterChineseFileName")
+  
+  // 核心轉換邏輯
+  const fixEncoding = (file: Express.Multer.File): void => {
+    if (file && file.originalname) {
+  console.log(file.originalname)
+      // 檢查是否包含非 ASCII 字元（避免重複轉換導致二度亂碼）
+      // 通常 latin1 轉 utf8 的特徵是包含特殊的位元組序列
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+  console.log(file.originalname)
+    }
+  };
+
+  // 1. 處理單一檔案 (req.file)
+  if (req.file) {
+    fixEncoding(req.file);
+  }
+
+  // 2. 處理多檔案 (req.files)
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      // 處理 upload.array() 的情況
+      req.files.forEach(fixEncoding);
+    } else {
+      // 處理 upload.fields() 的情況，req.files 是一個 Dictionary 物件
+      Object.values(req.files).forEach((fileArray) => {
+        (fileArray as Express.Multer.File[]).forEach(fixEncoding);
+      });
+    }
+  }
+
+  next();
+};
 
 // File filter - only allow specific file types
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
