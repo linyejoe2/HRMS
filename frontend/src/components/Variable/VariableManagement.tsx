@@ -141,8 +141,8 @@ const VariableManagement: React.FC = () => {
     if (!variableToDelete?._id) return;
 
     try {
-      await variableAPI.delete(variableToDelete._id, false); // Soft delete
-      toast.success('變數已停用');
+      await variableAPI.delete(variableToDelete._id, true); // Hard delete
+      toast.success('變數已刪除');
       fetchVariables();
       handleCloseDeleteDialog();
     } catch (error: any) {
@@ -377,16 +377,16 @@ const VariableManagement: React.FC = () => {
         <DialogTitle>確認刪除</DialogTitle>
         <DialogContent>
           <Typography>
-            確定要停用變數 <strong>{variableToDelete && (sectionMap[variableToDelete.section as keyof typeof sectionMap] || variableToDelete.section)} - {variableToDelete?.code}</strong> 嗎？
+            確定要刪除變數 <strong>{variableToDelete && (sectionMap[variableToDelete.section as keyof typeof sectionMap] || variableToDelete.section)} - {variableToDelete?.code}</strong> 嗎？
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            此變數將被停用，不會顯示在選單中。
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+            此操作將永久刪除變數，無法復原！
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>取消</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            確認停用
+            確認刪除
           </Button>
         </DialogActions>
       </Dialog>
