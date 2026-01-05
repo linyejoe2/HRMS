@@ -25,6 +25,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { kanbanService, KanbanTask, KanbanStatus, GroupedTasks } from '../services/kanbanService';
 import { TaskCard } from '../components/Kanban/TaskCard';
 import { TaskModal } from '../components/Kanban/TaskModal';
+import { DoneColumnTasks } from '../components/Kanban/DoneColumnTasks';
 
 const COLUMNS: { key: KanbanStatus; label: string; color: string }[] = [
   { key: 'Backlog', label: 'Backlog', color: '#9e9e9e' },
@@ -242,16 +243,24 @@ export const KanbanPage: React.FC = () => {
                   </Box>
 
                   <DroppableColumn id={column.key}>
-                    <SortableContext items={columnTasks.map((t: KanbanTask) => t._id)} strategy={verticalListSortingStrategy}>
-                      {columnTasks.map(task => (
-                        <TaskCard
-                          key={task._id}
-                          task={task}
-                          onEdit={column.key === 'Deprecated' ? handleRestoreTask : handleEditTask}
-                          onDelete={handleDeleteTask}
-                        />
-                      ))}
-                    </SortableContext>
+                    {column.key === 'Done' ? (
+                      <DoneColumnTasks
+                        tasks={columnTasks}
+                        onEditTask={handleEditTask}
+                        onDeleteTask={handleDeleteTask}
+                      />
+                    ) : (
+                      <SortableContext items={columnTasks.map((t: KanbanTask) => t._id)} strategy={verticalListSortingStrategy}>
+                        {columnTasks.map(task => (
+                          <TaskCard
+                            key={task._id}
+                            task={task}
+                            onEdit={column.key === 'Deprecated' ? handleRestoreTask : handleEditTask}
+                            onDelete={handleDeleteTask}
+                          />
+                        ))}
+                      </SortableContext>
+                    )}
                   </DroppableColumn>
                 </Paper>
               </Grid>
