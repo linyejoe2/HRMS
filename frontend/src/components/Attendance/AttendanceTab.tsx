@@ -602,7 +602,24 @@ const AttendanceTab: React.FC = () => {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            出勤記錄 ({attendanceRecords.length} 筆)
+            出勤記錄 ({attendanceRecords.filter(record => {
+              // Filter: Only show my records if checked
+              if (showOnlyMyRecords && record.cardID !== user?.cardID) {
+                return false;
+              }
+
+              // Filter: Show/hide unknown employees
+              if (!showUnknownEmployees && !record.employeeName) {
+                return false;
+              }
+
+              // Filter: Fuzzy search by cardID, empID, employeeName, department
+              if (!fuzzySearchAttendance(record, searchQuery, record.empID ?? "")) {
+                return false;
+              }
+
+              return true;
+            }).length} 筆)
           </Typography>
 
           <Box sx={{ width: '100%' }}>
