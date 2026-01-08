@@ -1,19 +1,9 @@
 import { Router } from 'express';
 import { employeeController } from '../controllers';
 import { authenticateToken, requireRole } from '../middleware';
-import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
-// Rate limiting
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // 200 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-router.use(generalLimiter);
 router.use(authenticateToken);
 
 // Routes accessible by all authenticated users

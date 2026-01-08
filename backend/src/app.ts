@@ -8,7 +8,7 @@ import routes from './routes';
 
 const app = express();
 
-app.set('trust proxy', 2); 
+app.set('trust proxy', true); 
 
 // Security middleware
 app.use(helmet({

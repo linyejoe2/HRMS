@@ -1,18 +1,8 @@
 import { Router } from 'express';
 import { kanbanController } from '../controllers';
 import { authenticateToken } from '../middleware';
-import rateLimit from 'express-rate-limit';
 
 const router = Router();
-
-// Rate limiting for kanban endpoints
-const kanbanLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-router.use(kanbanLimiter);
 
 // All routes require authentication
 router.use(authenticateToken);
