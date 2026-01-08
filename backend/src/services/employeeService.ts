@@ -60,6 +60,23 @@ export class EmployeeService {
     return !!result;
   }
 
+  async resetPassword(id: string, newPassword: string): Promise<boolean> {
+    const employee = await Employee.findById(id);
+
+    if (!employee) {
+      return false;
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    employee.password = hashedPassword;
+    await employee.save();
+
+    return true;
+  }
+
   async getAllEmployees(page: number = 1, limit: number = 10, department?: string): Promise<{
     employees: IEmployee[];
     total: number;

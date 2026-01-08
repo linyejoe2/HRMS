@@ -265,6 +265,10 @@ export const employeeAPI = {
   update: (id: string, employeeData: Partial<Employee>): Promise<AxiosResponse<{ error: boolean, message: string, data: { employee: Employee } }>> =>
     api.put(`/employees/${id}`, employeeData),
 
+  // Reset employee password (Admin only)
+  resetPassword: (id: string, newPassword: string): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
+    api.put(`/employees/${id}/reset-password`, { newPassword }),
+
   // Delete/deactivate employee (Admin only)
   delete: (id: string): Promise<AxiosResponse<{ error: boolean, message: string }>> =>
     api.delete(`/employees/${id}`)

@@ -92,9 +92,9 @@ export class EmployeeController {
   updateEmployee = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
-    
+
     const employee = await employeeService.updateEmployee(id, updateData);
-    
+
     if (!employee) {
       res.status(404).json({
         error: true,
@@ -107,6 +107,34 @@ export class EmployeeController {
       error: false,
       message: '員工資料成功更新',
       data: { employee }
+    });
+  });
+
+  resetPassword = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      res.status(400).json({
+        error: true,
+        message: '新密碼長度至少需要 6 個字元'
+      });
+      return;
+    }
+
+    const success = await employeeService.resetPassword(id, newPassword);
+
+    if (!success) {
+      res.status(404).json({
+        error: true,
+        message: '找不到員工資料'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      error: false,
+      message: '密碼重置成功'
     });
   });
 

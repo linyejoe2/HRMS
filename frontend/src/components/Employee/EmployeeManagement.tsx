@@ -28,6 +28,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { employeeAPI, variableAPI } from '../../services/api';
 import { Employee, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -60,6 +61,13 @@ const EmployeeManagement: React.FC = () => {
     employee: Employee | null;
   }>({ open: false, employee: null });
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [resetPasswordDialog, setResetPasswordDialog] = useState<{
+    open: boolean;
+    employee: Employee | null;
+  }>({ open: false, employee: null });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetConfirmName, setResetConfirmName] = useState('');
 
   const limit = 100;
 
@@ -234,6 +242,60 @@ const EmployeeManagement: React.FC = () => {
   const handleCloseDeleteDialog = () => {
     setDeleteDialog({ open: false, employee: null });
     setDeleteConfirmName('');
+  };
+
+  // Handle reset password click
+  const handleResetPasswordClick = (employee: Employee) => {
+    setResetPasswordDialog({
+      open: true,
+      employee
+    });
+    setNewPassword('');
+    setConfirmPassword('');
+    setResetConfirmName('');
+  };
+
+  // Handle confirm reset password
+  const handleConfirmResetPassword = async () => {
+    if (!resetPasswordDialog.employee) return;
+
+    // Validate passwords
+    if (!newPassword || !confirmPassword) {
+      toast.error('請輸入新密碼');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('新密碼與確認密碼不一致');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('密碼長度至少需要 6 個字元');
+      return;
+    }
+
+    // Validate name confirmation
+    if (resetConfirmName !== resetPasswordDialog.employee.name) {
+      toast.error('輸入的姓名不正確');
+      return;
+    }
+
+    try {
+      await employeeAPI.resetPassword(resetPasswordDialog.employee._id!, newPassword);
+      toast.success('密碼重置成功');
+      handleCloseResetPasswordDialog();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || '密碼重置失敗');
+    }
+  };
+
+  // Handle close reset password dialog
+  const handleCloseResetPasswordDialog = () => {
+    setResetPasswordDialog({ open: false, employee: null });
+    setNewPassword('');
+    setConfirmPassword('');
+    setResetConfirmName('');
   };
 
   // Get role display text
@@ -431,6 +493,16 @@ const EmployeeManagement: React.FC = () => {
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
+                        <Tooltip title="重製密碼">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleResetPasswordClick(employee)}
+                            disabled={loading || user?.role !== UserLevel.ADMIN}
+                            color="warning"
+                          >
+                            <VpnKeyIcon />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title={employee.isActive ? '停用員工' : '啟用員工'}>
                           <IconButton
                             size="small"
@@ -562,6 +634,75 @@ const EmployeeManagement: React.FC = () => {
               disabled={deleteConfirmName !== deleteDialog.employee?.name}
             >
               確認刪除
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog
+        open={resetPasswordDialog.open}
+        onClose={handleCloseResetPasswordDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom color="warning.main">
+            重製密碼
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            重製員工 <strong>{resetPasswordDialog.employee?.name}</strong> ({resetPasswordDialog.employee?.empID}) 的密碼
+          </Typography>
+
+          <TextField
+            fullWidth
+            type="password"
+            label="新密碼"
+            placeholder="請輸入新密碼"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            sx={{ mb: 2 }}
+            autoFocus
+          />
+
+          <TextField
+            fullWidth
+            type="password"
+            label="確認新密碼"
+            placeholder="請再次輸入新密碼"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            確認重製 請在此輸入 <strong>{resetPasswordDialog.employee?.name}</strong>
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="請輸入員工姓名"
+            value={resetConfirmName}
+            onChange={(e) => setResetConfirmName(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              onClick={handleCloseResetPasswordDialog}
+            >
+              取消
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={handleConfirmResetPassword}
+              disabled={
+                !newPassword ||
+                !confirmPassword ||
+                resetConfirmName !== resetPasswordDialog.employee?.name
+              }
+            >
+              確認
             </Button>
           </Box>
         </Box>

@@ -15,6 +15,7 @@ router.get('/empid/:id', employeeController.getEmployeeByEmpID);
 // Routes accessible only by HR and Admin
 router.post('/', requireRole(['admin', 'hr']), employeeController.createEmployee);
 router.put('/:id', requireRole(['admin', 'hr']), employeeController.updateEmployee);
+router.put('/:id/reset-password', requireRole(['admin']), employeeController.resetPassword);
 router.delete('/:id', requireRole(['admin']), employeeController.deleteEmployee);
 
 export default router;
