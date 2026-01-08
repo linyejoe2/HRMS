@@ -92,7 +92,6 @@ export const fixMulterChineseFileName = (
   res: Response, 
   next: NextFunction
 ): void => {
-  console.log("in fixMulterChineseFileName")
   
   // 核心轉換邏輯
   const fixEncoding = (file: Express.Multer.File): void => {

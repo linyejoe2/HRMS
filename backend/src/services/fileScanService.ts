@@ -28,9 +28,27 @@ export class FileScanService {
       }
 
       let files = fs.readdirSync(this.dataFolderPath);
-      files = files.filter(file => file.endsWith('saveData.txt'));
-      files = files.filter(file => file.startsWith('001'));
-      files = files.filter(file => file.includes('2025'));
+      // files = files.filter(file => file.endsWith('saveData.txt'));
+      // files = files.filter(file => file.startsWith('001'));
+      // files = files.filter(file => file.includes('2025'));
+      files = files.filter(file => {
+        // 1. 基本過濾：必須以 saveData.txt 結尾
+        if (!file.endsWith('saveData.txt')) {
+          return false;
+        }
+
+        // 2. 提取年份：使用正則表達式尋找 4 位數字
+        // \d{4} 代表比對連續四個數字
+        const match = file.match(/\d{4}/);
+
+        if (match) {
+          const year = parseInt(match[0], 10);
+          // 3. 條件判斷：年份必須大於 2025
+          return year > 2025;
+        }
+
+        return false;
+      });
 
       console.log(`Found ${files.length} saveData.txt files`);
 
@@ -38,7 +56,7 @@ export class FileScanService {
         try {
           const filePath = path.join(this.dataFolderPath, fileName);
           const stats = fs.statSync(filePath);
-          
+
           const fileInfo = {
             name: fileName,
             updateDate: stats.mtime.toISOString(),
@@ -52,13 +70,13 @@ export class FileScanService {
             // New file - create record and process
             attendanceFile = new AttendanceFile(fileInfo);
             await attendanceFile.save();
-            
+
             // Process the file
             const result = await attendanceService.importSaveDataFile(filePath);
             attendanceFile.lastProcessed = new Date();
             attendanceFile.processedRecords = result.imported;
             await attendanceFile.save();
-            
+
             console.log(`Processed new file ${fileName}: ${result.imported} records imported`);
             if (result.errors.length > 0) {
               errors.push(...result.errors);
@@ -69,23 +87,23 @@ export class FileScanService {
             updated++;
           } else {
             // Existing file - check if it has been updated
-            if (attendanceFile.updateDate !== fileInfo.updateDate || 
-                attendanceFile.fileSize !== fileInfo.fileSize) {
-              
+            if (attendanceFile.updateDate !== fileInfo.updateDate ||
+              attendanceFile.fileSize !== fileInfo.fileSize) {
+
               // File has been updated - update record and reprocess
               attendanceFile.updateDate = fileInfo.updateDate;
               attendanceFile.fileSize = fileInfo.fileSize;
-              
+
               const result = await attendanceService.importSaveDataFile(filePath);
               attendanceFile.lastProcessed = new Date();
               attendanceFile.processedRecords = result.imported;
               await attendanceFile.save();
-              
+
               console.log(`Reprocessed updated file ${fileName}: ${result.imported} records imported`);
               if (result.errors.length > 0) {
                 errors.push(...result.errors);
               }
-              
+
               processed++;
               updated++;
             } else {
@@ -128,9 +146,9 @@ export class FileScanService {
     const files = await AttendanceFile.find();
     const totalFiles = files.length;
     const totalProcessedRecords = files.reduce((sum, file) => sum + (file.processedRecords || 0), 0);
-    const lastScanTime = files.length > 0 ? 
-      files.reduce((latest, file) => 
-        !latest || file.updatedAt > latest ? file.updatedAt : latest, 
+    const lastScanTime = files.length > 0 ?
+      files.reduce((latest, file) =>
+        !latest || file.updatedAt > latest ? file.updatedAt : latest,
         undefined as Date | undefined
       ) : undefined;
 
