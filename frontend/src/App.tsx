@@ -12,6 +12,7 @@ import AskLeaveTab from './components/Leave/AskLeaveTab';
 import ApproveLeaveTab from './components/Leave/ApproveLeaveTab';
 import PostClockTab from './components/PostClock/PostClockTab';
 import BusinessTripTab from './components/BusinessTrip/BusinessTripTab';
+import OfficialBusinessTab from './components/OfficialBusiness/OfficialBusinessTab';
 import VariableManagement from './components/Variable/VariableManagement';
 import { CalendarTab } from './components/Calendar/CalendarTab';
 import { KanbanPage } from './pages/KanbanPage';
@@ -92,6 +93,7 @@ const App: React.FC = () => {
         <Route path="leave/approve" element={<ApproveLeaveTab />} />
         <Route path="postclock" element={<PostClockTab />} />
         <Route path="business-trip" element={<BusinessTripTab />} />
+        <Route path="officialbusiness" element={<OfficialBusinessTab />} />
         <Route path="variables" element={<VariableManagement />} />
         <Route path="calendar" element={<CalendarTab />} />
         <Route path="settings" element={<SettingsTab />} />

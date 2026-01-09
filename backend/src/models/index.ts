@@ -5,6 +5,7 @@ export { AttendanceFile, IAttendanceFile } from './AttendanceFile';
 export { Leave, ILeave } from './Leave';
 export { PostClock, IPostClock } from './PostClock';
 export { BusinessTrip, IBusinessTrip } from './BusinessTrip';
+export { OfficialBusiness, IOfficialBusiness } from './OfficialBusiness';
 export { Counter, ICounter } from './Counter';
 export { LeaveAdjustment, ILeaveAdjustment } from './LeaveAdjustment';
 export { KanbanTask, IKanbanTask, IKanbanHistoryEntry, KanbanStatus } from './KanbanTask';

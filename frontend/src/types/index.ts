@@ -304,6 +304,34 @@ export interface BusinessTripRequest {
   updatedAt?: string;
 }
 
+export interface OfficialBusinessRequestForm {
+  empIDs: string[]; // Array of employee IDs (participants)
+  licensePlate: string; // Vehicle license plate number
+  startTime: string; // Departure time (ISO datetime)
+  endTime: string; // Return time (ISO datetime)
+  purpose: string; // Purpose of the official business
+  supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
+}
+
+export interface OfficialBusinessRequest {
+  _id?: string; // MongoDB ID
+  sequenceNumber: number; // auto-increment sequence number
+  applicant: string; // empID of the request creator
+  applicantName: string; // Name of the applicant
+  empIDs: string[]; // Array of participant employee IDs
+  participantNames: string[]; // Array of participant names
+  licensePlate: string; // Vehicle license plate number
+  startTime: string; // Departure time (ISO datetime)
+  endTime: string; // Return time (ISO datetime)
+  purpose: string; // Purpose of the official business
+  supportingInfo?: string[]; // Array of file paths/URLs - 佐證資料
+  status: 'created' | 'approved' | 'rejected' | 'cancel';
+  rejectionReason?: string; // Reason for rejection or cancellation
+  approvedBy?: string; // empID of the approver/rejector/canceller
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface LeaveAdjustment {
   _id?: string;
   empID: string;

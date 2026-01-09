@@ -9,6 +9,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApproveLeaveList from './ApproveLeaveList';
 import ApprovePostClockList from '../PostClock/ApprovePostClockList';
 import ApproveBusinessTripList from '../BusinessTrip/ApproveBusinessTripList';
+import ApproveOfficialBusinessTab from '../OfficialBusiness/ApproveOfficialBusinessTab';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -57,6 +58,8 @@ const ApproveLeaveTab: React.FC = () => {
         return 1;
       case 'travel':
         return 2;
+      case 'officialbusiness':
+        return 3;
       default:
         return 0;
     }
@@ -72,7 +75,7 @@ const ApproveLeaveTab: React.FC = () => {
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     // Update URL parameter
-    const tabNames = ['leave', 'postclock', 'travel'];
+    const tabNames = ['leave', 'postclock', 'travel', 'officialbusiness'];
     navigate(`/leave/approve?tab=${tabNames[newValue]}`, { replace: true });
   };
 
@@ -87,6 +90,7 @@ const ApproveLeaveTab: React.FC = () => {
           <Tab label="請假審核" {...a11yProps(0)} />
           <Tab label="補單審核" {...a11yProps(1)} />
           <Tab label="出差審核" {...a11yProps(2)} />
+          <Tab label="外出審核" {...a11yProps(3)} />
         </Tabs>
       </Box>
 
@@ -98,6 +102,9 @@ const ApproveLeaveTab: React.FC = () => {
       </TabPanel>
       <TabPanel value={tabValue} index={2}>
         <ApproveBusinessTripList />
+      </TabPanel>
+      <TabPanel value={tabValue} index={3}>
+        <ApproveOfficialBusinessTab />
       </TabPanel>
     </Box>
   );

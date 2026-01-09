@@ -4,6 +4,7 @@ export { attendanceService, AttendanceService } from './attendanceService';
 export { fileScanService, FileScanService } from './fileScanService';
 export { cronService, CronService } from './cronService';
 export { BusinessTripService } from './businessTripService';
+export { officialBusinessService, OfficialBusinessService } from './officialBusinessService';
 export { kanbanService, KanbanService } from './kanbanService';
 export { variableService, VariableService } from './variableService';
 export { variableSeedService, VariableSeedService } from './variableSeedService';

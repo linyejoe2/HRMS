@@ -8,8 +8,9 @@ import { Request, Response, NextFunction } from 'express';
 const postClockUploadDir = path.join(process.cwd(), config.uploadPath, 'postclock');
 const leaveUploadDir = path.join(process.cwd(), config.uploadPath, 'leave');
 const businessTripUploadDir = path.join(process.cwd(), config.uploadPath, 'businesstrip');
+const officialBusinessUploadDir = path.join(process.cwd(), config.uploadPath, 'officialbusiness');
 
-[postClockUploadDir, leaveUploadDir, businessTripUploadDir].forEach(dir => {
+[postClockUploadDir, leaveUploadDir, businessTripUploadDir, officialBusinessUploadDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -70,6 +71,24 @@ const leaveStorage = multer.diskStorage({
 const businessTripStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, businessTripUploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Decode and sanitize the original filename to preserve Chinese characters
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const ext = path.extname(originalName);
+    const basename = path.basename(originalName, ext);
+    const sanitizedBasename = sanitizeFilename(basename);
+
+    // Generate unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${sanitizedBasename}-${uniqueSuffix}${ext}`);
+  }
+});
+
+// Configure storage for OfficialBusiness
+const officialBusinessStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, officialBusinessUploadDir);
   },
   filename: (req, file, cb) => {
     // Decode and sanitize the original filename to preserve Chinese characters
@@ -170,3 +189,12 @@ export const uploadBusinessTripFiles = multer({
     files: 10 // Maximum 10 files
   }
 });
+
+export const uploadOfficialBusinessFiles = multer({
+  storage: officialBusinessStorage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+    files: 10 // Maximum 10 files
+  }
+}).array('supportingInfo', 10);

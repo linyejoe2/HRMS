@@ -30,6 +30,7 @@ import {
   Assignment as ApprovalIcon,
   EditCalendar as PostClockIcon,
   Work as BusinessTripIcon,
+  DirectionsCar as OfficialBusinessIcon,
   Storage as VariableIcon,
   CalendarMonth as CalendarIcon,
   ExpandLess,
@@ -131,6 +132,12 @@ const AppLayout: React.FC = () => {
       path: '/business-trip'
     });
 
+    baseItems.push({
+      text: '外出申請',
+      icon: <OfficialBusinessIcon />,
+      path: '/officialbusiness'
+    });
+
     // Add Employee Management for HR and Admin only
     if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
       // Add Approval Center with sub-items for HR and Admin only
@@ -142,6 +149,7 @@ const AppLayout: React.FC = () => {
           { text: '請假審核', path: '/leave/approve?tab=leave' },
           { text: '補單審核', path: '/leave/approve?tab=postclock' },
           { text: '出差審核', path: '/leave/approve?tab=travel' },
+          { text: '外出審核', path: '/leave/approve?tab=officialbusiness' },
         ]
       });
 

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, LeaveAdjustment, Variable } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = "";
@@ -511,6 +511,72 @@ export const approveBusinessTripRequest = businessTripAPI.approve;
 export const rejectBusinessTripRequest = businessTripAPI.reject;
 export const cancelBusinessTripRequest = businessTripAPI.cancel;
 export const getCancelledBusinessTripRequests = businessTripAPI.getCancelled;
+
+export const officialBusinessAPI = {
+  // Create official business request
+  create: (officialBusinessData: OfficialBusinessRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
+    const formData = new FormData();
+    formData.append('empIDs', JSON.stringify(officialBusinessData.empIDs));
+    formData.append('licensePlate', officialBusinessData.licensePlate);
+    formData.append('startTime', officialBusinessData.startTime);
+    formData.append('endTime', officialBusinessData.endTime);
+    formData.append('purpose', officialBusinessData.purpose);
+
+    if (officialBusinessData.supportingInfo && officialBusinessData.supportingInfo.length > 0) {
+      officialBusinessData.supportingInfo.forEach((file) => {
+        formData.append('supportingInfo', file);
+      });
+    }
+
+    return api.post('/officialbusiness/create', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Get my official business requests
+  getMy: (): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest[] }>> =>
+    api.get('/officialbusiness/my'),
+
+  // Get all official business requests (HR/Admin only)
+  getAll: (status?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest[] }>> =>
+    api.get(`/officialbusiness/all${status ? `?status=${status}` : ''}`),
+
+  // Get official business request by ID
+  getById: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.get(`/officialbusiness/${id}`),
+
+  // Get official business request by sequence number
+  getBySequenceNumber: (sequenceNumber: number): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.get(`/officialbusiness/sequence/${sequenceNumber}`),
+
+  // Approve official business request (HR/Admin only)
+  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/approve`),
+
+  // Reject official business request (HR/Admin only)
+  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/reject`, { reason }),
+
+  // Cancel official business request
+  cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/cancel`, reason ? { reason } : {}),
+
+  // Get cancelled official business requests (HR/Admin only)
+  getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest[] }>> =>
+    api.get(`/officialbusiness/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+};
+
+// Convenience functions for official business operations
+export const createOfficialBusinessRequest = officialBusinessAPI.create;
+export const getMyOfficialBusinessRequests = officialBusinessAPI.getMy;
+export const getAllOfficialBusinessRequests = officialBusinessAPI.getAll;
+export const getOfficialBusinessRequestById = officialBusinessAPI.getById;
+export const approveOfficialBusinessRequest = officialBusinessAPI.approve;
+export const rejectOfficialBusinessRequest = officialBusinessAPI.reject;
+export const cancelOfficialBusinessRequest = officialBusinessAPI.cancel;
+export const getCancelledOfficialBusinessRequests = officialBusinessAPI.getCancelled;
 
 // Variable API
 export const variableAPI = {
