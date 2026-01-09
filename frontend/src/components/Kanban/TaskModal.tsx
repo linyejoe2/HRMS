@@ -119,7 +119,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ open, onClose, task, onSav
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setFiles(Array.from(event.target.files));
+      setFiles([...files, ...Array.from(event.target.files)]);
     }
   };
 
