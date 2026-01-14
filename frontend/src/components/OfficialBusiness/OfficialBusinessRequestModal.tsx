@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Box,
-  Typography,
   Autocomplete,
   Chip,
   Grid
@@ -15,7 +14,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { Employee, OfficialBusinessRequestForm } from '../../types';
 import { employeeAPI, officialBusinessAPI } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -78,7 +77,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
     }
   }, [open, user]);
 
-  // Reset form when modal closes
+  // Reset form when modal closes or set defaults when it opens
   useEffect(() => {
     if (!open) {
       setSelectedEmployees([]);
@@ -87,6 +86,13 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
       setEndTime(null);
       setPurpose('');
       clearFiles();
+    } else {
+      // Set default times when modal opens
+      const now = dayjs();
+      const defaultStartTime = now.hour(8).minute(30).second(0);
+      const defaultEndTime = now.hour(17).minute(30).second(0);
+      setStartTime(defaultStartTime);
+      setEndTime(defaultEndTime);
     }
   }, [open, clearFiles]);
 
@@ -110,6 +116,28 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
 
     if (!endTime) {
       toast.error('請選擇返回時間');
+      return;
+    }
+
+    // Check if start and end times are on the same day
+    if (!startTime.isSame(endTime, 'day')) {
+      toast.error('外出時間與返回時間必須在同一天');
+      return;
+    }
+
+    // Check if startTime is at or after 08:30
+    const startTimeMinutes = startTime.hour() * 60 + startTime.minute();
+    const minTimeMinutes = 8 * 60 + 30; // 08:30
+    if (startTimeMinutes < minTimeMinutes) {
+      toast.error('外出時間必須在 08:30 之後');
+      return;
+    }
+
+    // Check if endTime is at or before 17:30
+    const endTimeMinutes = endTime.hour() * 60 + endTime.minute();
+    const maxTimeMinutes = 17 * 60 + 30; // 17:30
+    if (endTimeMinutes > maxTimeMinutes) {
+      toast.error('返回時間必須在 17:30 之前');
       return;
     }
 
@@ -210,13 +238,38 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                 <DateTimePicker
                   label="外出時間"
                   value={startTime}
-                  onChange={(newValue) => setStartTime(newValue)}
+                  onChange={(newValue) => {
+                    setStartTime(newValue);
+                    // Reset end time if it's on a different day or violates rules
+                    if (newValue && endTime) {
+                      if (!newValue.isSame(endTime, 'day')) {
+                        setEndTime(null);
+                      }
+                    }
+                  }}
                   format="YYYY/MM/DD HH:mm"
                   ampm={false}
+                  minTime={dayjs().hour(8).minute(29)}
+                  maxTime={dayjs().hour(17).minute(30)}
+                  shouldDisableTime={(value, view) => {
+                    if (view === 'hours') {
+                      const hour = value.hour();
+                      return hour < 8 || hour > 17;
+                    }
+                    if (view === 'minutes') {
+                      const hour = value.hour();
+                      const minute = value.minute();
+                      if (hour === 8 && minute < 29) return true;
+                      if (hour === 17 && minute > 30) return true;
+                      return false;
+                    }
+                    return false;
+                  }}
                   slotProps={{
                     textField: {
                       required: true,
-                      fullWidth: true
+                      fullWidth: true,
+                      helperText: '時間必須在 08:30 ~ 17:30 之間'
                     }
                   }}
                 />
@@ -229,10 +282,33 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                   format="YYYY/MM/DD HH:mm"
                   ampm={false}
                   minDateTime={startTime || undefined}
+                  maxTime={dayjs().hour(17).minute(30)}
+                  shouldDisableDate={(date) => {
+                    // Only allow the same day as startTime
+                    if (startTime) {
+                      return !date.isSame(startTime, 'day');
+                    }
+                    return false;
+                  }}
+                  shouldDisableTime={(value, view) => {
+                    if (view === 'hours') {
+                      const hour = value.hour();
+                      return hour > 17;
+                    }
+                    if (view === 'minutes') {
+                      const hour = value.hour();
+                      const minute = value.minute();
+                      if (hour === 17 && minute > 30) return true;
+                      return false;
+                    }
+                    return false;
+                  }}
+                  disabled={!startTime}
                   slotProps={{
                     textField: {
                       required: true,
-                      fullWidth: true
+                      fullWidth: true,
+                      helperText: startTime ? '必須與外出時間同一天且在 17:30 之前' : '請先選擇外出時間'
                     }
                   }}
                 />
@@ -254,9 +330,6 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
 
           {/* File Upload */}
           <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              佐證資料（選填）
-            </Typography>
             <FileUploadField
               files={files}
               onFilesChange={addFiles}

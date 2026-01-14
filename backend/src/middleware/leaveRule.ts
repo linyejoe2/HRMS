@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { toDayjs, toSeparatVariable, isWeekend } from '../utility';
+import { toDayjs, toSeparatVariable, isWeekend } from '../util/utility';
 import { AuthRequest } from '../middleware/auth';
 
 export const validateLeaveRule = async (req: AuthRequest, res: Response, next: NextFunction) => {

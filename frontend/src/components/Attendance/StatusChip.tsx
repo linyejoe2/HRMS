@@ -1,7 +1,7 @@
 // components/StatusChip.tsx
 import React, { ReactElement, useState } from 'react';
 import { Chip } from '@mui/material';
-import { isToday, toTaipeiDate } from '@/utility';
+import { isToday, toTaipeiDate } from '@/utils/util/utility';
 import LeaveDetailsModal from '../Leave/LeaveDetailsModal';
 import dayjs from 'dayjs';
 import utc from "dayjs/plugin/utc";

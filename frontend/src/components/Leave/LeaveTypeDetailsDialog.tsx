@@ -16,7 +16,7 @@ import {
   Box,
   Chip
 } from '@mui/material';
-import { toTaipeiDate } from '@/utility';
+import { toTaipeiDate } from '@/utils/util/utility';
 import { calculateNextSpecialLeave, formatMinutesToHours } from '../../utils/leaveCalculations';
 import { LeaveData } from '../../services/leaveService';
 import { employeeAPI } from '@/services/api';

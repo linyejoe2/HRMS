@@ -26,7 +26,7 @@ import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockReques
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
-import { fuzzySearchApproval } from '../../utility';
+import { fuzzySearchApproval } from '../../utils/util/utility';
 
 const ApprovePostClockList: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);

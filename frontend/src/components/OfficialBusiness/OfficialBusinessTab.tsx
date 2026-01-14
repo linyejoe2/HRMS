@@ -96,7 +96,8 @@ const OfficialBusinessTab: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'sequenceNumber',
-      headerName: '#編號',
+      headerName: '編號',
+      valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       flex: 0.8,
       minWidth: 80
     },

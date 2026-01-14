@@ -19,7 +19,7 @@ import { AttendanceRecord, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
-import { fuzzySearchAttendance, toTaipeiDate } from '../../utility';
+import { fuzzySearchAttendance, toTaipeiDate } from '../../utils/util/utility';
 
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();

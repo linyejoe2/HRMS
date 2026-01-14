@@ -1,7 +1,7 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import { LeaveRequest, PostClockRequest, BusinessTripRequest } from '../types';
-import { toTaipeiString } from '@/utility';
+import { toTaipeiString } from '@/utils/util/utility';
 
 export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Promise<void> => {
   try {

@@ -26,7 +26,7 @@ import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
-import { fuzzySearchApproval } from '../../utility';
+import { fuzzySearchApproval } from '../../utils/util/utility';
 
 const ApproveBusinessTripList: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);

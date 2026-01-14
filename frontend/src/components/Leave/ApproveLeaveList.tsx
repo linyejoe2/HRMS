@@ -33,7 +33,7 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fetchUserLeaveData } from '../../services/leaveService';
-import { errorToString, fuzzySearchApproval } from '@/utility';
+import { errorToString, fuzzySearchApproval } from '@/utils/util/utility';
 import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
 

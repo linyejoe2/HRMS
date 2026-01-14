@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend } from '../utility';
+import { isWeekend } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 
 export type DurentObject = {
