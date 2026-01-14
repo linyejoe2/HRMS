@@ -280,7 +280,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="核准">
-                  <CheckIcon />
+                  <CheckIcon color="success" />
                 </Tooltip>
               }
               label="核准"
@@ -294,7 +294,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="拒絕">
-                  <CloseIcon />
+                  <CloseIcon color="error" />
                 </Tooltip>
               }
               label="拒絕"
@@ -310,7 +310,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="抽單">
-                  <CancelIcon />
+                  <CancelIcon color="warning" />
                 </Tooltip>
               }
               label="抽單"
