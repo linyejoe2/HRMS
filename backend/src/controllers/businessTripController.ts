@@ -51,7 +51,11 @@ export const approveBusinessTripRequest = asyncHandler(async (req: AuthRequest, 
   const { id } = req.params;
   const approvedBy = req.user!.empID;
 
-  const businessTrip = await BusinessTripService.approveBusinessTripRequest(id, approvedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/businesstrip/${file.filename}`) || [];
+
+  const businessTrip = await BusinessTripService.approveBusinessTripRequest(id, approvedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.status(200).json({
     error: false,
@@ -65,7 +69,11 @@ export const rejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   const { reason } = req.body;
   const rejectedBy = req.user!.empID;
 
-  const businessTrip = await BusinessTripService.rejectBusinessTripRequest(id, reason, rejectedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/businesstrip/${file.filename}`) || [];
+
+  const businessTrip = await BusinessTripService.rejectBusinessTripRequest(id, reason, rejectedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.status(200).json({
     error: false,

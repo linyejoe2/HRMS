@@ -150,11 +150,11 @@ const ApproveLeaveList: React.FC = () => {
     }
   };
 
-  const handleApproveConfirm = async (_: string) => {
+  const handleApproveConfirm = async (_: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await approveLeaveRequest(selectedRequest._id!);
+      await approveLeaveRequest(selectedRequest._id!, files);
       toast.success('請假申請已核准');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -170,11 +170,11 @@ const ApproveLeaveList: React.FC = () => {
     setRejectDialogOpen(true);
   };
 
-  const handleRejectConfirm = async (reason: string) => {
+  const handleRejectConfirm = async (reason: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await rejectLeaveRequest(selectedRequest._id!, reason);
+      await rejectLeaveRequest(selectedRequest._id!, reason, files);
       toast.success('請假申請已拒絕');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -506,6 +506,8 @@ const ApproveLeaveList: React.FC = () => {
         cancelText="取消"
         confirmColor="success"
         required={false}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>
@@ -539,6 +541,8 @@ const ApproveLeaveList: React.FC = () => {
         cancelText="取消"
         confirmColor="error"
         required={true}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>

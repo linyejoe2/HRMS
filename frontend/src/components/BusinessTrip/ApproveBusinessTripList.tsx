@@ -62,11 +62,11 @@ const ApproveBusinessTripList: React.FC = () => {
     setApproveDialogOpen(true);
   };
 
-  const handleApproveConfirm = async (_: string) => {
+  const handleApproveConfirm = async (_: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await approveBusinessTripRequest(selectedRequest._id!);
+      await approveBusinessTripRequest(selectedRequest._id!, files);
       toast.success('出差申請已核准');
       fetchBusinessTripRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -82,11 +82,11 @@ const ApproveBusinessTripList: React.FC = () => {
     setRejectDialogOpen(true);
   };
 
-  const handleRejectConfirm = async (reason: string) => {
+  const handleRejectConfirm = async (reason: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await rejectBusinessTripRequest(selectedRequest._id!, reason);
+      await rejectBusinessTripRequest(selectedRequest._id!, reason, files);
       toast.success('出差申請已拒絕');
       fetchBusinessTripRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -417,6 +417,8 @@ const ApproveBusinessTripList: React.FC = () => {
         cancelText="取消"
         confirmColor="success"
         required={false}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>
@@ -452,6 +454,8 @@ const ApproveBusinessTripList: React.FC = () => {
         cancelText="取消"
         confirmColor="error"
         required={true}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>

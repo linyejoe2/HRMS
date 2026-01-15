@@ -25,9 +25,9 @@ router.get('/sequence/:sequenceNumber', authenticateToken, getBusinessTripReques
 
 router.get('/:id', authenticateToken, getBusinessTripRequestById);
 
-router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), approveBusinessTripRequest);
+router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), approveBusinessTripRequest);
 
-router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), rejectBusinessTripRequest);
+router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), rejectBusinessTripRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelBusinessTripRequest);
 

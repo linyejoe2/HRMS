@@ -51,7 +51,11 @@ export const approvePostClockRequest = asyncHandler(async (req: AuthRequest, res
   const { id } = req.params;
   const approvedBy = req.user!.empID;
 
-  const postClock = await PostClockService.approvePostClockRequest(id, approvedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/postclock/${file.filename}`) || [];
+
+  const postClock = await PostClockService.approvePostClockRequest(id, approvedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.status(200).json({
     error: false,
@@ -65,7 +69,11 @@ export const rejectPostClockRequest = asyncHandler(async (req: AuthRequest, res:
   const { reason } = req.body;
   const rejectedBy = req.user!.empID;
 
-  const postClock = await PostClockService.rejectPostClockRequest(id, reason, rejectedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/postclock/${file.filename}`) || [];
+
+  const postClock = await PostClockService.rejectPostClockRequest(id, reason, rejectedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.status(200).json({
     error: false,

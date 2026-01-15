@@ -128,7 +128,11 @@ export class OfficialBusinessController {
       return;
     }
 
-    const officialBusiness = await officialBusinessService.approveOfficialBusinessRequest(id, user.empID);
+    // Extract file paths from uploaded files
+    const files = req.files as Express.Multer.File[];
+    const filePaths = files?.map(file => `/uploads/officialbusiness/${file.filename}`) || [];
+
+    const officialBusiness = await officialBusinessService.approveOfficialBusinessRequest(id, user.empID, filePaths.length > 0 ? filePaths : undefined);
 
     res.status(200).json({
       error: false,
@@ -158,10 +162,15 @@ export class OfficialBusinessController {
       return;
     }
 
+    // Extract file paths from uploaded files
+    const files = req.files as Express.Multer.File[];
+    const filePaths = files?.map(file => `/uploads/officialbusiness/${file.filename}`) || [];
+
     const officialBusiness = await officialBusinessService.rejectOfficialBusinessRequest(
       id,
       reason,
-      user.empID
+      user.empID,
+      filePaths.length > 0 ? filePaths : undefined
     );
 
     res.status(200).json({

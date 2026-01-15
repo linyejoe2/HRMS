@@ -197,4 +197,4 @@ export const uploadOfficialBusinessFiles = multer({
     fileSize: 10 * 1024 * 1024, // 10MB max file size
     files: 10 // Maximum 10 files
   }
-}).array('supportingInfo', 10);
+});

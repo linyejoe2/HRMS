@@ -117,7 +117,7 @@ export class LeaveService {
     return await Leave.find(query).sort({ createdAt: -1 });
   }
 
-  static async approveLeaveRequest(leaveId: string, approvedBy: string): Promise<ILeave> {
+  static async approveLeaveRequest(leaveId: string, approvedBy: string, supportingInfo?: string[]): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
@@ -135,12 +135,17 @@ export class LeaveService {
     leave.status = 'approved';
     leave.approvedBy = approvedBy;
 
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      leave.supportingInfo = [...(leave.supportingInfo || []), ...supportingInfo];
+    }
+
     const savedLeave = await leave.save();
 
     return savedLeave;
   }
 
-  static async rejectLeaveRequest(leaveId: string, rejectionReason: string, rejectedBy: string): Promise<ILeave> {
+  static async rejectLeaveRequest(leaveId: string, rejectionReason: string, rejectedBy: string, supportingInfo?: string[]): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
@@ -153,6 +158,11 @@ export class LeaveService {
     leave.status = 'rejected';
     leave.rejectionReason = rejectionReason;
     leave.approvedBy = rejectedBy;
+
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      leave.supportingInfo = [...(leave.supportingInfo || []), ...supportingInfo];
+    }
 
     return await leave.save();
   }

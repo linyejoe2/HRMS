@@ -62,11 +62,11 @@ const ApprovePostClockList: React.FC = () => {
     setApproveDialogOpen(true);
   };
 
-  const handleApproveConfirm = async (_: string) => {
+  const handleApproveConfirm = async (_: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await approvePostClockRequest(selectedRequest._id!);
+      await approvePostClockRequest(selectedRequest._id!, files);
       toast.success('補單申請已核准');
       fetchPostClockRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -82,11 +82,11 @@ const ApprovePostClockList: React.FC = () => {
     setRejectDialogOpen(true);
   };
 
-  const handleRejectConfirm = async (reason: string) => {
+  const handleRejectConfirm = async (reason: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await rejectPostClockRequest(selectedRequest._id!, reason);
+      await rejectPostClockRequest(selectedRequest._id!, reason, files);
       toast.success('補單申請已拒絕');
       fetchPostClockRequests(statusFilter || undefined);
     } catch (error: any) {
@@ -409,6 +409,8 @@ const ApprovePostClockList: React.FC = () => {
         cancelText="取消"
         confirmColor="success"
         required={false}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>
@@ -441,6 +443,8 @@ const ApprovePostClockList: React.FC = () => {
         cancelText="取消"
         confirmColor="error"
         required={true}
+        allowFileUpload={true}
+        fileUploadLabel="附加檔案（選填）"
         detailsContent={
           selectedRequest && (
             <Box>

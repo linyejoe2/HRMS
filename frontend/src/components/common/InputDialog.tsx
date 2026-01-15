@@ -9,11 +9,12 @@ import {
   Typography,
   Box
 } from '@mui/material';
+import FileUploadField from './FileUploadField';
 
 interface InputDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (reason: string) => void | Promise<void>;
+  onConfirm: (reason: string, files?: File[]) => void | Promise<void>;
   title: string;
   message?: string;
   label: string;
@@ -25,6 +26,8 @@ interface InputDialogProps {
   multiline?: boolean;
   rows?: number;
   detailsContent?: React.ReactNode;
+  allowFileUpload?: boolean;
+  fileUploadLabel?: string;
 }
 
 const InputDialog: React.FC<InputDialogProps> = ({
@@ -41,16 +44,20 @@ const InputDialog: React.FC<InputDialogProps> = ({
   required = true,
   multiline = true,
   rows = 4,
-  detailsContent
+  detailsContent,
+  allowFileUpload = false,
+  fileUploadLabel = '附加檔案（選填）'
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
   // Reset input when dialog closes
   useEffect(() => {
     if (!open) {
       setInputValue('');
       setLoading(false);
+      setFiles([]);
     }
   }, [open]);
 
@@ -61,7 +68,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
 
     setLoading(true);
     try {
-      await onConfirm(inputValue);
+      await onConfirm(inputValue, files.length > 0 ? files : undefined);
       onClose();
     } catch (error) {
       // Error is handled by the parent component
@@ -107,6 +114,16 @@ const InputDialog: React.FC<InputDialogProps> = ({
           disabled={loading}
           autoFocus
         />
+        {allowFileUpload && (
+          <Box sx={{ mt: 2 }}>
+            <FileUploadField
+              files={files}
+              onFilesChange={setFiles}
+              label={fileUploadLabel}
+              disabled={loading}
+            />
+          </Box>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>

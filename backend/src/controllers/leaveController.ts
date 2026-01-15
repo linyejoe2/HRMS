@@ -57,7 +57,11 @@ export const approveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Re
   const { id } = req.params;
   const approvedBy = req.user!.empID;
 
-  const leave = await LeaveService.approveLeaveRequest(id, approvedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/leave/${file.filename}`) || [];
+
+  const leave = await LeaveService.approveLeaveRequest(id, approvedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.json({
     error: false,
@@ -71,7 +75,11 @@ export const rejectLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
   const { reason } = req.body;
   const rejectedBy = req.user!.empID;
 
-  const leave = await LeaveService.rejectLeaveRequest(id, reason, rejectedBy);
+  // Extract file paths from uploaded files
+  const files = req.files as Express.Multer.File[];
+  const filePaths = files?.map(file => `/uploads/leave/${file.filename}`) || [];
+
+  const leave = await LeaveService.rejectLeaveRequest(id, reason, rejectedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.json({
     error: false,

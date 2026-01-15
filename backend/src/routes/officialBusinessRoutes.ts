@@ -9,7 +9,7 @@ const router = Router();
 router.use(authenticateToken);
 
 // Routes accessible by all authenticated users
-router.post('/create', uploadOfficialBusinessFiles, officialBusinessController.createOfficialBusinessRequest);
+router.post('/create', uploadOfficialBusinessFiles.array('supportingInfo', 10), officialBusinessController.createOfficialBusinessRequest);
 router.get('/my', officialBusinessController.getMyOfficialBusinessRequests);
 
 // Routes accessible only by HR and Admin - must come before /:id route
@@ -22,7 +22,7 @@ router.get('/sequence/:sequenceNumber', officialBusinessController.getOfficialBu
 // Dynamic routes - must come last to avoid matching specific paths
 router.get('/:id', officialBusinessController.getOfficialBusinessRequestById);
 router.put('/:id/cancel', officialBusinessController.cancelOfficialBusinessRequest);
-router.put('/:id/approve', requireRole(['admin', 'hr']), officialBusinessController.approveOfficialBusinessRequest);
-router.put('/:id/reject', requireRole(['admin', 'hr']), officialBusinessController.rejectOfficialBusinessRequest);
+router.put('/:id/approve', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.approveOfficialBusinessRequest);
+router.put('/:id/reject', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.rejectOfficialBusinessRequest);
 
 export default router;

@@ -28,9 +28,9 @@ router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequ
 
 router.get('/:id', authenticateToken, getLeaveRequestById);
 
-router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), approveLeaveRequest);
+router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), approveLeaveRequest);
 
-router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), rejectLeaveRequest);
+router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), rejectLeaveRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 

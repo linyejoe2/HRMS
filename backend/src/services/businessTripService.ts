@@ -54,7 +54,7 @@ export class BusinessTripService {
     return await BusinessTrip.find(query).sort({ createdAt: -1 });
   }
 
-  static async approveBusinessTripRequest(businessTripId: string, approvedBy: string): Promise<IBusinessTrip> {
+  static async approveBusinessTripRequest(businessTripId: string, approvedBy: string, supportingInfo?: string[]): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {
       throw new APIError('Business trip request not found', 404);
@@ -67,12 +67,17 @@ export class BusinessTripService {
     businessTrip.status = 'approved';
     businessTrip.approvedBy = approvedBy;
 
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      businessTrip.supportingInfo = [...(businessTrip.supportingInfo || []), ...supportingInfo];
+    }
+
     const savedBusinessTrip = await businessTrip.save();
 
     return savedBusinessTrip;
   }
 
-  static async rejectBusinessTripRequest(businessTripId: string, rejectionReason: string, rejectedBy: string): Promise<IBusinessTrip> {
+  static async rejectBusinessTripRequest(businessTripId: string, rejectionReason: string, rejectedBy: string, supportingInfo?: string[]): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {
       throw new APIError('Business trip request not found', 404);
@@ -85,6 +90,11 @@ export class BusinessTripService {
     businessTrip.status = 'rejected';
     businessTrip.rejectionReason = rejectionReason;
     businessTrip.approvedBy = rejectedBy;
+
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      businessTrip.supportingInfo = [...(businessTrip.supportingInfo || []), ...supportingInfo];
+    }
 
     return await businessTrip.save();
   }

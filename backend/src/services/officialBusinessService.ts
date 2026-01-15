@@ -122,7 +122,8 @@ export class OfficialBusinessService {
    */
   static async approveOfficialBusinessRequest(
     officialBusinessId: string,
-    approvedBy: string
+    approvedBy: string,
+    supportingInfo?: string[]
   ): Promise<IOfficialBusiness> {
     const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
 
@@ -137,6 +138,11 @@ export class OfficialBusinessService {
     officialBusiness.status = 'approved';
     officialBusiness.approvedBy = approvedBy;
 
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      officialBusiness.supportingInfo = [...(officialBusiness.supportingInfo || []), ...supportingInfo];
+    }
+
     return officialBusiness.save();
   }
 
@@ -146,7 +152,8 @@ export class OfficialBusinessService {
   static async rejectOfficialBusinessRequest(
     officialBusinessId: string,
     rejectionReason: string,
-    rejectedBy: string
+    rejectedBy: string,
+    supportingInfo?: string[]
   ): Promise<IOfficialBusiness> {
     const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
 
@@ -161,6 +168,11 @@ export class OfficialBusinessService {
     officialBusiness.status = 'rejected';
     officialBusiness.rejectionReason = rejectionReason;
     officialBusiness.approvedBy = rejectedBy;
+
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      officialBusiness.supportingInfo = [...(officialBusiness.supportingInfo || []), ...supportingInfo];
+    }
 
     return officialBusiness.save();
   }

@@ -29,6 +29,7 @@ import { officialBusinessAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
 import { toast } from 'react-toastify';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import FileUploadField from '../common/FileUploadField';
 
 const ApproveOfficialBusinessTab: React.FC = () => {
   // State
@@ -41,6 +42,11 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<OfficialBusinessRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectFiles, setRejectFiles] = useState<File[]>([]);
+
+  // Approve dialog
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [approveFiles, setApproveFiles] = useState<File[]>([]);
 
   // File preview
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
@@ -73,14 +79,21 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   };
 
   // Handle approve
-  const handleApprove = async (id: string) => {
-    if (!window.confirm('確定要核准此外出申請嗎？')) {
-      return;
-    }
+  const handleApproveClick = (request: OfficialBusinessRequest) => {
+    setSelectedRequest(request);
+    setApproveFiles([]);
+    setApproveDialogOpen(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!selectedRequest) return;
 
     try {
-      await officialBusinessAPI.approve(id);
+      await officialBusinessAPI.approve(selectedRequest._id!, approveFiles.length > 0 ? approveFiles : undefined);
       toast.success('外出申請已核准');
+      setApproveDialogOpen(false);
+      setSelectedRequest(null);
+      setApproveFiles([]);
       loadRequests();
     } catch (error: any) {
       console.error('Error approving request:', error);
@@ -92,6 +105,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   const handleRejectClick = (request: OfficialBusinessRequest) => {
     setSelectedRequest(request);
     setRejectionReason('');
+    setRejectFiles([]);
     setRejectDialogOpen(true);
   };
 
@@ -104,11 +118,12 @@ const ApproveOfficialBusinessTab: React.FC = () => {
     }
 
     try {
-      await officialBusinessAPI.reject(selectedRequest._id!, rejectionReason);
+      await officialBusinessAPI.reject(selectedRequest._id!, rejectionReason, rejectFiles.length > 0 ? rejectFiles : undefined);
       toast.success('外出申請已拒絕');
       setRejectDialogOpen(false);
       setSelectedRequest(null);
       setRejectionReason('');
+      setRejectFiles([]);
       loadRequests();
     } catch (error: any) {
       console.error('Error rejecting request:', error);
@@ -284,7 +299,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
                 </Tooltip>
               }
               label="核准"
-              onClick={() => handleApprove(params.row._id)}
+              onClick={() => handleApproveClick(params.row)}
               showInMenu={false}
             />
           );
@@ -418,6 +433,42 @@ const ApproveOfficialBusinessTab: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Approve Dialog */}
+      <Dialog
+        open={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>確認核准外出申請</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            申請人：{selectedRequest?.applicantName} ({selectedRequest?.applicant})
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            外出時間：{selectedRequest && new Date(selectedRequest.startTime).toLocaleString('zh-TW')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            返回時間：{selectedRequest && new Date(selectedRequest.endTime).toLocaleString('zh-TW')}
+          </Typography>
+          <FileUploadField
+            files={approveFiles}
+            onFilesChange={setApproveFiles}
+            label="附加檔案（選填）"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setApproveDialogOpen(false)}>取消</Button>
+          <Button
+            onClick={handleApproveConfirm}
+            variant="contained"
+            color="success"
+          >
+            確認核准
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Reject Dialog */}
       <Dialog
         open={rejectDialogOpen}
@@ -440,6 +491,12 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             required
             autoFocus
             placeholder="請輸入拒絕此申請的理由"
+            sx={{ mb: 2 }}
+          />
+          <FileUploadField
+            files={rejectFiles}
+            onFilesChange={setRejectFiles}
+            label="附加檔案（選填）"
           />
         </DialogContent>
         <DialogActions>

@@ -313,12 +313,29 @@ export const leaveAPI = {
     api.get(`/leave/sequence/${sequenceNumber}`),
 
   // Approve leave request (HR/Admin only)
-  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
-    api.put(`/leave/${id}/approve`),
+  approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/leave/${id}/approve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/leave/${id}/approve`);
+  },
 
   // Reject leave request (HR/Admin only)
-  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
-    api.put(`/leave/${id}/reject`, { reason }),
+  reject: (id: string, reason: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append('reason', reason);
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/leave/${id}/reject`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/leave/${id}/reject`, { reason });
+  },
 
   // Cancel leave request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
@@ -411,12 +428,29 @@ export const postClockAPI = {
     api.get(`/postclock/sequence/${sequenceNumber}`),
 
   // Approve postclock request (HR/Admin only)
-  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
-    api.put(`/postclock/${id}/approve`),
+  approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/postclock/${id}/approve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/postclock/${id}/approve`);
+  },
 
   // Reject postclock request (HR/Admin only)
-  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
-    api.put(`/postclock/${id}/reject`, { reason }),
+  reject: (id: string, reason: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append('reason', reason);
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/postclock/${id}/reject`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/postclock/${id}/reject`, { reason });
+  },
 
   // Cancel postclock request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
@@ -486,12 +520,29 @@ export const businessTripAPI = {
     api.get(`/businesstrip/sequence/${sequenceNumber}`),
 
   // Approve business trip request (HR/Admin only)
-  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
-    api.put(`/businesstrip/${id}/approve`),
+  approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/businesstrip/${id}/approve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/businesstrip/${id}/approve`);
+  },
 
   // Reject business trip request (HR/Admin only)
-  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
-    api.put(`/businesstrip/${id}/reject`, { reason }),
+  reject: (id: string, reason: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append('reason', reason);
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/businesstrip/${id}/reject`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/businesstrip/${id}/reject`, { reason });
+  },
 
   // Cancel business trip request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
@@ -552,12 +603,29 @@ export const officialBusinessAPI = {
     api.get(`/officialbusiness/sequence/${sequenceNumber}`),
 
   // Approve official business request (HR/Admin only)
-  approve: (id: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
-    api.put(`/officialbusiness/${id}/approve`),
+  approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/officialbusiness/${id}/approve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/officialbusiness/${id}/approve`);
+  },
 
   // Reject official business request (HR/Admin only)
-  reject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
-    api.put(`/officialbusiness/${id}/reject`, { reason }),
+  reject: (id: string, reason: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append('reason', reason);
+      files.forEach(file => formData.append('files', file));
+      return api.put(`/officialbusiness/${id}/reject`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/officialbusiness/${id}/reject`, { reason });
+  },
 
   // Cancel official business request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>

@@ -25,9 +25,9 @@ router.get('/sequence/:sequenceNumber', authenticateToken, getPostClockRequestBy
 
 router.get('/:id', authenticateToken, getPostClockRequestById);
 
-router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), approvePostClockRequest);
+router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), approvePostClockRequest);
 
-router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), rejectPostClockRequest);
+router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), rejectPostClockRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelPostClockRequest);
 

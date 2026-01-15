@@ -43,7 +43,7 @@ export class PostClockService {
     return await PostClock.find(query).sort({ createdAt: -1 });
   }
 
-  static async approvePostClockRequest(postClockId: string, approvedBy: string): Promise<IPostClock> {
+  static async approvePostClockRequest(postClockId: string, approvedBy: string, supportingInfo?: string[]): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
       throw new APIError('PostClock request not found', 404);
@@ -56,6 +56,11 @@ export class PostClockService {
     postClock.status = 'approved';
     postClock.approvedBy = approvedBy;
 
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      postClock.supportingInfo = [...(postClock.supportingInfo || []), ...supportingInfo];
+    }
+
     const savedPostClock = await postClock.save();
 
     // Update related attendance record with postclock sequenceNumber
@@ -66,7 +71,7 @@ export class PostClockService {
 
 
 
-  static async rejectPostClockRequest(postClockId: string, rejectionReason: string, rejectedBy: string): Promise<IPostClock> {
+  static async rejectPostClockRequest(postClockId: string, rejectionReason: string, rejectedBy: string, supportingInfo?: string[]): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
       throw new APIError('PostClock request not found', 404);
@@ -79,6 +84,11 @@ export class PostClockService {
     postClock.status = 'rejected';
     postClock.rejectionReason = rejectionReason;
     postClock.approvedBy = rejectedBy;
+
+    // Append new supporting files if provided
+    if (supportingInfo && supportingInfo.length > 0) {
+      postClock.supportingInfo = [...(postClock.supportingInfo || []), ...supportingInfo];
+    }
 
     return await postClock.save();
   }
