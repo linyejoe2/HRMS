@@ -75,7 +75,7 @@ const StatusChip: React.FC<StatusChipProps> = ({ log }) => {
         size="small"
       />
     );
-    if (isToday(log.clockInTime)) chips.push(<span key="today">(今天)</span>)
+    if (isToday(log.date)) chips.push(<span key="today">(今天)</span>)
     return <>{chips}</>;
   }
 
