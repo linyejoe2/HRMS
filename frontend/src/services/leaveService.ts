@@ -21,25 +21,27 @@ export interface UserLeaveData {
 export async function fetchUserLeaveData(empID: string, hireDate: string): Promise<UserLeaveData> {
   const now = new Date();
   const oneYearAgo = new Date();
+  const oneYearLater = new Date();
   oneYearAgo.setFullYear(now.getFullYear() - 1);
+  oneYearLater.setFullYear(now.getFullYear() + 1);
 
   // Fetch all leave types
   const [personalResponse, sickResponse, specialResponse] = await Promise.all([
     queryLeaveRequests({
       timeStart: oneYearAgo.toISOString(),
-      timeEnd: now.toISOString(),
+      timeEnd: oneYearLater.toISOString(),
       leaveType: '事假',
       status: 'approved'
     }),
     queryLeaveRequests({
       timeStart: oneYearAgo.toISOString(),
-      timeEnd: now.toISOString(),
+      timeEnd: oneYearLater.toISOString(),
       leaveType: '普通傷病假',
       status: 'approved'
     }),
     queryLeaveRequests({
       timeStart: oneYearAgo.toISOString(),
-      timeEnd: now.toISOString(),
+      timeEnd: oneYearLater.toISOString(),
       leaveType: '特別休假',
       status: 'approved'
     })
