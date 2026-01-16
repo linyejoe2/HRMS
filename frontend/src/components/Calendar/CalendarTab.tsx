@@ -7,7 +7,7 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Upload as UploadIcon } from '@mui/icons-material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -16,6 +16,7 @@ import { EventClickArg, DatesSetArg } from '@fullcalendar/core';
 import toast from 'react-hot-toast';
 import { holidayService, Holiday } from '../../services/holidayService';
 import { HolidayModal } from './HolidayModal';
+import { ImportHolidayModal } from './ImportHolidayModal';
 
 // Color mapping for holiday types
 const HOLIDAY_TYPE_COLORS: Record<string, string> = {
@@ -30,6 +31,7 @@ export const CalendarTab: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Load holidays
   const loadHolidays = async (start?: string, end?: string) => {
@@ -87,6 +89,22 @@ export const CalendarTab: React.FC = () => {
     }
   };
 
+  // Handle import modal
+  const handleImportHoliday = () => {
+    setImportModalOpen(true);
+  };
+
+  const handleImportModalClose = () => {
+    setImportModalOpen(false);
+  };
+
+  const handleImportComplete = () => {
+    // Reload holidays for current date range after import
+    if (dateRange) {
+      loadHolidays(dateRange.start, dateRange.end);
+    }
+  };
+
   // Convert holidays to FullCalendar events
   const events = holidays.map(holiday => ({
     id: holiday._id,
@@ -113,13 +131,22 @@ export const CalendarTab: React.FC = () => {
         <Typography variant="h4" component="h1">
           假日管理
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateHoliday}
-        >
-          新增假日
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            onClick={handleImportHoliday}
+          >
+            匯入假日
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateHoliday}
+          >
+            新增假日
+          </Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p: 3 }}>
@@ -196,6 +223,12 @@ export const CalendarTab: React.FC = () => {
         holiday={editingHoliday}
         onClose={handleModalClose}
         onSaved={handleModalSave}
+      />
+
+      <ImportHolidayModal
+        open={importModalOpen}
+        onClose={handleImportModalClose}
+        onImported={handleImportComplete}
       />
     </Container>
   );

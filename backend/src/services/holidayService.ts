@@ -1,5 +1,6 @@
 import { Holiday, IHoliday } from '../models';
 import { APIError } from '../middleware/errorHandler';
+import { toTaipeiDate } from '../util/utility';
 
 export class HolidayService {
   /**
@@ -53,10 +54,10 @@ export class HolidayService {
     pay_rate: number;
     is_paid: boolean;
     memo?: string;
-  }): Promise<IHoliday> {
+  }): Promise<IHoliday | null> {
     // Convert string date to Date object
-    const holidayDate = new Date(data.date);
-
+    const holidayDate = new Date(toTaipeiDate(data.date));
+console.log(`1 ${holidayDate}`)
     if (isNaN(holidayDate.getTime())) {
       throw new APIError('無效的日期格式', 400);
     }
@@ -64,8 +65,9 @@ export class HolidayService {
     // Check for duplicate date
     const existing = await Holiday.findOne({ date: holidayDate });
     if (existing) {
-      throw new APIError('該日期已存在假日', 409);
+      return this.updateHoliday(existing.id, {...data, date: undefined})
     }
+console.log(`2 ${holidayDate}`)
 
     // Validate pay_rate
     if (data.pay_rate < 0) {
@@ -98,6 +100,7 @@ export class HolidayService {
       memo: string;
     }>
   ): Promise<IHoliday | null> {
+console.log(`3 ${data.date}`)
     const holiday = await Holiday.findById(id);
     if (!holiday) {
       throw new APIError('找不到假日', 404);
@@ -105,7 +108,8 @@ export class HolidayService {
 
     // If updating date, check for duplicates
     if (data.date) {
-      const newDate = new Date(data.date);
+console.log(`4 ${data.date}`)
+      const newDate = new Date(toTaipeiDate(data.date));
 
       if (isNaN(newDate.getTime())) {
         throw new APIError('無效的日期格式', 400);
@@ -123,6 +127,7 @@ export class HolidayService {
 
       holiday.date = newDate;
     }
+console.log(`5`)
 
     // Update other fields
     if (data.type !== undefined) holiday.type = data.type as any;
