@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
-import CancelIcon from '@mui/icons-material/Cancel';
+import DeleteIcon from '@mui/icons-material/Delete';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { officialBusinessAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
@@ -193,11 +193,22 @@ const OfficialBusinessTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title="取消申請">
-                  <CancelIcon />
+                  <DeleteIcon color="error" />
                 </Tooltip>
               }
-              label="取消"
+              label="取消申請"
               onClick={() => handleCancelRequest(params.row._id, params.row.applicant)}
+            />
+          );
+        } else {
+          actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="請聯繫管理部">
+                  <DeleteIcon color="disabled" />
+                </Tooltip>
+              }
+              label="取消申請"
             />
           );
         }

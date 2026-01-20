@@ -21,8 +21,8 @@ import {
   Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
-import { PostClockRequest } from '../../types';
-import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest } from '../../services/api';
+import { PostClockRequest, Variable } from '../../types';
+import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest, variableAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -39,6 +39,7 @@ const ApprovePostClockList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
     try {
@@ -56,6 +57,28 @@ const ApprovePostClockList: React.FC = () => {
   useEffect(() => {
     fetchPostClockRequests(statusFilter || undefined);
   }, [statusFilter]);
+
+  // Load departments on mount
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const response = await variableAPI.getAll(undefined, false);
+        const allVariables = response.data.data.variables;
+        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+        setDepartments(departmentVars);
+      } catch (err: any) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
+
+  // Lookup department description by code
+  const getDepartmentDescription = (departmentCode?: string): string => {
+    if (!departmentCode) return '-';
+    const department = departments.find(dept => dept.code === departmentCode);
+    return department?.description || departmentCode;
+  };
 
   const handleApproveClick = (request: PostClockRequest) => {
     setSelectedRequest(request);
@@ -162,6 +185,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'department',
       headerName: '部門',
       flex: 1,
+      valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
     {

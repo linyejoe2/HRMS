@@ -25,8 +25,8 @@ import {
   Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
-import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI } from '../../services/api';
+import { LeaveRequest, Variable } from '../../types';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI, variableAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -50,6 +50,7 @@ const ApproveLeaveList: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
+  const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -67,6 +68,28 @@ const ApproveLeaveList: React.FC = () => {
   useEffect(() => {
     fetchLeaveRequests(statusFilter || undefined);
   }, [statusFilter]);
+
+  // Load departments on mount
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const response = await variableAPI.getAll(undefined, false);
+        const allVariables = response.data.data.variables;
+        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+        setDepartments(departmentVars);
+      } catch (err: any) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
+
+  // Lookup department description by code
+  const getDepartmentDescription = (departmentCode?: string): string => {
+    if (!departmentCode) return '-';
+    const department = departments.find(dept => dept.code === departmentCode);
+    return department?.description || departmentCode;
+  };
 
   // Check leave balance before approval
   const checkLeaveBalance = async (request: LeaveRequest): Promise<boolean> => {
@@ -246,6 +269,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'department',
       headerName: '部門',
       flex: 1,
+      valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
     {
