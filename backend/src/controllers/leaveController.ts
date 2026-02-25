@@ -158,3 +158,55 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
     data: leaves
   });
 });
+
+/**
+ * Download 休假總表 (Leave Summary Report) Excel
+ */
+export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { year } = req.query;
+
+  if (!year) {
+    return res.status(400).json({
+      error: true,
+      message: 'year 為必填參數'
+    });
+  }
+
+  const yearNum = parseInt(year as string);
+  if (isNaN(yearNum)) {
+    return res.status(400).json({
+      error: true,
+      message: 'year 必須為數字'
+    });
+  }
+
+  const buffer = await LeaveService.generateLeaveSummaryReport(yearNum);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}.xlsx"`);
+  res.send(buffer);
+});
+
+/**
+ * Download 休假表 (Individual Employee Leave Report) Excel
+ */
+export const downloadEmployeeLeaveReport = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { empID, startDate, endDate } = req.query;
+
+  if (!empID || !startDate || !endDate) {
+    return res.status(400).json({
+      error: true,
+      message: 'empID, startDate 和 endDate 為必填參數'
+    });
+  }
+
+  const buffer = await LeaveService.generateEmployeeLeaveReport(
+    empID as string,
+    startDate as string,
+    endDate as string
+  );
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="leave_report_${empID}_${startDate}_${endDate}.xlsx"`);
+  res.send(buffer);
+});

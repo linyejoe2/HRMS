@@ -35,6 +35,7 @@ import {
   CalendarMonth as CalendarIcon,
   ExpandLess,
   ExpandMore,
+  Download,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -175,6 +176,11 @@ const AppLayout: React.FC = () => {
         text: '假日管理',
         icon: <CalendarIcon />,
         path: '/calendar'
+      });
+      baseItems.push({
+        text: '表單下載',
+        icon: <Download />,
+        path: '/download'
       });
     }
 

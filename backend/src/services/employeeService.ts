@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { Employee, IEmployee, Attendance } from '../models';
+import { Employee, IEmployee, Attendance, Variable } from '../models';
 import { config } from '../config';
 import { APIError } from '../middleware';
 
@@ -38,7 +38,7 @@ export class EmployeeService {
 
   async updateEmployee(id: string, updateData: Partial<IEmployee>): Promise<IEmployee | null> {
     const employee = await Employee.findByIdAndUpdate(id, updateData, { new: true });
-    
+
     if (employee && (updateData.name || updateData.department || updateData.cardID)) {
       await Attendance.updateMany(
         { empID: employee.empID },
@@ -51,7 +51,7 @@ export class EmployeeService {
         }
       );
     }
-    
+
     return employee;
   }
 
@@ -82,13 +82,13 @@ export class EmployeeService {
     total: number;
     pages: number;
   }> {
-    const filter: any = {  };
+    const filter: any = {};
     if (department) {
       filter.department = department;
     }
 
     const skip = (page - 1) * limit;
-    
+
     const [employees, total] = await Promise.all([
       Employee.find(filter)
         .select('-password')
@@ -116,13 +116,64 @@ export class EmployeeService {
       ]
     }).select('-password').limit(20);
   }
+
+  async fixDepartmentIssue(): Promise<void> {
+    try {
+      // 1. Fetch all department variables to create a mapping { "財務部": "2000" }
+      const deptVariables = await Variable.find({
+        section: 'department',
+        isActive: true
+      });
+
+      const descriptionToCodeMap: Record<string, string> = {};
+      deptVariables.forEach(v => {
+        descriptionToCodeMap[v.description] = v.code;
+      });
+
+      // 2. Find employees (or just iterate if the dataset is manageable)
+      // We target employees where department exists and is NOT just a numeric code
+      const employees = await Employee.find({
+        department: { $exists: true, $ne: null }
+      });
+
+      let updatedCount = 0;
+
+      // 3. Process updates
+      const bulkOps = employees.map(emp => {
+        const currentDept = emp.department;
+
+        // If the current value matches a description in our map, convert it
+        if (currentDept && descriptionToCodeMap[currentDept]) {
+          updatedCount++;
+          return {
+            updateOne: {
+              filter: { _id: emp._id },
+              update: { $set: { department: descriptionToCodeMap[currentDept] } }
+            }
+          };
+        }
+        return null;
+      }).filter(op => op !== null);
+
+      if (bulkOps.length > 0) {
+        await Employee.bulkWrite(bulkOps);
+        console.log(`Successfully updated ${updatedCount} employees to department codes.`);
+      } else {
+        console.log('No employees required department correction.');
+      }
+
+    } catch (error) {
+      console.error('Error during fixDepartmentIssue:', error);
+      throw error;
+    }
+  }
 }
 
 export class AuthService {
   async login(empID: string, password: string): Promise<{ token: string; employee: Partial<IEmployee> }> {
     // Find employee by empID
     const employee = await Employee.findOne({ empID, isActive: true }).select('+password');
-    
+
     if (!employee) {
       console.log("Can't find employee")
       throw new APIError('帳號或密碼錯誤', 401);
@@ -146,10 +197,10 @@ export class AuthService {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: (employee._id as any).toString(), 
+      {
+        id: (employee._id as any).toString(),
         empID: employee.empID,
-        role: employee.role 
+        role: employee.role
       },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn } as SignOptions
@@ -157,14 +208,14 @@ export class AuthService {
 
     // Return token and employee data (excluding password)
     const { password: _, ...employeeData } = employee.toObject();
-    
+
     return { token, employee: employeeData };
   }
 
   async register(empID: string, password: string, email?: string): Promise<{ token: string; employee: Partial<IEmployee> }> {
     // Find existing employee record from Access DB migration
     const existingEmployee = await Employee.findOne({ empID }).select('+password');
-    
+
     if (!existingEmployee) {
       throw new APIError('沒有找到這個員工編號，請聯繫管理員。', 404);
     }
@@ -179,15 +230,15 @@ export class AuthService {
     // Update employee with authentication details
     existingEmployee.password = hashedPassword;
     existingEmployee.lastLogin = new Date();
-    
+
     await existingEmployee.save();
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: (existingEmployee._id as any).toString(), 
+      {
+        id: (existingEmployee._id as any).toString(),
         empID: existingEmployee.empID,
-        role: existingEmployee.role 
+        role: existingEmployee.role
       },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn } as SignOptions
@@ -195,13 +246,13 @@ export class AuthService {
 
     // Return token and employee data (excluding password)
     const { password: _, ...employeeData } = existingEmployee.toObject();
-    
+
     return { token, employee: employeeData };
   }
 
   async changePassword(employeeId: string, currentPassword: string, newPassword: string): Promise<void> {
     const employee = await Employee.findById(employeeId).select('+password');
-    
+
     if (!employee) {
       throw new APIError('Employee not found', 404);
     }
@@ -214,7 +265,7 @@ export class AuthService {
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
-    
+
     // Update password
     employee.password = hashedPassword;
     await employee.save();

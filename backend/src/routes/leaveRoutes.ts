@@ -9,7 +9,9 @@ import {
   cancelLeaveRequest,
   getCancelLeaveRequests,
   getLeaveRequestBySequenceNumber,
-  queryLeaveRequests
+  queryLeaveRequests,
+  downloadLeaveSummaryReport,
+  downloadEmployeeLeaveReport
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -23,6 +25,10 @@ router.post('/create', authenticateToken, uploadLeaveFiles.array('supportingInfo
 router.get('/my', authenticateToken, getMyLeaveRequests);
 
 router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllLeaveRequests);
+
+// Report download routes (HR/Admin only) - must be before /:id route
+router.get('/reports/summary', authenticateToken, requireRole(['hr', 'admin']), downloadLeaveSummaryReport);
+router.get('/reports/employee', authenticateToken, requireRole(['hr', 'admin']), downloadEmployeeLeaveReport);
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 

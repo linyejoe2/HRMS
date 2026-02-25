@@ -16,6 +16,7 @@ import OfficialBusinessTab from './components/OfficialBusiness/OfficialBusinessT
 import VariableManagement from './components/Variable/VariableManagement';
 import { CalendarTab } from './components/Calendar/CalendarTab';
 import { KanbanPage } from './pages/KanbanPage';
+import LeaveDownloadTab from './components/Leave/LeaveDownloadTab';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -96,6 +97,7 @@ const App: React.FC = () => {
         <Route path="officialbusiness" element={<OfficialBusinessTab />} />
         <Route path="variables" element={<VariableManagement />} />
         <Route path="calendar" element={<CalendarTab />} />
+        <Route path="download" element={<LeaveDownloadTab />} />
         <Route path="settings" element={<SettingsTab />} />
       </Route>
 
