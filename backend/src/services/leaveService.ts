@@ -292,8 +292,8 @@ export class LeaveService {
   }
 
   /**
-   * Generate 休假總表 (Leave Summary Report) Excel for a given year
-   * Columns: 員工編號, 姓名, 應修天數(特別休假 by day), 可修時數(特別休假 by hour), 事假(approved by hour), 病假(approved by hour)
+   * Generate 請假總表 (Leave Summary Report) Excel for a given year
+   * Columns: 員工編號, 姓名, 應休天數(特別休假 by day), 可休時數(特別休假 by hour), 事假(approved by hour), 病假(approved by hour)
    */
   static async generateLeaveSummaryReport(year: number): Promise<Buffer> {
     // Get all active employees
@@ -351,8 +351,8 @@ export class LeaveService {
       reportData.push({
         '員工編號': employee.empID,
         '姓名': employee.name,
-        '應修天數': specialLeaveDays,
-        '可修時數': Math.round(specialLeaveHours * 10) / 10,
+        '應休天數': specialLeaveDays,
+        '可休時數': Math.round(specialLeaveHours * 10) / 10,
         '事假': Math.round(personalUsedHours * 10) / 10,
         '病假': Math.round(sickUsedHours * 10) / 10
       });
@@ -361,14 +361,14 @@ export class LeaveService {
     // Create Excel workbook
     const worksheet = XLSX.utils.json_to_sheet(reportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '休假總表');
+    XLSX.utils.book_append_sheet(workbook, worksheet, '請假總表');
 
     // Set column widths
     worksheet['!cols'] = [
       { wch: 12 }, // 員工編號
       { wch: 12 }, // 姓名
-      { wch: 12 }, // 應修天數
-      { wch: 12 }, // 可修時數
+      { wch: 12 }, // 應休天數
+      { wch: 12 }, // 可休時數
       { wch: 10 }, // 事假
       { wch: 10 }  // 病假
     ];
@@ -379,7 +379,7 @@ export class LeaveService {
   }
 
   /**
-   * Generate 休假表 (Individual Employee Leave Report) Excel for a given employee and date range
+   * Generate 請假表 (Individual Employee Leave Report) Excel for a given employee and date range
    */
   static async generateEmployeeLeaveReport(empID: string, startDate: string, endDate: string): Promise<Buffer> {
     const employee = await Employee.findOne({ empID });
@@ -443,7 +443,7 @@ export class LeaveService {
     // Re-add the data starting from row 4
     XLSX.utils.sheet_add_json(worksheet, reportData, { origin: 'A4', skipHeader: false });
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, '休假表');
+    XLSX.utils.book_append_sheet(workbook, worksheet, '請假表');
 
     // Set column widths
     worksheet['!cols'] = [

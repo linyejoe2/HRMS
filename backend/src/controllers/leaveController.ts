@@ -160,7 +160,7 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
 });
 
 /**
- * Download 休假總表 (Leave Summary Report) Excel
+ * Download 請假總表 (Leave Summary Report) Excel
  */
 export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { year } = req.query;
@@ -188,7 +188,7 @@ export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, 
 });
 
 /**
- * Download 休假表 (Individual Employee Leave Report) Excel
+ * Download 請假表 (Individual Employee Leave Report) Excel
  */
 export const downloadEmployeeLeaveReport = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { empID, startDate, endDate } = req.query;

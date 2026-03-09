@@ -71,8 +71,8 @@ const LeaveDownloadTab: React.FC = () => {
 
       if (documentType === 'leave_summary') {
         const blob = await leaveReportAPI.downloadSummary(selectedYear);
-        downloadBlob(blob, `休假總表_${selectedYear}.xlsx`);
-        toast.success('休假總表下載成功');
+        downloadBlob(blob, `請假總表_${selectedYear}.xlsx`);
+        toast.success('請假總表下載成功');
       } else {
         if (!selectedEmployee) {
           toast.error('請選擇員工');
@@ -88,8 +88,8 @@ const LeaveDownloadTab: React.FC = () => {
           startDate.format('YYYY-MM-DD'),
           endDate.format('YYYY-MM-DD')
         );
-        downloadBlob(blob, `休假表_${selectedEmployee.empID}_${selectedEmployee.name}_${startDate.format('YYYYMMDD')}_${endDate.format('YYYYMMDD')}.xlsx`);
-        toast.success('休假表下載成功');
+        downloadBlob(blob, `請假表_${selectedEmployee.empID}_${selectedEmployee.name}_${startDate.format('YYYYMMDD')}_${endDate.format('YYYYMMDD')}.xlsx`);
+        toast.success('請假表下載成功');
       }
     } catch (error: any) {
       console.error('Error downloading report:', error);
@@ -132,8 +132,8 @@ const LeaveDownloadTab: React.FC = () => {
                   label="表單類型"
                   onChange={(e) => setDocumentType(e.target.value as DocumentType)}
                 >
-                  <MenuItem value="leave_summary">休假總表</MenuItem>
-                  <MenuItem value="leave_record">休假表</MenuItem>
+                  <MenuItem value="leave_summary">請假總表</MenuItem>
+                  <MenuItem value="leave_record">請假表</MenuItem>
                 </Select>
               </FormControl>
 
@@ -143,10 +143,10 @@ const LeaveDownloadTab: React.FC = () => {
               {documentType === 'leave_summary' && (
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
-                    休假總表
+                    請假總表
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    匯出包含所有員工的年度休假統計，包含：員工編號、姓名、應修天數(特休)、可修時數(特休)、事假(已核准時數)、病假(已核准時數)
+                    匯出包含所有員工的年度休假統計，包含：員工編號、姓名、應休天數(特休)、可休時數(特休)、事假(已核准時數)、病假(已核准時數)
                   </Typography>
 
                   <FormControl fullWidth>
@@ -170,7 +170,7 @@ const LeaveDownloadTab: React.FC = () => {
               {documentType === 'leave_record' && (
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
-                    休假表
+                    請假表
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     匯出單一員工在指定期間內的所有已核准請假紀錄

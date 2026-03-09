@@ -706,7 +706,7 @@ export const cardAssignmentAPI = {
 
 // Leave Report API (HR/Admin only)
 export const leaveReportAPI = {
-  // Download leave summary report (休假總表) for a given year
+  // Download leave summary report (請假總表) for a given year
   downloadSummary: async (year: number): Promise<Blob> => {
     const response = await api.get(`/leave/reports/summary?year=${year}`, {
       responseType: 'blob'
@@ -714,7 +714,7 @@ export const leaveReportAPI = {
     return response.data;
   },
 
-  // Download individual employee leave report (休假表) for a given employee and date range
+  // Download individual employee leave report (請假表) for a given employee and date range
   downloadEmployeeReport: async (empID: string, startDate: string, endDate: string): Promise<Blob> => {
     const response = await api.get(`/leave/reports/employee?empID=${empID}&startDate=${startDate}&endDate=${endDate}`, {
       responseType: 'blob'
