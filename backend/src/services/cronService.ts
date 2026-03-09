@@ -2,6 +2,7 @@ import * as cron from 'node-cron';
 import { fileScanService } from './fileScanService';
 import { Employee } from '../models/Employee';
 import { Attendance } from '../models/Attendance';
+import { cardAssignmentService } from './cardAssignmentService';
 import dayjs from 'dayjs';
 
 export class CronService {
@@ -174,11 +175,26 @@ export class CronService {
           });
 
           if (!existingAttendance) {
+            // Use CardAssignment for snapshot if available, fallback to Employee
+            let empID = employee.empID;
+            let employeeName = employee.name;
+
+            if (employee.cardID) {
+              const assignment = await cardAssignmentService.getActiveAssignment(employee.cardID);
+              if (assignment) {
+                const assignedEmp = await Employee.findById(assignment.employeeId);
+                if (assignedEmp) {
+                  empID = assignedEmp.empID;
+                  employeeName = assignedEmp.name;
+                }
+              }
+            }
+
             // Create new attendance record
             const attendance = new Attendance({
-              empID: employee.empID,
+              empID,
               cardID: employee.cardID,
-              employeeName: employee.name,
+              employeeName,
               department: employee.department,
               date: today,
               isAbsent: true // Default to absent until clock-in data is processed

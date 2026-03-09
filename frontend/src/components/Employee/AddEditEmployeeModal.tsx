@@ -529,7 +529,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
 
       onSaved();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error ||
+      const errorMessage = err.response?.data?.message ||
         (employee ? '更新員工失敗' : '新增員工失敗');
       toast.error(errorMessage);
     } finally {

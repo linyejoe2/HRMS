@@ -44,7 +44,7 @@ export class FileScanService {
         if (match) {
           const year = parseInt(match[0], 10);
           // 3. 條件判斷：年份必須大於 2025
-          return year > 2025;
+          return year > 2024;
         }
 
         return false;

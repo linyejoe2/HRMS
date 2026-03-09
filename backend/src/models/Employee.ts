@@ -78,10 +78,10 @@ const EmployeeSchema = new Schema<IEmployee>({
     required: true,
     unique: true
   },
-  cardID: { // 卡號
+  cardID: { // 卡號 (current card, may be reassigned)
     type: String,
-    required: true,
-    unique: true
+    unique: true,
+    sparse: true
   },
   password: {
     type: String,

@@ -8,3 +8,4 @@ export { officialBusinessService, OfficialBusinessService } from './officialBusi
 export { kanbanService, KanbanService } from './kanbanService';
 export { variableService, VariableService } from './variableService';
 export { variableSeedService, VariableSeedService } from './variableSeedService';
+export { cardAssignmentService, CardAssignmentService } from './cardAssignmentService';

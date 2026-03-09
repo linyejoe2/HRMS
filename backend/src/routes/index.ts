@@ -11,6 +11,7 @@ import leaveAdjustmentRoutes from './leaveAdjustmentRoutes';
 import kanbanRoutes from './kanbanRoutes';
 import variableRoutes from './variableRoutes';
 import holidayRoutes from './holidayRoutes';
+import cardAssignmentRoutes from './cardAssignmentRoutes';
 import { fixMulterChineseFileName } from '../middleware/upload';
 
 const router = Router();
@@ -39,5 +40,6 @@ router.use('/officialbusiness', officialBusinessRoutes);
 router.use('/kanban', kanbanRoutes);
 router.use('/variables', variableRoutes);
 router.use('/holidays', holidayRoutes);
+router.use('/card-assignments', cardAssignmentRoutes);
 
 export default router;

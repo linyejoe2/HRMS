@@ -49,7 +49,10 @@ export class AttendanceAggregationService {
     // Step 2: Fetch all data with date range and permission filters
     const [attendanceRecords, holidays, leaves, businessTrips, postClocks] = await Promise.all([
       Attendance.find({
-        cardID: { $in: allowedCardIDs },
+        $or: [
+          { empID: { $in: allowedEmpIDs } },
+          { cardID: { $in: allowedCardIDs } }
+        ],
         date: { $gte: startDate, $lte: endDate }
       }),
       holidayService.getHolidaysByDateRange(startDateStr, endDateStr),

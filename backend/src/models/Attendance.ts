@@ -8,6 +8,10 @@ export interface IAttendance extends Document {
   cardID: string; // 8-digit employee ID from access system
   date: Date; // Attendance date (YYYY-MM-DD)
 
+  // Denormalized employee identity snapshot (set at swipe time)
+  empID?: string; // Employee ID snapshot
+  employeeName?: string; // Employee name snapshot
+
   // Clock in data
   clockInRawRecord?: string; // Original raw data for debugging
   clockInTime?: Date; // Clock in time
@@ -35,6 +39,12 @@ const AttendanceSchema = new Schema<IAttendance>({
     type: Date,
     required: true,
     index: true
+  },
+  empID: {
+    type: String
+  },
+  employeeName: {
+    type: String
   },
   clockInRawRecord: {
     type: String
@@ -67,5 +77,6 @@ const AttendanceSchema = new Schema<IAttendance>({
 // Compound index for efficient queries
 AttendanceSchema.index({ cardID: 1, date: 1 }, { unique: true });
 AttendanceSchema.index({ date: 1 });
+AttendanceSchema.index({ empID: 1 });
 
 export const Attendance = model<IAttendance>('Attendance', AttendanceSchema);

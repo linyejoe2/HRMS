@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Attendance, IAttendance, Employee } from '../models';
 import { APIError } from '../middleware';
+import { cardAssignmentService } from './cardAssignmentService';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -99,6 +100,25 @@ export class AttendanceService {
               cardID: parsed.cardID,
               date: parsed.date
             });
+          }
+
+          // Denormalize employee identity from CardAssignment (snapshot at swipe time)
+          if (!attendance.empID || !attendance.employeeName) {
+            const assignment = await cardAssignmentService.getActiveAssignment(parsed.cardID);
+            if (assignment) {
+              const emp = await Employee.findById(assignment.employeeId);
+              if (emp) {
+                attendance.empID = emp.empID;
+                attendance.employeeName = emp.name;
+              }
+            } else {
+              // Fallback: lookup employee directly by cardID
+              const emp = await Employee.findOne({ cardID: parsed.cardID });
+              if (emp) {
+                attendance.empID = emp.empID;
+                attendance.employeeName = emp.name;
+              }
+            }
           }
 
           const now = new Date();

@@ -693,6 +693,17 @@ export const variableAPI = {
     api.post('/variables/reseed')
 };
 
+// Card Assignment API (HR/Admin only)
+export const cardAssignmentAPI = {
+  sync: (options?: { startDate?: string; endDate?: string; employeeId?: string }): Promise<AxiosResponse<{ error: boolean, message: string, data: { total: number; updated: number; errors: string[] } }>> => {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.append('startDate', options.startDate);
+    if (options?.endDate) params.append('endDate', options.endDate);
+    if (options?.employeeId) params.append('employeeId', options.employeeId);
+    return api.post(`/card-assignments/sync?${params.toString()}`);
+  }
+};
+
 // Leave Report API (HR/Admin only)
 export const leaveReportAPI = {
   // Download leave summary report (休假總表) for a given year

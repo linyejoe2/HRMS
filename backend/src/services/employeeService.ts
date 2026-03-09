@@ -3,6 +3,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { Employee, IEmployee, Attendance, Variable } from '../models';
 import { config } from '../config';
 import { APIError } from '../middleware';
+import { cardAssignmentService } from './cardAssignmentService';
 
 export class EmployeeService {
   async findByEmpID(empID: string): Promise<IEmployee | null> {
@@ -33,23 +34,39 @@ export class EmployeeService {
 
   async createEmployee(employeeData: Partial<IEmployee>): Promise<IEmployee> {
     const employee = new Employee(employeeData);
-    return employee.save();
+    const saved = await employee.save();
+
+    // Create initial CardAssignment if cardID is provided
+    if (saved.cardID) {
+      await cardAssignmentService.assignCard(saved._id as any, saved.empID, saved.cardID);
+    }
+
+    return saved;
   }
 
   async updateEmployee(id: string, updateData: Partial<IEmployee>): Promise<IEmployee | null> {
+    // Check if cardID is changing so we can track assignment
+    const cardIDChanging = updateData.cardID !== undefined;
     const employee = await Employee.findByIdAndUpdate(id, updateData, { new: true });
 
-    if (employee && (updateData.name || updateData.department || updateData.cardID)) {
-      await Attendance.updateMany(
-        { empID: employee.empID },
-        {
-          $set: {
-            ...(updateData.name && { employeeName: employee.name }),
-            ...(updateData.department && { department: employee.department }),
-            ...(updateData.cardID && { cardID: employee.cardID })
+    if (employee) {
+      // When cardID changes, create a new CardAssignment (revokes old + creates new)
+      if (cardIDChanging && employee.cardID) {
+        await cardAssignmentService.assignCard(employee._id as any, employee.empID, employee.cardID);
+      }
+
+      // Update name/department on future attendance records (snapshot fields)
+      if (updateData.name || updateData.department) {
+        await Attendance.updateMany(
+          { empID: employee.empID },
+          {
+            $set: {
+              ...(updateData.name && { employeeName: employee.name }),
+              ...(updateData.department && { department: employee.department })
+            }
           }
-        }
-      );
+        );
+      }
     }
 
     return employee;

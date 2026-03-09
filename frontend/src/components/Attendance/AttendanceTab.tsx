@@ -84,7 +84,7 @@ const AttendanceTab: React.FC = () => {
       // Fetch all employees to map cardID to employee info
       const employeesResponse = await employeeAPI.getAll(1, 10000); // High limit to get all employees
       const employees = employeesResponse.data.data.employees;
-      const employeeMap = new Map(employees.map((e: any) => [e.cardID, e]));
+      const employeeMap = new Map(employees.map((e: any) => [e.empID, e]));
       const empIDToCardID = new Map(employees.map((e: any) => [e.empID, e.cardID]));
 
       // Create holiday map for quick lookup
@@ -94,11 +94,11 @@ const AttendanceTab: React.FC = () => {
       const recordMap = new Map<string, any>();
 
       // Helper function to get or create record
-      const getOrCreateRecord = (empID: string, dateStr: string) => {
+      const getOrCreateRecord = (empID: string, dateStr: string, cardID?: string) => {
         const key = `${empID}_${dateStr}`;
         if (!recordMap.has(key)) {
-          const cardID = empIDToCardID.get(empID);
-          const employee = cardID ? employeeMap.get(cardID) : null;
+          if (!cardID) cardID = empIDToCardID.get(empID);
+          const employee = empID ? employeeMap.get(empID) : null;
           recordMap.set(key, {
             _id: key,
             cardID: cardID || '',
@@ -121,11 +121,21 @@ const AttendanceTab: React.FC = () => {
 
       // Process attendance records
       attendanceRecords.forEach((att: any) => {
-        const employee = employeeMap.get(att.cardID);
-        if (!employee) return;
+        // Fallback logic: use snapshot fields first, then Employee lookup
+        const snapshotName = att.employeeName;
+        const employee = employeeMap.get(att.empID);
+        const resolvedEmpID = att.empID || employee?.empID;
+        if (!resolvedEmpID && !employee) return;
 
         const dateStr = toTaipeiDate(att.date);
-        const record = getOrCreateRecord(employee.empID, dateStr);
+        const record = getOrCreateRecord(resolvedEmpID || employee.empID, dateStr, att.cardID);
+
+        // Prefer snapshot name, fallback to employee map
+        if (snapshotName) {
+          record.employeeName = snapshotName;
+        } else if (employee) {
+          record.employeeName = employee.name;
+        }
 
         record.clockInTime = att.clockInTime;
         record.clockOutTime = att.clockOutTime;
@@ -256,7 +266,7 @@ const AttendanceTab: React.FC = () => {
       // Filter records based on current filters
       const filteredRecords = attendanceRecords.filter(record => {
         // Filter: Only show my records if checked
-        if (showOnlyMyRecords && record.cardID !== user?.cardID) {
+        if (showOnlyMyRecords && record.empID !== user?.empID) {
           return false;
         }
 

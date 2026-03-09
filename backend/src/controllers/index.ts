@@ -5,3 +5,4 @@ export { attendanceController, AttendanceController } from './attendanceControll
 export { officialBusinessController, OfficialBusinessController } from './officialBusinessController';
 export { kanbanController, KanbanController } from './kanbanController';
 export { variableController, VariableController } from './variableController';
+export { cardAssignmentController, CardAssignmentController } from './cardAssignmentController';
