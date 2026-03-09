@@ -20,6 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
 import { fuzzySearchAttendance, toTaipeiDate } from '../../utils/util/utility';
+import { AttendanceLog, calcAttendanceStatuses } from '../../utils/attendanceUtils';
 
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
@@ -260,6 +261,27 @@ const AttendanceTab: React.FC = () => {
     }
   }
 
+  const getStatusLabel = (record: any): string => {
+    const log = record as AttendanceLog;
+    const { isHoliday, hasLeaveStatus, hasLeaveRecords, isLate, isEarlyLeave, isAbsent, hasNoClockTimes } = calcAttendanceStatuses(log);
+
+    if (isHoliday) return log.status || log.holidayName || '';
+
+    if (hasLeaveStatus || hasLeaveRecords) {
+      let label = log.status || '請假';
+      if (hasLeaveRecords && log.leaves!.length > 1) label += ` (${log.leaves!.length})`;
+      return label;
+    }
+
+    if (isAbsent) return '缺勤';
+
+    const parts: string[] = [];
+    if (isLate) parts.push('遲到');
+    if (isEarlyLeave) parts.push('早退');
+    if (!isLate && !isEarlyLeave && !hasNoClockTimes) parts.push('正常');
+    return parts.join(', ');
+  };
+
   // Download attendance records as Excel
   const downloadAsExcel = () => {
     try {
@@ -300,7 +322,7 @@ const AttendanceTab: React.FC = () => {
         '下班出勤時間': formatTime(record.clockOutTime),
         '下班出勤狀態': record.clockOutSource || '-',
         '工作時數': formatWorkDuration(record.workDuration),
-        '狀態': record.holidayName ? record.status || record.holidayName : ''
+        '狀態': getStatusLabel(record)
       }));
 
       // Create worksheet
@@ -555,7 +577,7 @@ const AttendanceTab: React.FC = () => {
                   onClick={downloadAsExcel}
                   disabled={loading || attendanceRecords.length === 0}
                 >
-                  下載成 Excel
+                  下載報表
                 </Button>
               </Box>
             </Grid>
