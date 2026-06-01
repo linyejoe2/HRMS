@@ -163,27 +163,29 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
  * Download 請假總表 (Leave Summary Report) Excel
  */
 export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { year } = req.query;
+  const { year, month } = req.query;
 
-  if (!year) {
+  if (!year || !month) {
     return res.status(400).json({
       error: true,
-      message: 'year 為必填參數'
+      message: 'year 和 month 為必填參數'
     });
   }
 
-  const yearNum = parseInt(year as string);
-  if (isNaN(yearNum)) {
+  const yearNum  = parseInt(year as string);
+  const monthNum = parseInt(month as string);
+
+  if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
     return res.status(400).json({
       error: true,
-      message: 'year 必須為數字'
+      message: 'year 必須為數字，month 必須為 1–12'
     });
   }
 
-  const buffer = await LeaveService.generateLeaveSummaryReport(yearNum);
+  const buffer = await LeaveService.generateLeaveSummaryReport(yearNum, monthNum);
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}.xlsx"`);
+  res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}_${String(monthNum).padStart(2, '0')}.xlsx"`);
   res.send(buffer);
 });
 

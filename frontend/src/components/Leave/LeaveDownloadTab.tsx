@@ -29,6 +29,7 @@ type DocumentType = 'leave_summary' | 'leave_record';
 const LeaveDownloadTab: React.FC = () => {
   const [documentType, setDocumentType] = useState<DocumentType>('leave_summary');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
@@ -70,8 +71,9 @@ const LeaveDownloadTab: React.FC = () => {
       setLoading(true);
 
       if (documentType === 'leave_summary') {
-        const blob = await leaveReportAPI.downloadSummary(selectedYear);
-        downloadBlob(blob, `請假總表_${selectedYear}.xlsx`);
+        const blob = await leaveReportAPI.downloadSummary(selectedYear, selectedMonth);
+        const mm = String(selectedMonth).padStart(2, '0');
+        downloadBlob(blob, `請假總表_${selectedYear}_${mm}.xlsx`);
         toast.success('請假總表下載成功');
       } else {
         if (!selectedEmployee) {
@@ -146,24 +148,42 @@ const LeaveDownloadTab: React.FC = () => {
                     請假總表
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    匯出包含所有員工的年度休假統計，包含：員工編號、姓名、應休天數(特休)、可休時數(特休)、事假(已核准時數)、病假(已核准時數)
+                    匯出所有員工指定月份的休假統計：特休總時數、休餘、特休、事假、病假、喪假、產假、婚假、公假、出差、公傷
                   </Typography>
 
-                  <FormControl fullWidth>
-                    <InputLabel id="year-select-label">選擇年份</InputLabel>
-                    <Select
-                      labelId="year-select-label"
-                      value={selectedYear}
-                      label="選擇年份"
-                      onChange={(e) => setSelectedYear(e.target.value as number)}
-                    >
-                      {yearOptions.map((year) => (
-                        <MenuItem key={year} value={year}>
-                          {year} 年
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <FormControl fullWidth>
+                      <InputLabel id="year-select-label">選擇年份</InputLabel>
+                      <Select
+                        labelId="year-select-label"
+                        value={selectedYear}
+                        label="選擇年份"
+                        onChange={(e) => setSelectedYear(e.target.value as number)}
+                      >
+                        {yearOptions.map((year) => (
+                          <MenuItem key={year} value={year}>
+                            {year} 年
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth>
+                      <InputLabel id="month-select-label">選擇月份</InputLabel>
+                      <Select
+                        labelId="month-select-label"
+                        value={selectedMonth}
+                        label="選擇月份"
+                        onChange={(e) => setSelectedMonth(e.target.value as number)}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                          <MenuItem key={m} value={m}>
+                            {m} 月
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Stack>
                 </Box>
               )}
 

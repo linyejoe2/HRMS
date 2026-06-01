@@ -33,7 +33,9 @@ import { employeeAPI, variableAPI } from '../../services/api';
 import { Employee, UserLevel, Variable } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
+import LegacyLeaveDialog from './LegacyLeaveDialog';
 import { toast } from 'react-toastify';
+import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
 
 const EmployeeManagement: React.FC = () => {
   const { user } = useAuth();
@@ -68,6 +70,10 @@ const EmployeeManagement: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetConfirmName, setResetConfirmName] = useState('');
+  const [legacyLeaveDialog, setLegacyLeaveDialog] = useState<{
+    open: boolean;
+    employee: Employee | null;
+  }>({ open: false, employee: null });
 
   const limit = 100;
 
@@ -91,6 +97,10 @@ const EmployeeManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await employeeAPI.getAll(currentPage, limit, selectedDepartment);
+      let employees = response.data.data.employees
+      employees = employees.sort((a,b) => {
+        return a.empID.localeCompare(b.empID, 'en', { numeric: true })
+    })
       setEmployees(response.data.data.employees || []);
       setTotal(response.data.data.total || 0);
       setTotalPages(response.data.data.pages || 1);
@@ -493,7 +503,7 @@ const EmployeeManagement: React.FC = () => {
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="重製密碼">
+                        <Tooltip title="重置密碼">
                           <IconButton
                             size="small"
                             onClick={() => handleResetPasswordClick(employee)}
@@ -501,6 +511,16 @@ const EmployeeManagement: React.FC = () => {
                             color="warning"
                           >
                             <VpnKeyIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="舊系統休假時數">
+                          <IconButton
+                            size="small"
+                            onClick={() => setLegacyLeaveDialog({ open: true, employee })}
+                            disabled={loading}
+                            color="info"
+                          >
+                            <HistoryEduIcon />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title={employee.isActive ? '停用員工' : '啟用員工'}>
@@ -639,6 +659,13 @@ const EmployeeManagement: React.FC = () => {
         </Box>
       </Dialog>
 
+      {/* Legacy Leave Dialog */}
+      <LegacyLeaveDialog
+        open={legacyLeaveDialog.open}
+        employee={legacyLeaveDialog.employee}
+        onClose={() => setLegacyLeaveDialog({ open: false, employee: null })}
+      />
+
       {/* Reset Password Dialog */}
       <Dialog
         open={resetPasswordDialog.open}
@@ -648,10 +675,10 @@ const EmployeeManagement: React.FC = () => {
       >
         <Box sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom color="warning.main">
-            重製密碼
+            重置密碼
           </Typography>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            重製員工 <strong>{resetPasswordDialog.employee?.name}</strong> ({resetPasswordDialog.employee?.empID}) 的密碼
+            重置員工 <strong>{resetPasswordDialog.employee?.name}</strong> ({resetPasswordDialog.employee?.empID}) 的密碼
           </Typography>
 
           <TextField
@@ -676,7 +703,7 @@ const EmployeeManagement: React.FC = () => {
           />
 
           <Typography variant="body2" sx={{ mb: 1 }}>
-            確認重製 請在此輸入 <strong>{resetPasswordDialog.employee?.name}</strong>
+            確認重置 請在此輸入 <strong>{resetPasswordDialog.employee?.name}</strong>
           </Typography>
           <TextField
             fullWidth

@@ -12,3 +12,4 @@ export { KanbanTask, IKanbanTask, IKanbanHistoryEntry, KanbanStatus } from './Ka
 export { Variable, IVariable } from './Variable';
 export { Holiday, IHoliday, HolidayType } from './Holiday';
 export { CardAssignment, ICardAssignment } from './CardAssignment';
+export { LegacyLeave, ILegacyLeave, ILeaveEntry } from './LegacyLeave';

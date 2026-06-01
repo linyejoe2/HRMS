@@ -1,4 +1,4 @@
-import { Leave, ILeave, Employee, Attendance, LeaveAdjustment } from '../models';
+import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, LegacyLeave } from '../models';
 import { APIError } from '../middleware/errorHandler';
 import { isWeekend } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
@@ -259,121 +259,145 @@ export class LeaveService {
   }
 
   /**
-   * Calculate special leave entitlement in days based on hire date
+   * Calculate special leave entitlement in days based on hire date.
+   * @param referenceDate defaults to now; pass month-end for report calculations
    */
-  private static calculateSpecialLeaveEntitlementDays(hireDate: Date): number {
-    const now = new Date();
+  private static calculateSpecialLeaveEntitlementDays(hireDate: Date, referenceDate?: Date): number {
+    const ref = referenceDate ?? new Date();
     const hireDateObj = new Date(hireDate);
 
-    // Calculate months of service
-    const monthsDiff = (now.getFullYear() - hireDateObj.getFullYear()) * 12 +
-      (now.getMonth() - hireDateObj.getMonth());
+    const monthsDiff = (ref.getFullYear() - hireDateObj.getFullYear()) * 12 +
+      (ref.getMonth() - hireDateObj.getMonth());
 
-    // Calculate years of service (including partial years)
     const yearsDiff = monthsDiff / 12;
 
     if (monthsDiff < 6) {
-      return 0; // Less than 6 months
+      return 0;
     } else if (yearsDiff < 1) {
-      return 3; // 6 months to 1 year
+      return 3;
     } else if (yearsDiff < 2) {
-      return 7; // 1-2 years
+      return 7;
     } else if (yearsDiff < 3) {
-      return 10; // 2-3 years
+      return 10;
     } else if (yearsDiff < 5) {
-      return 14; // 3-5 years
+      return 14;
     } else if (yearsDiff < 10) {
-      return 15; // 5-10 years
+      return 15;
     } else {
-      // 10 years and above: 16 + (years - 10), max 30 days
       const additionalYears = Math.floor(yearsDiff) - 10;
       return Math.min(16 + additionalYears, 30);
     }
   }
 
   /**
-   * Generate 請假總表 (Leave Summary Report) Excel for a given year
-   * Columns: 員工編號, 姓名, 應休天數(特別休假 by day), 可休時數(特別休假 by hour), 事假(approved by hour), 病假(approved by hour)
+   * Generate 請假總表 (Leave Summary Report) Excel for a given year and month.
+   * Columns: 員工編號, 姓名, 特休總時數, 休餘, 特休, 事假, 病假, 喪假, 產假, 婚假, 公假, 出差, 公傷
+   * - 特休總時數: annual entitlement hours (seniority at month-end)
+   * - 休餘: 特休總時數 minus 特別休假 used from hire anniversary to month-end
+   * - 特休..公傷: only approved leaves whose leaveStart falls within the selected month
    */
-  static async generateLeaveSummaryReport(year: number): Promise<Buffer> {
-    // Get all active employees
+  static async generateLeaveSummaryReport(year: number, month: number): Promise<Buffer> {
     const employees = await Employee.find({ isActive: true }).sort({ empID: 1 });
 
-    // Get all approved leave requests for the year
-    const yearStart = new Date(year, 0, 1);
-    const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+    // Month boundaries (month is 1-indexed)
+    const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const [allLeaves, allAdjustments] = await Promise.all([
-      Leave.find({
-        status: 'approved',
-        $or: [
-          { leaveStart: { $gte: yearStart, $lte: yearEnd } },
-          { leaveEnd: { $gte: yearStart, $lte: yearEnd } },
-          { leaveStart: { $lte: yearStart }, leaveEnd: { $gte: yearEnd } }
-        ]
-      }),
-      LeaveAdjustment.find({})
+    // Year-to-month range for 休餘 accumulation
+    const yearStart = new Date(year, 0, 1, 0, 0, 0, 0);
+
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    console.log(monthKey)
+
+    const [monthLeaves, yearToMonthLeaves, allAdjustments, legacyRecords] = await Promise.all([
+      Leave.find({ status: 'approved', leaveStart: { $gte: monthStart, $lte: monthEnd } }),
+      Leave.find({ status: 'approved', leaveStart: { $gte: yearStart, $lte: monthEnd } }),
+      LeaveAdjustment.find({}),
+      LegacyLeave.find({ month: monthKey })
     ]);
 
-    // Build report data
+    const sumMinutes = (leaves: ILeave[]): number =>
+      leaves.reduce((s, l) => s + parseInt(l.hour) * 60 + parseInt(l.minutes), 0);
+
+    const roundH = (min: number) => Math.round(min / 60 * 10) / 10;
+
     const reportData: any[] = [];
 
     for (const employee of employees) {
-      // Filter leaves for this employee
-      const empLeaves = allLeaves.filter(l => l.empID === employee.empID);
-      const empAdjustments = allAdjustments.filter(a => a.empID === employee.empID);
+      const empMonthLeaves = monthLeaves.filter(l => l.empID === employee.empID);
+      const empYearLeaves  = yearToMonthLeaves.filter(l => l.empID === employee.empID);
+      const empAdj         = allAdjustments.filter(a => a.empID === employee.empID);
 
-      // Calculate special leave entitlement
-      let specialLeaveDays = 0;
-      let specialLeaveHours = 0;
+      // Legacy leave for this month: build a map of type -> hours
+      const legacyRecord = legacyRecords.find(r => r.empID === employee.empID);
+      const legacyHours = (colType: string): number =>
+        legacyRecord?.leaves.find(e => e.type === colType)?.count ?? 0;
+
+      // 特休總時數
+      let totalSpecialHours = 0;
       if (employee.hireDate) {
-        specialLeaveDays = this.calculateSpecialLeaveEntitlementDays(employee.hireDate);
-        // Add adjustments for special leave
-        const specialAdjustments = empAdjustments.filter(a => a.leaveType === '特別休假');
-        const adjustmentMinutes = specialAdjustments.reduce((sum, a) => sum + a.minutes, 0);
-        specialLeaveHours = specialLeaveDays * 8 + (adjustmentMinutes / 60);
+        const days = this.calculateSpecialLeaveEntitlementDays(employee.hireDate, monthEnd);
+        const adjMinutes = empAdj
+          .filter(a => a.leaveType === '特別休假')
+          .reduce((s, a) => s + a.minutes, 0);
+        totalSpecialHours = days * 8 + adjMinutes / 60;
       }
 
-      // Calculate used personal leave (事假) in hours
-      const personalLeaves = empLeaves.filter(l => l.leaveType === '事假');
-      const personalUsedMinutes = personalLeaves.reduce((sum, l) => {
-        return sum + (parseInt(l.hour) * 60) + parseInt(l.minutes);
-      }, 0);
-      const personalUsedHours = personalUsedMinutes / 60;
+      // 休餘: deduct 特別休假 from hire anniversary in this year up to month-end
+      let remainingHours = totalSpecialHours;
+      if (employee.hireDate) {
+        const hire = new Date(employee.hireDate);
+        const anniversaryThisYear = new Date(year, hire.getMonth(), hire.getDate());
+        const usedMins = sumMinutes(
+          empYearLeaves.filter(l =>
+            l.leaveType === '特別休假' &&
+            new Date(l.leaveStart) >= anniversaryThisYear
+          )
+        );
+        remainingHours = totalSpecialHours - usedMins / 60;
+      }
 
-      // Calculate used sick leave (普通傷病假) in hours
-      const sickLeaves = empLeaves.filter(l => l.leaveType === '普通傷病假');
-      const sickUsedMinutes = sickLeaves.reduce((sum, l) => {
-        return sum + (parseInt(l.hour) * 60) + parseInt(l.minutes);
-      }, 0);
-      const sickUsedHours = sickUsedMinutes / 60;
+      // Monthly leave helper: system hours + legacy hours for the column
+      const monthH = (dbType: string, legacyCol: string) =>
+        Math.round((roundH(sumMinutes(empMonthLeaves.filter(l => l.leaveType === dbType))) + legacyHours(legacyCol)) * 10) / 10;
 
       reportData.push({
-        '員工編號': employee.empID,
-        '姓名': employee.name,
-        '應休天數': specialLeaveDays,
-        '可休時數': Math.round(specialLeaveHours * 10) / 10,
-        '事假': Math.round(personalUsedHours * 10) / 10,
-        '病假': Math.round(sickUsedHours * 10) / 10
+        '員工編號':  employee.empID,
+        '姓名':      employee.name,
+        '特休總時數': Math.round(totalSpecialHours * 10) / 10,
+        '休餘':      Math.round(remainingHours * 10) / 10,
+        '特休':      monthH('特別休假', '特休'),
+        '事假':      monthH('事假',     '事假'),
+        '病假':      monthH('普通傷病假','病假'),
+        '喪假':      monthH('喪假',     '喪假'),
+        '產假':      monthH('產假',     '產假'),
+        '婚假':      monthH('婚假',     '婚假'),
+        '公假':      monthH('公假',     '公假'),
+        '出差':      monthH('出差',     '出差'),
+        '公傷':      monthH('公傷病假', '公傷')
       });
     }
 
-    // Create Excel workbook
     const worksheet = XLSX.utils.json_to_sheet(reportData);
-    const workbook = XLSX.utils.book_new();
+    const workbook  = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '請假總表');
 
-    // Set column widths
     worksheet['!cols'] = [
       { wch: 12 }, // 員工編號
-      { wch: 12 }, // 姓名
-      { wch: 12 }, // 應休天數
-      { wch: 12 }, // 可休時數
-      { wch: 10 }, // 事假
-      { wch: 10 }  // 病假
+      { wch: 10 }, // 姓名
+      { wch: 12 }, // 特休總時數
+      { wch: 10 }, // 休餘
+      { wch: 8 },  // 特休
+      { wch: 8 },  // 事假
+      { wch: 8 },  // 病假
+      { wch: 8 },  // 喪假
+      { wch: 8 },  // 產假
+      { wch: 8 },  // 婚假
+      { wch: 8 },  // 公假
+      { wch: 8 },  // 出差
+      { wch: 8 }   // 公傷
     ];
 
-    // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     return buffer;
   }

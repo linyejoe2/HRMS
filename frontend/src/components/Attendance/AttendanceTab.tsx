@@ -593,7 +593,7 @@ const AttendanceTab: React.FC = () => {
                 <Grid item xs={12} md={4}>
                   <TextField
                     label="搜尋"
-                    placeholder="輸入卡號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
+                    placeholder="搜尋卡號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     fullWidth

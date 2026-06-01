@@ -704,11 +704,23 @@ export const cardAssignmentAPI = {
   }
 };
 
+// Legacy Leave API (HR/Admin only)
+export const legacyLeaveAPI = {
+  getByEmpID: (empID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { emp_id: string, month: string, leaves: { type: string, count: number }[] }[] }>> =>
+    api.get(`/legacy-leaves/${empID}`),
+
+  upsert: (empID: string, month: string, leaves: { type: string, count: number }[]): Promise<AxiosResponse<{ error: boolean, message: string, data: any }>> =>
+    api.post(`/legacy-leaves/${empID}/${month}`, { leaves }),
+
+  deleteByMonth: (empID: string, month: string): Promise<AxiosResponse<{ error: boolean, message: string, data: null }>> =>
+    api.delete(`/legacy-leaves/${empID}/${month}`)
+};
+
 // Leave Report API (HR/Admin only)
 export const leaveReportAPI = {
-  // Download leave summary report (請假總表) for a given year
-  downloadSummary: async (year: number): Promise<Blob> => {
-    const response = await api.get(`/leave/reports/summary?year=${year}`, {
+  // Download leave summary report (請假總表) for a given year and month
+  downloadSummary: async (year: number, month: number): Promise<Blob> => {
+    const response = await api.get(`/leave/reports/summary?year=${year}&month=${month}`, {
       responseType: 'blob'
     });
     return response.data;
