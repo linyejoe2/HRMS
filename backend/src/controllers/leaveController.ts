@@ -161,6 +161,22 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
   });
 });
 
+export const importLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const records = req.body;
+
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ error: true, message: '請提供請假紀錄陣列' });
+  }
+
+  const result = await LeaveService.importLeaveRequests(records);
+
+  res.status(201).json({
+    error: false,
+    message: `成功匯入 ${result.imported} 筆，失敗 ${result.errors.length} 筆`,
+    data: result
+  });
+});
+
 /**
  * Download 特休表
  */

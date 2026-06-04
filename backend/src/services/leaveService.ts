@@ -431,4 +431,78 @@ export class LeaveService {
       thisYearEnd: formatDate(thisEnd)
     };
   }
+
+  /**
+   * Bulk import leave records from legacy data.
+   * leaveStart/leaveEnd are Chinese date strings like "1月7日".
+   * leaveEnd datetime = parsed leaveStart date at 09:00 + hour duration.
+   * All records are inserted as status='approved', skipping overlap checks.
+   */
+  static async importLeaveRequests(records: {
+    empID: string;
+    leaveType: string;
+    reason?: string;
+    year: string;
+    leaveStart: string;
+    leaveEnd: string;
+    hour: string;
+  }[]): Promise<{ imported: number; errors: { index: number; empID: string; message: string }[] }> {
+    let imported = 0;
+    const errors: { index: number; empID: string; message: string }[] = [];
+
+    const parseChineseDate = (year: string, dateStr: string): Date | null => {
+      const match = dateStr.match(/(\d+)月(\d+)日/);
+      if (!match) return null;
+      return new Date(parseInt(year), parseInt(match[1]) - 1, parseInt(match[2]), 9, 0, 0, 0);
+    };
+
+    for (let i = 0; i < records.length; i++) {
+      const { empID, leaveType, reason, year, leaveStart: startStr, hour } = records[i];
+      try {
+        const employee = await Employee.findOne({ empID });
+        if (!employee) {
+          errors.push({ index: i, empID, message: `找不到員工 ${empID}` });
+          continue;
+        }
+
+        const startDate = parseChineseDate(year, startStr);
+        if (!startDate) {
+          errors.push({ index: i, empID, message: `無法解析日期: ${startStr}` });
+          continue;
+        }
+
+        const hours = parseFloat(hour);
+        if (isNaN(hours) || hours <= 0) {
+          errors.push({ index: i, empID, message: `無效的時數: ${hour}` });
+          continue;
+        }
+
+        const endDate = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
+        const wholeHours = Math.floor(hours);
+        const minutes   = Math.round((hours - wholeHours) * 60);
+
+        await Leave.create({
+          empID,
+          name:       employee.name,
+          department: employee.department || '',
+          leaveType,
+          reason:     reason || '',
+          leaveStart: startDate,
+          leaveEnd:   endDate,
+          YYYY:       String(startDate.getFullYear()),
+          mm:         String(startDate.getMonth() + 1).padStart(2, '0'),
+          DD:         String(startDate.getDate()).padStart(2, '0'),
+          hour:       String(wholeHours),
+          minutes:    String(minutes),
+          status:     'approved'
+        });
+
+        imported++;
+      } catch (err: any) {
+        errors.push({ index: i, empID, message: err.message || '未知錯誤' });
+      }
+    }
+
+    return { imported, errors };
+  }
 }

@@ -10,6 +10,7 @@ import {
   getCancelLeaveRequests,
   getLeaveRequestBySequenceNumber,
   queryLeaveRequests,
+  importLeaveRequests,
   downloadLeaveSummaryReport,
   downloadEmployeeLeaveReport,
   downloadAnnualLeaveReport
@@ -45,5 +46,7 @@ router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 router.get('/cancelled/all', authenticateToken, requireRole(['hr', 'admin']), getCancelLeaveRequests);
 
 router.post('/query', authenticateToken, queryLeaveRequests);
+
+router.post('/import', authenticateToken, requireRole(['hr', 'admin']), importLeaveRequests);
 
 export default router;
