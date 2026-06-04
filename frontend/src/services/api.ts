@@ -725,6 +725,12 @@ export const leaveReportAPI = {
     });
     return response.data;
   },
+  downloadAnnualLeaveSummary: async (year: number, month: number): Promise<Blob> => {
+    const response = await api.get(`/leave/reports/annual-leave?year=${year}&month=${month}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
 
   // Download individual employee leave report (請假表) for a given employee and date range
   downloadEmployeeReport: async (empID: string, startDate: string, endDate: string): Promise<Blob> => {

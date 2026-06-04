@@ -11,7 +11,8 @@ import {
   getLeaveRequestBySequenceNumber,
   queryLeaveRequests,
   downloadLeaveSummaryReport,
-  downloadEmployeeLeaveReport
+  downloadEmployeeLeaveReport,
+  downloadAnnualLeaveReport
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -28,6 +29,7 @@ router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllLeaveR
 
 // Report download routes (HR/Admin only) - must be before /:id route
 router.get('/reports/summary', authenticateToken, requireRole(['hr', 'admin']), downloadLeaveSummaryReport);
+router.get('/reports/annual-leave', authenticateToken, requireRole(['hr', 'admin']), downloadAnnualLeaveReport);
 router.get('/reports/employee', authenticateToken, requireRole(['hr', 'admin']), downloadEmployeeLeaveReport);
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);

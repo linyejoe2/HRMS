@@ -24,12 +24,14 @@ import { Employee } from '../../types';
 import { employeeAPI, leaveReportAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 
-type DocumentType = 'leave_summary' | 'leave_record';
+type DocumentType = 'leave_summary' | 'leave_record' | "annual_leave_summary";
 
 const LeaveDownloadTab: React.FC = () => {
   const [documentType, setDocumentType] = useState<DocumentType>('leave_summary');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedMonth, setSelectedMonth] = useState<number>(1);
+  // const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  // const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
@@ -75,6 +77,11 @@ const LeaveDownloadTab: React.FC = () => {
         const mm = String(selectedMonth).padStart(2, '0');
         downloadBlob(blob, `請假總表_${selectedYear}_${mm}.xlsx`);
         toast.success('請假總表下載成功');
+      } else if (documentType === "annual_leave_summary") {
+        const blob = await leaveReportAPI.downloadAnnualLeaveSummary(selectedYear, selectedMonth);
+        const mm = String(selectedMonth).padStart(2, '0');
+        downloadBlob(blob, `特休表_${selectedYear}_${mm}.xlsx`);
+        toast.success('特休表下載成功');
       } else {
         if (!selectedEmployee) {
           toast.error('請選擇員工');
@@ -135,6 +142,7 @@ const LeaveDownloadTab: React.FC = () => {
                   onChange={(e) => setDocumentType(e.target.value as DocumentType)}
                 >
                   <MenuItem value="leave_summary">請假總表</MenuItem>
+                  <MenuItem value="annual_leave_summary">特休表</MenuItem>
                   <MenuItem value="leave_record">請假表</MenuItem>
                 </Select>
               </FormControl>
@@ -149,6 +157,51 @@ const LeaveDownloadTab: React.FC = () => {
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     匯出所有員工指定月份的休假統計：特休總時數、休餘、特休、事假、病假、喪假、產假、婚假、公假、出差、公傷
+                  </Typography>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <FormControl fullWidth>
+                      <InputLabel id="year-select-label">選擇年份</InputLabel>
+                      <Select
+                        labelId="year-select-label"
+                        value={selectedYear}
+                        label="選擇年份"
+                        onChange={(e) => setSelectedYear(e.target.value as number)}
+                      >
+                        {yearOptions.map((year) => (
+                          <MenuItem key={year} value={year}>
+                            {year} 年
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth>
+                      <InputLabel id="month-select-label">選擇月份</InputLabel>
+                      <Select
+                        labelId="month-select-label"
+                        value={selectedMonth}
+                        label="選擇月份"
+                        onChange={(e) => setSelectedMonth(e.target.value as number)}
+                        sx={{ display: "none" }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                          <MenuItem key={m} value={m}>
+                            {m} 月
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                </Box>
+              )}
+              {documentType === 'annual_leave_summary' && (
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    特休表
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    匯出所有員工在指定年份(月份)的特休天數
                   </Typography>
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { LeaveService } from '../services/leaveService';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
+import { generateAnnualLeaveTable } from '../services/excel/annualLeaveTable';
+import { generateLeaveSummaryReport } from '../services/excel/leaveSummaryReport';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
@@ -160,6 +162,36 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
 });
 
 /**
+ * Download 特休表
+ */
+export const downloadAnnualLeaveReport = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    return res.status(400).json({
+      error: true,
+      message: 'year 和 month 為必填參數'
+    });
+  }
+
+  const yearNum  = parseInt(year as string);
+  const monthNum = parseInt(month as string);
+
+  if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+    return res.status(400).json({
+      error: true,
+      message: 'year 必須為數字，month 必須為 1–12'
+    });
+  }
+
+  const buffer = await generateAnnualLeaveTable(yearNum, monthNum);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}_${String(monthNum).padStart(2, '0')}.xlsx"`);
+  res.send(buffer);
+});
+
+/**
  * Download 請假總表 (Leave Summary Report) Excel
  */
 export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -182,7 +214,7 @@ export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, 
     });
   }
 
-  const buffer = await LeaveService.generateLeaveSummaryReport(yearNum, monthNum);
+  const buffer = await generateLeaveSummaryReport(yearNum, monthNum);
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}_${String(monthNum).padStart(2, '0')}.xlsx"`);
