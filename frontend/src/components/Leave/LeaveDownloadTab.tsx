@@ -34,14 +34,14 @@ const LeaveDownloadTab: React.FC = () => {
   // const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
-  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs().endOf('year'));
+  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs(`${dayjs().year() - 1}-12-24`));
+  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs(`${dayjs().year()}-12-23`));
   const [loading, setLoading] = useState(false);
   const [employeesLoading, setEmployeesLoading] = useState(false);
 
   // Generate year options (current year and past 5 years)
   const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i)
 
   // Load employees when document type changes to leave_record
   useEffect(() => {
@@ -64,8 +64,8 @@ const LeaveDownloadTab: React.FC = () => {
   };
 
   const handleYearQuickSelect = (year: number) => {
-    setStartDate(dayjs(`${year}-01-01`));
-    setEndDate(dayjs(`${year}-12-31`));
+    setStartDate(dayjs(`${year - 1}-12-24`));
+    setEndDate(dayjs(`${year}-12-23`));
   };
 
   const handleDownload = async () => {
@@ -176,7 +176,7 @@ const LeaveDownloadTab: React.FC = () => {
                       </Select>
                     </FormControl>
 
-                    <FormControl fullWidth>
+                    <FormControl fullWidth sx={{ display: "none" }}>
                       <InputLabel id="month-select-label">選擇月份</InputLabel>
                       <Select
                         labelId="month-select-label"
@@ -275,12 +275,12 @@ const LeaveDownloadTab: React.FC = () => {
                     />
 
                     {/* Quick Year Selection */}
-                    <Box>
+                    <Box sx={{ display: "none" }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         快速選擇年份：
                       </Typography>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {yearOptions.slice(0, 4).map((year) => (
+                        {yearOptions.slice(0, 1).map((year) => (
                           <Button
                             key={year}
                             variant="outlined"
@@ -299,6 +299,7 @@ const LeaveDownloadTab: React.FC = () => {
                         label="開始日期"
                         value={startDate}
                         onChange={(newValue) => setStartDate(newValue)}
+                        minDate={dayjs('2025-12-24')}
                         slotProps={{
                           textField: { fullWidth: true }
                         }}
@@ -307,6 +308,7 @@ const LeaveDownloadTab: React.FC = () => {
                         label="結束日期"
                         value={endDate}
                         onChange={(newValue) => setEndDate(newValue)}
+                        minDate={dayjs('2025-12-25')}
                         slotProps={{
                           textField: { fullWidth: true }
                         }}

@@ -4,6 +4,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { generateAnnualLeaveTable } from '../services/excel/annualLeaveTable';
 import { generateLeaveSummaryReport } from '../services/excel/leaveSummaryReport';
+import { generateEmployeeLeaveReport } from '../services/excel/employeeLeaveReport';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
@@ -250,7 +251,7 @@ export const downloadEmployeeLeaveReport = asyncHandler(async (req: AuthRequest,
     });
   }
 
-  const buffer = await LeaveService.generateEmployeeLeaveReport(
+  const buffer = await generateEmployeeLeaveReport(
     empID as string,
     startDate as string,
     endDate as string
