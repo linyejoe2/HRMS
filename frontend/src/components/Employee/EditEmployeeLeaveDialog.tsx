@@ -56,7 +56,8 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
   const [newAdjustment, setNewAdjustment] = useState({
     minutes: 0,
-    reason: ''
+    reason: '',
+    effectiveDate: new Date().toISOString().split('T')[0]
   });
 
   // Check if user can manage adjustments
@@ -122,17 +123,23 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       return;
     }
 
+    if (!newAdjustment.effectiveDate) {
+      toast.error('請選擇生效日期');
+      return;
+    }
+
     try {
       await leaveAdjustmentAPI.create({
         empID,
         leaveType: leaveData.type,
         minutes: newAdjustment.minutes,
-        reason: newAdjustment.reason
+        reason: newAdjustment.reason,
+        effectiveDate: newAdjustment.effectiveDate
       });
 
       toast.success('假別調整已新增');
       setShowAddAdjustment(false);
-      setNewAdjustment({ minutes: 0, reason: '' });
+      setNewAdjustment({ minutes: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0] });
       await refreshLeaveData(hireDate);
     } catch (error: any) {
       toast.error(error.response?.data?.error || '新增調整失敗');
@@ -363,6 +370,19 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                 </Box>
 
                 <TextField
+                  label="生效日期"
+                  type="date"
+                  size="small"
+                  fullWidth
+                  value={newAdjustment.effectiveDate}
+                  onChange={(e) =>
+                    setNewAdjustment({ ...newAdjustment, effectiveDate: e.target.value })
+                  }
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
                   label="調整原因"
                   size="small"
                   multiline
@@ -387,7 +407,8 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>調整時間</TableCell>
+                    <TableCell>建立時間</TableCell>
+                    <TableCell>生效日期</TableCell>
                     <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>
                     <TableCell>調整者</TableCell>
@@ -397,7 +418,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                 <TableBody>
                   {adjustments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={canManageAdjustments ? 5 : 4} align="center">
+                      <TableCell colSpan={canManageAdjustments ? 6 : 5} align="center">
                         <Typography variant="body2" color="text.secondary">
                           無調整記錄
                         </Typography>
@@ -409,6 +430,11 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                         <TableRow key={adj._id}>
                           <TableCell>
                             {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
+                          </TableCell>
+                          <TableCell>
+                            {adj.effectiveDate
+                              ? new Date(adj.effectiveDate).toLocaleDateString('zh-TW')
+                              : '-'}
                           </TableCell>
                           <TableCell>
                             <Chip

@@ -71,7 +71,7 @@ A485高慧娟
   {
     "empID": "A485",
     "leaveType": "特別休假",
-    "year": "2026",
+    "year": "2025",
     "leaveStart": "12月31日",
     "leaveEnd": "12月31日",
     "hour": "4"
@@ -517,7 +517,7 @@ A532高宏成
   {
     "empID": "A532",
     "leaveType": "特別休假",
-    "year": "2026",
+    "year": "2025",
     "leaveStart": "12月29日",
     "leaveEnd": "1月2日",
     "hour": "32"
@@ -952,7 +952,7 @@ A543林有章
   {
     "empID": "A543",
     "leaveType": "特別休假",
-    "year": "2026",
+    "year": "2025",
     "leaveStart": "12月24日",
     "leaveEnd": "12月24日",
     "hour": "4"

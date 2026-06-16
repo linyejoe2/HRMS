@@ -340,6 +340,7 @@ export interface LeaveAdjustment {
   leaveType: string;
   minutes: number; // Can be negative to increase remaining leave, or positive to decrease
   reason: string;
+  effectiveDate?: string;
   createdBy: string;
   createdByDesc: string;
   createdAt?: string;

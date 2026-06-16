@@ -373,6 +373,7 @@ export const leaveAdjustmentAPI = {
     leaveType: string;
     minutes: number;
     reason: string;
+    effectiveDate: string;
   }): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveAdjustment }>> =>
     api.post('/leave-adjustments', adjustmentData),
 

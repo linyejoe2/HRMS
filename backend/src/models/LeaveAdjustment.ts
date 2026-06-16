@@ -7,6 +7,7 @@ export interface ILeaveAdjustment extends Document {
   leaveType: string;
   minutes: number; // Can be negative to increase remaining leave, or positive to decrease
   reason: string;
+  effectiveDate: Date;
   createdBy: string; // empID of the user who created this adjustment
   createdByDesc: string;
   createdAt: Date;
@@ -40,6 +41,11 @@ const leaveAdjustmentSchema = new Schema<ILeaveAdjustment>({
   reason: {
     type: String,
     required: true
+  },
+  effectiveDate: {
+    type: Date,
+    required: true,
+    index: true
   },
   createdBy: {
     type: String,
