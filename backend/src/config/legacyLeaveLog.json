@@ -235,5 +235,200 @@
     "leaveEnd": "5月22日",
     "hour": "36"
   }
+],
+
+[
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "1月22日",
+    "leaveEnd": "1月22日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "2月4日",
+    "leaveEnd": "2月4日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月3日",
+    "leaveEnd": "3月3日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月13日",
+    "leaveEnd": "3月13日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月16日",
+    "leaveEnd": "3月16日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月18日",
+    "leaveEnd": "3月18日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月30日",
+    "leaveEnd": "3月30日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "3月31日",
+    "leaveEnd": "3月31日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月1日",
+    "leaveEnd": "4月1日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月2日",
+    "leaveEnd": "4月2日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月8日",
+    "leaveEnd": "4月8日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月15日",
+    "leaveEnd": "4月16日",
+    "hour": "16"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月29日",
+    "leaveEnd": "4月29日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月9日",
+    "leaveEnd": "4月9日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月24日",
+    "leaveEnd": "4月24日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月4日",
+    "leaveEnd": "5月4日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月13日",
+    "leaveEnd": "5月13日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月27日",
+    "leaveEnd": "5月27日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "4月22日",
+    "leaveEnd": "4月22日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月8日",
+    "leaveEnd": "5月8日",
+    "hour": "8"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月7日",
+    "leaveEnd": "5月7日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月22日",
+    "leaveEnd": "5月22日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月25日",
+    "leaveEnd": "5月25日",
+    "hour": "4"
+  },
+  {
+    "empID": "A137",
+    "leaveType": "特別休假",
+    "year": "2026",
+    "leaveStart": "5月26日",
+    "leaveEnd": "5月26日",
+    "hour": "4"
+  }
 ]
 ]

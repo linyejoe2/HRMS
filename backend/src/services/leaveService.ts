@@ -1,8 +1,15 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, parseJSONfromFile } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 import * as XLSX from 'xlsx';
+import { promises } from 'dns';
+import legacyLeaveJson from "../config/legacyLeave.json"
+import dayjs, { Dayjs } from 'dayjs';
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export type DurentObject = {
   minuteFormat: number;
@@ -259,18 +266,26 @@ export class LeaveService {
   }
 
   /**
-   * Calculate special leave entitlement in days based on hire date.
-   * @param referenceDate defaults to now; pass month-end for report calculations
-   */
-  private static calculateSpecialLeaveEntitlementDays(hireDate: Date, referenceDate?: Date): number {
-    const ref = referenceDate ?? new Date();
-    const hireDateObj = new Date(hireDate);
+ * Calculate special leave entitlement in days based on hire date.
+ * @param referenceDate defaults to now; pass month-end for report calculations
+ */
+  static calcAnnualLeaveEntitlementDays(
+    hireDate: Date | dayjs.Dayjs,
+    referenceDate?: Date | dayjs.Dayjs
+  ): number {
+    // 1. 統一轉換為 Day.js 物件（不論傳入的是原生 Date 還是 Dayjs 都能相容）
+    const ref = dayjs.tz(referenceDate ?? new Date(), "Asia/Taipei");
+    const hire = dayjs.tz(hireDate, "Asia/Taipei");
 
-    const monthsDiff = (ref.getFullYear() - hireDateObj.getFullYear()) * 12 +
-      (ref.getMonth() - hireDateObj.getMonth());
+    // 2. 直接使用 .diff() 計算相差的「月數」（浮點數），這會比純減月份更精準
+    // 為了完全符合你原本「只看年月、不看日期」的月數計算邏輯，我們可以先把兩者的日期都歸化到當月 1 號
+    const refMonthStart = ref.startOf('month');
+    const hireMonthStart = hire.startOf('month');
 
+    const monthsDiff = refMonthStart.diff(hireMonthStart, 'month');
     const yearsDiff = monthsDiff / 12;
 
+    // 3. 特休天數級距判斷（保持原本的勞基法邏輯）
     if (monthsDiff < 6) {
       return 0;
     } else if (yearsDiff < 1) {
@@ -289,63 +304,204 @@ export class LeaveService {
     }
   }
 
-  static calcAnnualLeaveDaysByEmployee(employee: IEmployee, referenceDate: Date): [number, number, number, number] {
-    const res: [number, number, number, number] = [0, 0, 0, 0]
-    const lastYear = new Date(referenceDate.getTime());
-    lastYear.setFullYear(lastYear.getFullYear() - 1);
+  /**
+     * @returns 
+     * 1. 去年剩下的時數 = 去年到職日 00:00 (由於有去年時數資料 所以取去年 12/24 開始) 到 今年到職日 或 這個月底
+     * 2. 今年剩下的時數 = 如果今年到職日還沒到 = 0, 如果到了 那就是 今年到職日 00:00 到 這個月底
+     * 3. total Hours
+     * 4. total Remain Hours
+     */
+  static async calcRemainAnnualLeaveDays(employee: IEmployee, referenceDate: dayjs.Dayjs): Promise<[number, number, number, number]> {
+    let res: [number, number, number, number] = [0, 0, 0, 0];
+    const baseYear = referenceDate.year();
+    const hireDate = dayjsTz(employee.hireDate);
+    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, referenceDate.month(11).date(24).startOf("day"));
 
-    res[0] = this.calculateSpecialLeaveEntitlementDays(employee.hireDate!, lastYear)
+    // ==================== 核心時間點計算 ====================
+
+    // B. 今年去年到職日起訖日 (將 getYearRanges 的字串結果轉回 Day.js 物件)
+    const anniversarys = LeaveService.getYearRanges(hireDate, referenceDate);
+
+    // C. 這個月的起訖時間
+    const thisMonthStart = referenceDate.subtract(1, 'month').date(24).startOf('day');
+    const thisMonthEnd = referenceDate.date(23).endOf('day');
+
+    // 今年初 (去年 12/24)
+    const thisYearStart = referenceDate.subtract(1, 'year').month(11).date(24).startOf("day")
+
+    // ==================== 條件邊界控制 ====================
+    // 判斷今年特休是否已開始了
+    const isThisYearLeaveStarted = anniversarys.thisYearStart.isBefore(thisMonthEnd);
+
+    const stage1End = isThisYearLeaveStarted ? anniversarys.thisYearStart : thisMonthEnd;
+
+    // ==================== 這個月細分兩段的起訖區間 ====================
+    // 上半月：這個月 1 號 -> 到職日前一天 23:59:59 或是這個月底
+    // const firstHalfStart = thisMonthStart;
+    // const firstHalfEnd = thisMonthEnd.isBefore(workAnniversaryDay)
+    //   ? thisMonthEnd
+    //   : workAnniversaryDay.subtract(1, 'day').endOf('day');
+
+    // // 下半月：到職日當天 00:00 或是這個月初 -> 這個月底 23:59:59
+    // const secondHalfStart = thisMonthStart.isAfter(workAnniversaryDay)
+    //   ? thisMonthStart
+    //   : workAnniversaryDay;
+    // const secondHalfEnd = thisMonthEnd;
+
+    // 區間合法性防呆判斷（若 start > end 則不合法）
+    // const isFirstHalfValid = !firstHalfStart.isAfter(firstHalfEnd);
+    // const isSecondHalfValid = !secondHalfStart.isAfter(secondHalfEnd);
+
+    // ==================== MongoDB 查詢區塊 ====================
+    const sumHours = (docs: ILeave[]): number => docs.reduce((sum, doc) => sum + (parseInt(doc.hour) || 0), 0);
+
+    const [
+      lastYearAnnualLeaveHours,
+      thisYearAnnualLeaveHours,
+      thisMonthHours
+      // thisMonthFirstHalfHours,
+      // thisMonthSecondHalfHours
+    ] = await Promise.all([
+      // 1. 去年歷史階段
+      Leave.find({
+        empID: employee.empID,
+        status: 'approved',
+        leaveType: "特別休假",
+        leaveStart: { $gte: thisYearStart.toDate(), $lte: stage1End.toDate() }
+      }).then(docs=>{console.log(docs); return docs}).then(docs => sumHours(docs)),
+
+      // 2. 今年歷史階段
+      isThisYearLeaveStarted
+        ? Leave.find({
+          empID: employee.empID,
+          status: 'approved',
+          leaveType: "特別休假",
+          leaveStart: { $gte: anniversarys.thisYearStart.toDate(), $lte: thisMonthEnd.toDate() }
+        }).then(docs => sumHours(docs))
+        : 0,
+
+      // 3. 這個月
+      Leave.find({
+        empID: employee.empID,
+        status: 'approved',
+        leaveType: "特別休假",
+        leaveStart: { $gte: thisMonthStart.toDate(), $lte: thisMonthEnd.toDate() }
+      }).then(docs => sumHours(docs)),
+
+      // 4. 這個月到職日後 (下半月)
+      // Leave.find({
+      //   empID: employee.empID,
+      //   status: 'approved',
+      //   leaveType: "特別休假",
+      //   leaveStart: { $gte: secondHalfStart.toDate(), $lte: secondHalfEnd.toDate() }
+      // }).then(docs => sumHours(docs))
+    ]);
+
+    console.log(`
+      lastYearAnnualLeaveHours: ${lastYearAnnualLeaveHours}
+      thisYearAnnualLeaveHours: ${thisYearAnnualLeaveHours}
+      thisMonthHours: ${thisMonthHours}
+      thisYearStart: ${thisYearStart.toISOString()}
+      stage1End: ${stage1End.toISOString()}
+      anniversarys.thisYearStart: ${anniversarys.thisYearStart.toISOString()}
+      anniversarys.thisYearEnd: ${anniversarys.thisYearEnd.toISOString()}
+      thisMonthStart: ${thisMonthStart.toISOString()}
+      thisMonthEnd: ${thisMonthEnd.toISOString()}
+      isThisYearLeaveStarted: ${isThisYearLeaveStarted}
+      `)
+
+    // ==================== 特休舊資料相容與結算 ====================
+    const remain = legacyLeaveJson.find(l => l.id === employee.empID)?.remain || 0;
+    if (baseYear === 2026 && remain) {
+      annualLeaveDays[1] = remain; // 去年剩餘時數
+      // 註：依你原本邏輯，這裡你可以自由指派 annualLeaveDays[3] 的今年時數
+    }
+
+    res = [
+      annualLeaveDays[1], // 去年總額
+      annualLeaveDays[3], // 今年總額
+      annualLeaveDays[1] + annualLeaveDays[3], // 原始總額度
+      annualLeaveDays[1] + annualLeaveDays[3], // 剩餘總額度 (預留)
+    ];
+
+    // 3. 兩年年假總額
+    res[2] = annualLeaveDays[1] + annualLeaveDays[3];
+
+    // 1. 去年剩餘時數：扣除去年歷史、以及這個月到職前的消耗
+    res[0] = res[0] - lastYearAnnualLeaveHours;
+
+    // 2. 今年剩餘時數：扣除今年歷史、以及這個月到職後的消耗
+    res[1] = res[1] - thisYearAnnualLeaveHours;
+
+    // 4. 真正剩餘的總時數 (去年剩餘 + 今年剩餘)
+    res[3] = res[0] + res[1];
+
+    return res;
+  }
+
+  /**
+   * @returns 
+   * 1. lastyear Days
+   * 2. lastyear Hours
+   * 3. this year Days
+   * 4. this year Hours
+   */
+  static calcAnnualLeaveDaysByEmployee(employee: IEmployee, referenceDate: dayjs.Dayjs): [number, number, number, number] {
+    const res: [number, number, number, number] = [0, 0, 0, 0]
+
+    const lastYear = dayjsTz(referenceDate).subtract(1, "year")
+    const hireDate = dayjsTz(employee.hireDate)
+
+    console.log("employee: ", employee.name)
+    console.log("hireDate: ", employee.hireDate)
+    // console.log("hireDate2: ", hireDate)
+    console.log("referenceDate: ", referenceDate.toISOString())
+    console.log("lastYear: ", lastYear.toISOString())
+
+    res[0] = this.calcAnnualLeaveEntitlementDays(hireDate, lastYear)
     res[1] = res[0] * 8
-    res[2] = this.calculateSpecialLeaveEntitlementDays(employee.hireDate!, referenceDate)
+    res[2] = this.calcAnnualLeaveEntitlementDays(hireDate, referenceDate)
     res[3] = res[2] * 8
+    console.log("res: ", res)
     return res
   }
 
-  static getYearRanges(hireDate?: Date, referenceDate?: Date) {
-    if (!hireDate || !referenceDate) return {
-      lastYearStart: '',
-      lastYearEnd: '',
-      thisYearStart: '',
-      thisYearEnd: ''
-    }
-    const hireMonth = hireDate.getMonth(); // 0-11
-    const hireDay = hireDate.getDate();
-    const baseYear = referenceDate.getFullYear();
+  static getYearRanges(hireDate: dayjs.Dayjs, referenceDate: dayjs.Dayjs) {
 
-    // 建立一個與 referenceDate 同一年的入職週年基準點
-    let thisYearStart = new Date(baseYear, hireMonth, hireDay);
+    // 1. 直接用 dayjs 抓取入職的月、日，以及基準日的年 (不用擔心月份 0-11 的問題了)
+    const hireMonth = hireDate.month(); // 0-11，但 dayjs 內部會自己處理，不影響設定
+    const hireDay = hireDate.date();
+    const baseYear = referenceDate.year();
 
-    // 根據你的範例：referenceDate (2025/01/01) 時，thisYearStart 是 2025/10/01
-    // 如果你的邏輯是「不管 referenceDate 在幾月，thisYearStart 都強制設定為 referenceDate 當年的入職月日」：
-    // 那就直接以此為基準。若 referenceDate 已經過了當年的入職日，需要視需求調整（目前完全符合你範例的邏輯）。
+    // 2. 建立基準點：referenceDate 當年的入職週年日
+    // 使用 .set() 同時設定年月日常數，並將時分秒歸零 (00:00:00) 確保比較與計算精準
+    const thisStart = referenceDate.clone()
+      .year(baseYear)
+      .month(hireMonth)
+      .date(hireDay)
+      .hour(0).minute(0).second(0).millisecond(0);
 
-    // 計算各個日期物件
-    let thisStart = new Date(thisYearStart);
-
-    let thisEnd = new Date(thisStart);
-    thisEnd.setFullYear(thisEnd.getFullYear() + 1);
-    thisEnd.setDate(thisEnd.getDate() - 1); // 減一天得到結束日
-
-    let lastStart = new Date(thisStart);
-    lastStart.setFullYear(lastStart.getFullYear() - 1);
-
-    let lastEnd = new Date(thisStart);
-    lastEnd.setDate(lastEnd.getDate() - 1);
-
-    // 格式化輸出成 YYYY/MM/DD
-    const formatDate = (date: Date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}/${m}/${d}`;
-    };
+    // 3. 利用 dayjs 的 .add() 和 .subtract() 直覺地推算各個日期
+    const thisEnd = thisStart.add(1, 'year').subtract(1, 'day').hour(23).minute(59).second(59);
+    const lastStart = thisStart.subtract(1, 'year');
+    const lastEnd = thisStart.subtract(1, 'day').hour(23).minute(59).second(59);
 
     return {
-      lastYearStart: formatDate(lastStart),
-      lastYearEnd: formatDate(lastEnd),
-      thisYearStart: formatDate(thisStart),
-      thisYearEnd: formatDate(thisEnd)
+      lastYearStart: dayjsTz(lastStart),
+      lastYearEnd: dayjsTz(lastEnd),
+      thisYearStart: dayjsTz(thisStart),
+      thisYearEnd: dayjsTz(thisEnd)
     };
+
+    // // 4. 定義格式化格式，直接呼叫 .format() 
+    // const FORMAT_STR = 'YYYY/MM/DD';
+
+    // return {
+    //   lastYearStart: lastStart.format(FORMAT_STR),
+    //   lastYearEnd: lastEnd.format(FORMAT_STR),
+    //   thisYearStart: thisStart.format(FORMAT_STR),
+    //   thisYearEnd: thisEnd.format(FORMAT_STR)
+    // };
   }
 
   /**
@@ -395,22 +551,22 @@ export class LeaveService {
 
         const endDate = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
         const wholeHours = Math.floor(hours);
-        const minutes   = Math.round((hours - wholeHours) * 60);
+        const minutes = Math.round((hours - wholeHours) * 60);
 
         await Leave.create({
           empID,
-          name:       employee.name,
+          name: employee.name,
           department: employee.department || '',
           leaveType,
-          reason:     reason || '',
+          reason: reason || '',
           leaveStart: startDate,
-          leaveEnd:   endDate,
-          YYYY:       String(startDate.getFullYear()),
-          mm:         String(startDate.getMonth() + 1).padStart(2, '0'),
-          DD:         String(startDate.getDate()).padStart(2, '0'),
-          hour:       String(wholeHours),
-          minutes:    String(minutes),
-          status:     'approved'
+          leaveEnd: endDate,
+          YYYY: String(startDate.getFullYear()),
+          mm: String(startDate.getMonth() + 1).padStart(2, '0'),
+          DD: String(startDate.getDate()).padStart(2, '0'),
+          hour: String(wholeHours),
+          minutes: String(minutes),
+          status: 'approved'
         });
 
         imported++;

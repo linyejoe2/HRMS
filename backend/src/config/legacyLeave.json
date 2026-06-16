@@ -5,19 +5,15 @@
   },
   {
     "id": "A137",
-    "remain": 152
-  },
-  {
-    "id": "A159",
-    "remain": 112
+    "remain": 156
   },
   {
     "id": "A365",
-    "remain": 144
+    "remain": 176
   },
   {
     "id": "A485",
-    "remain": 24
+    "remain": 36
   },
   {
     "id": "A488",
@@ -25,27 +21,23 @@
   },
   {
     "id": "A491",
-    "remain": 180
+    "remain": 192
   },
   {
     "id": "A493",
-    "remain": 48
-  },
-  {
-    "id": "A498",
-    "remain": 24
+    "remain": 72
   },
   {
     "id": "A514",
-    "remain": 96
+    "remain": 128
   },
   {
     "id": "A515",
-    "remain": 120
+    "remain": 128
   },
   {
     "id": "A518",
-    "remain": 32
+    "remain": 64
   },
   {
     "id": "A521",
@@ -53,7 +45,7 @@
   },
   {
     "id": "A524",
-    "remain": 96
+    "remain": 92
   },
   {
     "id": "A531",
@@ -61,18 +53,34 @@
   },
   {
     "id": "A532",
-    "remain": 72
+    "remain": 40
   },
   {
     "id": "A535",
-    "remain": 4
+    "remain": 16
   },
   {
     "id": "A536",
-    "remain": 44
+    "remain": 100
   },
   {
     "id": "A538",
-    "remain": 28
+    "remain": 80
+  },
+  {
+    "id": "A540",
+    "remain": 20
+  },
+  {
+    "id": "A541",
+    "remain": 24
+  },
+  {
+    "id": "A542",
+    "remain": 20
+  },
+  {
+    "id": "A543",
+    "remain": 76
   }
 ]

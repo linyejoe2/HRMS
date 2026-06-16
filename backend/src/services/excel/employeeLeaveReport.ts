@@ -3,7 +3,13 @@ import legacyLeave from "../../config/legacyLeave.json"
 import { Employee, IEmployee, ILeave, Leave, LeaveAdjustment, LegacyLeave } from '../../models';
 import { LeaveService } from '../leaveService';
 import { APIError } from '../../middleware';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import { dayjsTz, isSameDay, isToday, toDayjs } from '../../util/utility';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 /**
   * Generate 請假表 (Individual Employee Leave Report) Excel for a given employee and date range
   */
@@ -13,14 +19,14 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     throw new APIError('Employee not found', 404);
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
+  const start = dayjsTz(startDate);
+  const end = dayjsTz(endDate);
+  end.hour(23).minute(59).second(59)
 
-  const year = start.getFullYear();
-  const month = start.getMonth() + 1;
-  const endYear = end.getFullYear();
-  const endMonth = end.getMonth() + 1;
+  const year = start.year();
+  const month = start.month();
+  const endYear = end.year();
+  const endMonth = end.month();
 
 
   const reportName = `${employee.name}${year}年${month}月到${endYear}年${endMonth}月請假表`
@@ -30,20 +36,40 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     empID,
     status: 'approved',
     $or: [
-      { leaveStart: { $gte: start, $lte: end } },
-      { leaveEnd: { $gte: start, $lte: end } },
-      { leaveStart: { $lte: start }, leaveEnd: { $gte: end } }
+      { leaveStart: { $gte: start.toDate(), $lte: end.toDate() } },
+      { leaveEnd: { $gte: start.toDate(), $lte: end.toDate() } },
+      { leaveStart: { $lte: start.toDate() }, leaveEnd: { $gte: end.toDate() } }
     ]
   }).sort({ sequenceNumber: 1 });
 
   const remain = legacyLeave.find(l => l.id === employee.empID)?.remain || 0;
   console.log("remain: ", remain)
   const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, end);
-  const yearRange = LeaveService.getYearRanges(employee.hireDate, end);
+  const yearRange = LeaveService.getYearRanges(dayjsTz(employee.hireDate), end);
   const annualLeaveUsed = annualLeaveDays[1] - remain;
 
   // Build report data
   const reportData: any[] = leaves.map(leave => {
+    // console.log("1.",leave.leaveStart)
+    // console.log("2.", new Date(leave.leaveStart))
+    // console.log("3.", dayjs.tz(leave.leaveStart, "Asia/Taipei").toDate())
+    // console.log("4.", new Date(2026, 0, 1, 0, 0, 0, 0))
+    // console.log("5.", new Date(2026, 1, 0, 23, 59, 0, 0))
+
+
+    // console.log("6.", leave.leaveStart.toLocaleString("zh-TW"))
+    // console.log("7.", leave.leaveStart.toISOString())
+    // console.log("8.", leave.leaveStart.toString())
+    // console.log("10.", new Date(2026, 0, 1, 0, 0, 0, 0).toLocaleString("zh-TW"))
+    // console.log("11.", new Date(2026, 1, 0, 23, 59, 0, 0))
+
+    // const tzTime1 = dayjs(leave.leaveStart).tz("Asia/Taipei");
+    // console.log("9.", dayjs.tz(leave.leaveStart, "Asia/Taipei").format("YYYY-MM-DD HH:mm:ss"))
+    // const tzTime2 = dayjs(new Date(2026, 4, 14, 0, 0, 0, 0)).tz("Asia/Taipei");
+    // console.log("12.", tzTime2.format("YYYY-MM-DD HH:mm:ss"))
+
+    // console.log(tzTime1.isSame(tzTime2, 'day'))
+
     const leaveStartDate = new Date(leave.leaveStart);
     const leaveEndDate = new Date(leave.leaveEnd);
     const duration = parseInt(leave.hour) + (parseInt(leave.minutes) / 60)
@@ -76,7 +102,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
         hour: '2-digit',
         minute: '2-digit'
       }),
-      "leaveStartDate": leaveStartDate,
+      "leaveStartDate": toDayjs(leaveStartDate),
       '審核人': leave.approvedBy || ''
     };
   });
@@ -86,7 +112,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     yearRange: yearRange,
     annualLeaveUsed: annualLeaveUsed,
     remain: remain,
-    lastYearEnd: new Date(yearRange.lastYearEnd),
+    lastYearEnd: toDayjs(yearRange.lastYearEnd),
     year: year
   }
 
@@ -109,8 +135,8 @@ const _formatOutput = async (reportData: any[], employeeDate: { employee: IEmplo
     ["E1", "特休日數"],
     ["F1", employeeDate.metaData.annualLeaveDays[0]],
     ["G1", "補休"],
-    ["H1", employeeDate.metaData.yearRange.lastYearStart],
-    ["I1", employeeDate.metaData.yearRange.lastYearEnd],
+    ["H1", employeeDate.metaData.yearRange.lastYearStart.format('YYYY-MM-DD')],
+    ["I1", employeeDate.metaData.yearRange.lastYearEnd.format('YYYY-MM-DD')],
     ["J1", ""],
     ["K1", "卡號："],
     ["L1", employeeDate.employee.empID],
@@ -119,8 +145,8 @@ const _formatOutput = async (reportData: any[], employeeDate: { employee: IEmplo
     ["O1", "特休日數"],
     ["P1", employeeDate.metaData.annualLeaveDays[2]],
     ["Q1", "補休"],
-    ["R1", employeeDate.metaData.yearRange.thisYearStart],
-    ["S1", employeeDate.metaData.yearRange.thisYearEnd],
+    ["R1", employeeDate.metaData.yearRange.thisYearStart.format('YYYY-MM-DD')],
+    ["S1", employeeDate.metaData.yearRange.thisYearEnd.format('YYYY-MM-DD')],
 
     ["A2", "姓名"],
     ["B2", employeeDate.employee.name],
@@ -171,7 +197,9 @@ const _formatOutput = async (reportData: any[], employeeDate: { employee: IEmplo
   // const columnKs = ["K", "L", "M", "N", "O", "P", "Q", "R", "S"]
 
   for (const row of reportData) {
-    if (row.leaveStartDate <= employeeDate.metaData.lastYearEnd) {
+    console.log("leaveStartDate: ", row.leaveStartDate)
+    console.log("lastYearEnd: ", employeeDate.metaData.lastYearEnd)
+    if (row.leaveStartDate.isBefore(employeeDate.metaData.lastYearEnd)) {
       worksheet.getCell(`A${iA}`).value = row["起"];
       worksheet.getCell(`B${iA}`).value = row["迄"];
       worksheet.getCell(`E${iA}`).value = row["請假事由"];

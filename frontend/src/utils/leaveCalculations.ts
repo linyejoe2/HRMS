@@ -1,4 +1,10 @@
 import { LeaveRequest, LeaveAdjustment } from '../types';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 /**
  * Calculate total used minutes from leave requests

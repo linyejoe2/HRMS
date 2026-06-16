@@ -1,7 +1,9 @@
 import ExcelJS from 'exceljs';
-import legacyLeave from "../../config/legacyLeave.json"
+import legacyLeavejson from "../../config/legacyLeave.json"
 import { Employee, ILeave, Leave, LeaveAdjustment, LegacyLeave } from '../../models';
 import { LeaveService } from '../leaveService';
+import dayjs from 'dayjs';
+import { dayjsNum, dayjsTz } from '../../util/utility';
 
 /**
   * Generate 請假總表 (Leave Summary Report) Excel for a given year and month.
@@ -11,40 +13,44 @@ import { LeaveService } from '../leaveService';
   * - 特休..公傷: only approved leaves whose leaveStart falls within the selected month
   */
 export const generateLeaveSummaryReport = async (year: number, month: number): Promise<ExcelJS.Buffer> => {
-  // Month boundaries (month is 1-indexed)
-  const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
-  const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+  //  前一月 24 號 00:00 開始到這個月 23 號 23:59
+  // const monthStart = new Date(year, month - 2, 24, 0, 0, 0, 0);
+  // const monthEnd = new Date(year, month - 1, 23, 23, 59, 59, 999);
+  const monthStart = dayjsNum(year, month - 1, 24)
+  const monthEnd = dayjsNum(year, month, 23, 23, 59, 59, 999)
+
+  // 計算特休日數時使用到的到今年底為止的才算今年特休日數
+  // const annualLeaveReferenceDate = new Date(year, 11, 23, 23, 59, 59, 999);
+  const annualLeaveReferenceDate = dayjsNum(year, 12, 23)
 
   const employees = await Employee.find({
     isActive: true,
     // 確保 hireDate 存在、不為 null，且小於基準日
-    hireDate: { $exists: true, $ne: null, $lt: monthStart },
+    hireDate: { $exists: true, $ne: null, $lt: monthEnd.toDate() },
 
     // 離職日條件：沒有離職日，或者離職日大於基準日
     $or: [
       { endDate: { $exists: false } },
       { endDate: null },
-      { endDate: { $gt: monthStart } }
+      { endDate: { $gt: monthEnd.toDate() } }
     ]
   }).sort({ empID: 1 });
 
   // Year-to-month range for 休餘 accumulation
-  const yearStart = new Date(year, 0, 1, 0, 0, 0, 0);
+  // const yearStart = new Date(year, 0, 1, 0, 0, 0, 0);
+  const yearStart = dayjsNum(year - 1, 12, 24);
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
   console.log(monthKey)
 
-  const [monthLeaves, yearToMonthLeaves, allAdjustments, legacyRecords] = await Promise.all([
-    Leave.find({ status: 'approved', leaveStart: { $gte: monthStart, $lte: monthEnd } }),
-    Leave.find({ status: 'approved', leaveStart: { $gte: yearStart, $lte: monthEnd } }),
-    LeaveAdjustment.find({}),
-    LegacyLeave.find({ month: monthKey })
+  const [monthLeaves, yearToMonthLeaves, allAdjustments] = await Promise.all([
+    Leave.find({ status: 'approved', leaveStart: { $gte: monthStart.toDate(), $lte: monthEnd.toDate() } }),
+    Leave.find({ status: 'approved', leaveStart: { $gte: yearStart.toDate(), $lte: monthEnd.toDate() } }),
+    LeaveAdjustment.find({})
   ]);
 
   const sumMinutes = (leaves: ILeave[]): number =>
     leaves.reduce((s, l) => s + parseInt(l.hour) * 60 + parseInt(l.minutes), 0);
-
-  const roundH = (min: number) => Math.round(min / 60 * 10) / 10;
 
   const reportData: any[] = [];
 
@@ -52,58 +58,42 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
     const empMonthLeaves = monthLeaves.filter(l => l.empID === employee.empID);
     const empYearLeaves = yearToMonthLeaves.filter(l => l.empID === employee.empID);
     const empAdj = allAdjustments.filter(a => a.empID === employee.empID);
-    const empLegacyCalc = LeaveService.getYearRanges(employee.hireDate, monthEnd)
-    const remain = legacyLeave.find(l => l.id === employee.empID)?.remain || 0;
+    const empLegacyCalc = LeaveService.getYearRanges(dayjsTz(employee.hireDate), monthEnd)
+    const remain = legacyLeavejson.find(l => l.id === employee.empID)?.remain || 0;
 
-    // Legacy leave for this month: build a map of type -> hours
-    const legacyRecord = legacyRecords.find(r => r.empID === employee.empID);
-    const legacyHours = (colType: string): number =>
-      legacyRecord?.leaves.find(e => e.type === colType)?.count ?? 0;
+    console.log(`emp: ${employee.id}, remain: ${remain}`)
 
     // 特休總時數
-    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, monthStart);
+    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, annualLeaveReferenceDate);
 
-
-    // 休餘: deduct 特別休假 from hire anniversary in this year up to month-end
-    let remainingHours = annualLeaveDays[3];
-    if (employee.hireDate) {
-      const hire = new Date(employee.hireDate);
-      const anniversaryThisYear = new Date(year, hire.getMonth(), hire.getDate());
-      const usedMins = sumMinutes(
-        empYearLeaves.filter(l =>
-          l.leaveType === '特別休假' &&
-          new Date(l.leaveStart) >= anniversaryThisYear
-        )
-      );
-      remainingHours = annualLeaveDays[3] - usedMins / 60;
-    }
+    const remainAnnualLeaveDays = await LeaveService.calcRemainAnnualLeaveDays(employee, monthEnd)
 
     // Monthly leave helper: system hours + legacy hours for the column
-    const monthH = (dbType: string, legacyCol: string) =>
-      Math.round((roundH(sumMinutes(empMonthLeaves.filter(l => l.leaveType === dbType))) + legacyHours(legacyCol)) * 10) / 10;
+    const monthH = (dbType: string) =>
+      Math.round((sumMinutes(empMonthLeaves.filter(l => l.leaveType === dbType)))) / 60;
 
     reportData.push({
       'empId': employee.empID,
       'name': employee.name,
       'lastYearDays': annualLeaveDays[0],
-      "remain": annualLeaveDays[1],
-      "t1": empLegacyCalc.lastYearStart,
-      "t2": empLegacyCalc.lastYearEnd,
+      "remain": remainAnnualLeaveDays[0],
+      "t1": empLegacyCalc.lastYearStart.format('YYYY/MM/DD'),
+      "t2": empLegacyCalc.lastYearEnd.format('YYYY/MM/DD'),
       "days": annualLeaveDays[2],
-      "remain2": annualLeaveDays[3],
-      "t3": empLegacyCalc.thisYearStart,
-      "t4": empLegacyCalc.thisYearEnd,
-      'totalSpecialHours': Math.round(annualLeaveDays[3] * 10) / 10,
-      'remainingHours': Math.round(remainingHours * 10) / 10,
-      'annualLeave': monthH('特別休假', '特休'),
-      'personalLeave': monthH('事假', '事假'),
-      'sickLeave': monthH('普通傷病假', '病假'),
-      'funeralLeave': monthH('喪假', '喪假'),
-      'maternityLeave': monthH('產假', '產假'),
-      'marriageLeave': monthH('婚假', '婚假'),
-      'officialLeave': monthH('公假', '公假'),
-      'businessTrip': monthH('出差', '出差'),
-      'injuryLeave': monthH('公傷病假', '公傷')
+      "remain2": remainAnnualLeaveDays[1],
+      "t3": empLegacyCalc.thisYearStart.format('YYYY/MM/DD'),
+      "t4": empLegacyCalc.thisYearEnd.format('YYYY/MM/DD'),
+      'totalSpecialHours': remainAnnualLeaveDays[2],
+      'remainingHours': remainAnnualLeaveDays[3],
+      'annualLeave': monthH('特別休假'),
+      'personalLeave': monthH('事假'),
+      'sickLeave': monthH('普通傷病假'),
+      'funeralLeave': monthH('喪假'),
+      'maternityLeave': monthH('產假'),
+      'marriageLeave': monthH('婚假'),
+      'officialLeave': monthH('公假'),
+      'businessTrip': monthH('出差'),
+      'injuryLeave': monthH('公傷病假')
     });
   }
 

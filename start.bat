@@ -161,42 +161,46 @@ echo Start Time: %START_TIME%
 echo End Time:   %TIME%
 echo.
 
-if %ERROR_COUNT% equ 0 (
-    echo [SUCCESS] HRMS application started successfully!
-    echo.
-    echo Services Running:
-    echo   - MongoDB:  Running on port 27019
-    echo   - Backend:  Running on port 6002
-    echo   - Frontend: Running on port 80 (via Nginx)
-    echo.
-    echo Access Points:
-    echo   - Application: http://localhost
-    echo   - API Health:  http://localhost:6002/api/health
-    echo   - API Docs:    http://localhost:6002/api
-    echo.
-    echo Useful Commands:
-    echo   - View logs:        docker compose logs -f
-    echo   - View status:      docker compose ps
-    echo   - Stop services:    docker compose down
-    echo   - Restart service:  docker compose restart [service]
-    echo   - Rebuild ^& restart: start.bat (this script)
-    echo.
-    echo Note: If health checks show warnings, wait a minute for
-    echo       services to fully initialize, then check again.
-    echo.
-) else (
-    echo [FAILED] Startup encountered %ERROR_COUNT% error(s)
-    echo.
-    echo Troubleshooting:
-    echo   1. Ensure Docker Desktop is running
-    echo   2. Check docker-compose.yml syntax
-    echo   3. Review Dockerfile in backend/ and frontend/
-    echo   4. Check logs: docker compose logs
-    echo   5. Verify .env configuration
-    echo   6. Check port availability (80, 6002, 27019)
-    echo   7. Check available disk space
-    echo.
-)
+if %ERROR_COUNT% neq 0 goto :failed_summary
+
+:success_summary
+echo [SUCCESS] HRMS application started successfully!
+echo.
+echo Services Running:
+echo   - MongoDB:  Running on port 27019
+echo   - Backend:  Running on port 6002
+echo   - Frontend: Running on port 80 (via Nginx)
+echo.
+echo Access Points:
+echo   - Application: http://localhost
+echo   - API Health:  http://localhost:6002/api/health
+echo   - API Docs:    http://localhost:6002/api
+echo.
+echo Useful Commands:
+echo   - View logs:        docker compose logs -f
+echo   - View status:      docker compose ps
+echo   - Stop services:    docker compose down
+echo   - Restart service:  docker compose restart [service]
+echo   - Rebuild ^& restart: start.bat (this script)
+echo.
+echo Note: If health checks show warnings, wait a minute for
+echo       services to fully initialize, then check again.
+echo.
+goto :end
+
+:failed_summary
+echo [FAILED] Startup encountered %ERROR_COUNT% error(s)
+echo.
+echo Troubleshooting:
+echo   1. Ensure Docker Desktop is running
+echo   2. Check docker-compose.yml syntax
+echo   3. Review Dockerfile in backend/ and frontend/
+echo   4. Check logs: docker compose logs
+echo   5. Verify .env configuration
+echo   6. Check port availability (80, 6002, 27019)
+echo   7. Check available disk space
+echo.
+goto :end
 
 :end
 echo ============================================

@@ -28,7 +28,7 @@ type DocumentType = 'leave_summary' | 'leave_record' | "annual_leave_summary";
 
 const LeaveDownloadTab: React.FC = () => {
   const [documentType, setDocumentType] = useState<DocumentType>('leave_summary');
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number>(1);
   // const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   // const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
@@ -176,14 +176,13 @@ const LeaveDownloadTab: React.FC = () => {
                       </Select>
                     </FormControl>
 
-                    <FormControl fullWidth sx={{ display: "none" }}>
+                    <FormControl fullWidth>
                       <InputLabel id="month-select-label">選擇月份</InputLabel>
                       <Select
                         labelId="month-select-label"
                         value={selectedMonth}
                         label="選擇月份"
                         onChange={(e) => setSelectedMonth(e.target.value as number)}
-                        sx={{ display: "none" }}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                           <MenuItem key={m} value={m}>
@@ -221,7 +220,7 @@ const LeaveDownloadTab: React.FC = () => {
                       </Select>
                     </FormControl>
 
-                    <FormControl fullWidth>
+                    <FormControl fullWidth sx={{ display: "none" }}>
                       <InputLabel id="month-select-label">選擇月份</InputLabel>
                       <Select
                         labelId="month-select-label"
