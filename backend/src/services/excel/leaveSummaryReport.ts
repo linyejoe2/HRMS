@@ -64,7 +64,7 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
     console.log(`emp: ${employee.id}, remain: ${remain}`)
 
     // 特休總時數
-    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, annualLeaveReferenceDate);
+    const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(employee, annualLeaveReferenceDate);
 
     const remainAnnualLeaveDays = await LeaveService.calcRemainAnnualLeaveDays(employee, monthEnd)
 

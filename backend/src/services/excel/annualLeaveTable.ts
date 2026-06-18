@@ -28,7 +28,7 @@ export const generateAnnualLeaveTable = async (year: number, month?: number): Pr
   const reportData: any[] = [];
 
   for (const emp of employees) {
-    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(emp, referenceDate);
+    const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(emp, referenceDate);
     const yearRange = LeaveService.getYearRanges(toDayjs(emp.hireDate), referenceDate);
 
     reportData.push({

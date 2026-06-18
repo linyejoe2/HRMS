@@ -44,7 +44,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
 
   const remain = legacyLeave.find(l => l.id === employee.empID)?.remain || 0;
   console.log("remain: ", remain)
-  const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, end);
+  const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(employee, end.month(12).day(23).endOf("day"));
   const yearRange = LeaveService.getYearRanges(dayjsTz(employee.hireDate), end);
   const annualLeaveUsed = annualLeaveDays[1] - remain;
 
@@ -197,8 +197,8 @@ const _formatOutput = async (reportData: any[], employeeDate: { employee: IEmplo
   // const columnKs = ["K", "L", "M", "N", "O", "P", "Q", "R", "S"]
 
   for (const row of reportData) {
-    console.log("leaveStartDate: ", row.leaveStartDate)
-    console.log("lastYearEnd: ", employeeDate.metaData.lastYearEnd)
+    console.log("leaveStartDate: ", row.leaveStartDate.toISOString())
+    console.log("lastYearEnd: ", employeeDate.metaData.lastYearEnd.toISOString())
     if (row.leaveStartDate.isBefore(employeeDate.metaData.lastYearEnd)) {
       worksheet.getCell(`A${iA}`).value = row["起"];
       worksheet.getCell(`B${iA}`).value = row["迄"];
@@ -253,7 +253,7 @@ const _formatOutput = async (reportData: any[], employeeDate: { employee: IEmplo
           if (typeof prevUsed === 'number') worksheet.getCell(`R${iK}`).value = prevUsed;
           if (typeof prevRemain === 'number') worksheet.getCell(`S${iK}`).value = prevRemain;
         }
-      } else worksheet.getCell(`F${iK}`).value = `${leaveType}${row["時數"]}`;
+      } else worksheet.getCell(`P${iK}`).value = `${leaveType}${row["時數"]}`;
 
       iK++
     }

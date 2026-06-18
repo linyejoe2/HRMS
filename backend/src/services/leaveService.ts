@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 import * as XLSX from 'xlsx';
 import { promises } from 'dns';
@@ -315,7 +315,9 @@ export class LeaveService {
     let res: [number, number, number, number] = [0, 0, 0, 0];
     const baseYear = referenceDate.year();
     const hireDate = dayjsTz(employee.hireDate);
-    const annualLeaveDays = LeaveService.calcAnnualLeaveDaysByEmployee(employee, referenceDate.month(11).date(24).startOf("day"));
+    const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(employee, referenceDate.month(11).date(24).startOf("day"));
+
+    console.log(`annualLeaveDays: ${JSON.stringify(annualLeaveDays)}`)
 
     // ==================== 核心時間點計算 ====================
 
@@ -368,7 +370,7 @@ export class LeaveService {
         status: 'approved',
         leaveType: "特別休假",
         leaveStart: { $gte: thisYearStart.toDate(), $lte: stage1End.toDate() }
-      }).then(docs=>{console.log(docs); return docs}).then(docs => sumHours(docs)),
+      }).then(docs => { console.log(docs); return docs }).then(docs => sumHours(docs)),
 
       // 2. 今年歷史階段
       isThisYearLeaveStarted
@@ -446,7 +448,7 @@ export class LeaveService {
    * 3. this year Days
    * 4. this year Hours
    */
-  static calcAnnualLeaveDaysByEmployee(employee: IEmployee, referenceDate: dayjs.Dayjs): [number, number, number, number] {
+  static async calcAnnualLeaveDaysByEmployee(employee: IEmployee, referenceDate: dayjs.Dayjs): Promise<[number, number, number, number]> {
     const res: [number, number, number, number] = [0, 0, 0, 0]
 
     const lastYear = dayjsTz(referenceDate).subtract(1, "year")
@@ -458,12 +460,66 @@ export class LeaveService {
     console.log("referenceDate: ", referenceDate.toISOString())
     console.log("lastYear: ", lastYear.toISOString())
 
-    res[0] = this.calcAnnualLeaveEntitlementDays(hireDate, lastYear)
+    const adjusts = await this.getAdjustedAnnualLeaveHours(employee, referenceDate)
+
+    res[0] = this.calcAnnualLeaveEntitlementDays(hireDate, lastYear) + adjusts.lastYearDays
     res[1] = res[0] * 8
-    res[2] = this.calcAnnualLeaveEntitlementDays(hireDate, referenceDate)
+    res[2] = this.calcAnnualLeaveEntitlementDays(hireDate, referenceDate) + adjusts.thisYearDays
     res[3] = res[2] * 8
-    console.log("res: ", res)
+
+    console.log("calcAnnualLeaveDaysByEmployee res: ", res)
     return res
+  }
+
+  /**
+   * Return adjusted annual leave hours for this year and last year.
+   * Base entitlement comes from calcAnnualLeaveDaysByEmployee().
+   * LeaveAdjustment records (特別休假) are partitioned by effectiveDate
+   * into the matching anniversary-year range and added to each year's total.
+   */
+  static async getAdjustedAnnualLeaveHours(
+    employee: IEmployee,
+    referenceDate: dayjs.Dayjs
+  ): Promise<{ lastYearDays: number; thisYearDays: number; lastYearHours: number; thisYearHours: number }> {
+    // Base entitlement uses Dec-24 boundary consistent with calcRemainAnnualLeaveDays
+    const dec24Ref = referenceDate.month(11).date(24).startOf('day');
+    // const [, lastYearBaseHours, , thisYearBaseHours] = this.calcAnnualLeaveDaysByEmployee(employee, dec24Ref);
+
+    // Anniversary-year ranges to partition adjustments
+    const hireDate = dayjsTz(employee.hireDate);
+    const { lastYearStart, lastYearEnd, thisYearStart, thisYearEnd } = this.getYearRanges(hireDate, referenceDate);
+
+    const adjustments = await LeaveAdjustment.find({
+      empID: employee.empID,
+      leaveType: '特別休假'
+    });
+
+    let lastYearAdjMinutes = 0;
+    let thisYearAdjMinutes = 0;
+
+    for (const adj of adjustments) {
+      const adjDate = dayjsTz(adj.effectiveDate);
+      if (!adjDate.isBefore(lastYearStart) && !adjDate.isAfter(lastYearEnd)) {
+        lastYearAdjMinutes += adj.minutes;
+      } else if (!adjDate.isBefore(thisYearStart) && !adjDate.isAfter(thisYearEnd)) {
+        thisYearAdjMinutes += adj.minutes;
+      }
+    }
+    const res = {
+      lastYearDays: (lastYearAdjMinutes / 60) / 8,
+      thisYearDays: (thisYearAdjMinutes / 60) / 8,
+      lastYearHours: lastYearAdjMinutes / 60,
+      thisYearHours: thisYearAdjMinutes / 60
+    };
+
+
+    console.log("getAdjustedAnnualLeaveHours res: ", res)
+
+    return res
+    // return {
+    //   lastYearHours: lastYearBaseHours + lastYearAdjMinutes / 60,
+    //   thisYearHours: thisYearBaseHours + thisYearAdjMinutes / 60
+    // };
   }
 
   static getYearRanges(hireDate: dayjs.Dayjs, referenceDate: dayjs.Dayjs) {
@@ -522,14 +578,8 @@ export class LeaveService {
     let imported = 0;
     const errors: { index: number; empID: string; message: string }[] = [];
 
-    const parseChineseDate = (year: string, dateStr: string): Date | null => {
-      const match = dateStr.match(/(\d+)月(\d+)日/);
-      if (!match) return null;
-      return new Date(parseInt(year), parseInt(match[1]) - 1, parseInt(match[2]), 9, 0, 0, 0);
-    };
-
     for (let i = 0; i < records.length; i++) {
-      const { empID, leaveType, reason, year, leaveStart: startStr, hour } = records[i];
+      const { empID, leaveType, reason, year, leaveStart: startStr, leaveEnd: endStr, hour } = records[i];
       try {
         const employee = await Employee.findOne({ empID });
         if (!employee) {
@@ -549,7 +599,11 @@ export class LeaveService {
           continue;
         }
 
-        const endDate = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
+        const endDate = parseChineseDate(year, endStr);
+        if (!endDate) {
+          errors.push({ index: i, empID, message: `無法解析日期: ${endStr}` });
+          continue;
+        }
         const wholeHours = Math.floor(hours);
         const minutes = Math.round((hours - wholeHours) * 60);
 
@@ -559,11 +613,11 @@ export class LeaveService {
           department: employee.department || '',
           leaveType,
           reason: reason || '',
-          leaveStart: startDate,
-          leaveEnd: endDate,
-          YYYY: String(startDate.getFullYear()),
-          mm: String(startDate.getMonth() + 1).padStart(2, '0'),
-          DD: String(startDate.getDate()).padStart(2, '0'),
+          leaveStart: startDate.toDate(),
+          leaveEnd: endDate.toDate(),
+          YYYY: startDate.format('YYYY'),
+          mm: startDate.format('MM'),
+          DD: startDate.format('DD'),
           hour: String(wholeHours),
           minutes: String(minutes),
           status: 'approved'
