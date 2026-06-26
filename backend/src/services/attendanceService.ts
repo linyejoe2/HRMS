@@ -40,13 +40,13 @@ export class AttendanceService {
 
       // Parse date (YYmmDD format, assuming 25 = 2025)
       const year = 2000 + parseInt(dateStr.substring(0, 2));
-      const month = parseInt(dateStr.substring(2, 4));
-      const day = parseInt(dateStr.substring(4, 6));
+      const month = dateStr.substring(2, 4);
+      const day = dateStr.substring(4, 6);
       const date = dayjs.tz(`${year}-${month}-${day}`, 'Asia/Taipei').toDate();
 
       // Parse time (MMss format + additional digits)
-      const hour = parseInt(timeStr.substring(0, 2));
-      const minute = parseInt(timeStr.substring(2, 4));
+      const hour = timeStr.substring(0, 2);
+      const minute = timeStr.substring(2, 4);
       const time = dayjs.tz(`${year}-${month}-${day} ${hour}:${minute}`, 'YYYY-MM-DD HH:mm', 'Asia/Taipei').toDate();
 
       return {
