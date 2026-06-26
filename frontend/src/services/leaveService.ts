@@ -2,6 +2,13 @@ import { formatMinutesToHours, calculateRemainingPersonalLeaveMinutes, calculate
 import { LeaveRequest, LeaveAdjustment } from '../types';
 import { leaveAdjustmentAPI, queryLeaveRequests } from './api';
 
+// Add entries here to put a leave type into "reservation mode":
+// HR manually charges hours via LeaveAdjustment; totalHours = sum of adjustments (default 0).
+export const RESERVATION_LEAVE_TYPES: { type: string; displayName: string }[] = [
+  { type: '婚假', displayName: '婚假' },
+  { type: '喪假', displayName: '喪假' },
+];
+
 export interface LeaveData {
   type: string;
   displayName: string;
@@ -16,6 +23,7 @@ export interface UserLeaveData {
   personalLeave: LeaveData,
   sickLeave: LeaveData,
   specialLeave: LeaveData,
+  reservationLeaves: LeaveData[], // same order as RESERVATION_LEAVE_TYPES
 }
 
 export async function fetchUserLeaveData(empID: string, hireDate: string): Promise<UserLeaveData> {
@@ -80,6 +88,37 @@ export async function fetchUserLeaveData(empID: string, hireDate: string): Promi
   const specialTotalDays = hireDateObj ? calculateSpecialLeaveEntitlementDays(hireDateObj) : 0;
   const specialTotalHours = specialTotalDays * 8;
 
+  // Fetch reservation-mode leave types (婚假, 喪假, …)
+  const [reservationLeaveResponses, reservationAdjResponses] = await Promise.all([
+    Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
+      queryLeaveRequests({
+        timeStart: oneYearAgo.toISOString(),
+        timeEnd: oneYearLater.toISOString(),
+        leaveType: rt.type,
+        status: 'approved'
+      })
+    )),
+    Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
+      leaveAdjustmentAPI.getByEmployee(empID, rt.type)
+    ))
+  ]);
+
+  const reservationLeaves: LeaveData[] = RESERVATION_LEAVE_TYPES.map((rt, i) => {
+    const adjData = reservationAdjResponses[i].data.data;
+    const leaveRecords = reservationLeaveResponses[i].data.data.filter((l: LeaveRequest) => l.empID === empID);
+    const totalMinutes = adjData.reduce((sum: number, adj: LeaveAdjustment) => sum + adj.minutes, 0);
+    const usedMinutes = calculateUsedMinutes(leaveRecords);
+    return {
+      type: rt.type,
+      displayName: rt.displayName,
+      totalHours: minutesToHours(Math.max(0, totalMinutes)),
+      usedHours: minutesToHours(usedMinutes),
+      remainingHours: minutesToHours(totalMinutes - usedMinutes),
+      leaves: leaveRecords,
+      adjustments: adjData
+    };
+  });
+
   return ({
     personalLeave: {
       type: '事假',
@@ -107,6 +146,7 @@ export async function fetchUserLeaveData(empID: string, hireDate: string): Promi
       remainingHours: specialRemainingHours,
       adjustments: specialAdjustment.data.data,
       leaves: specialLeaves
-    }
+    },
+    reservationLeaves
   });
 }

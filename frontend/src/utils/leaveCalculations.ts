@@ -28,6 +28,15 @@ export const calculateAdjustmentMinutes = (adjustments: LeaveAdjustment[]): numb
   return adjustments.reduce((total, adjustment) => total + adjustment.minutes, 0);
 };
 
+export const calculateReservationLeaveRemainingMinutes = (
+  leaves: LeaveRequest[],
+  adjustments?: LeaveAdjustment[]
+): number => {
+  const totalMinutes = adjustments ? calculateAdjustmentMinutes(adjustments) : 0;
+  const usedMinutes = calculateUsedMinutes(leaves);
+  return totalMinutes - usedMinutes;
+};
+
 export const calculateRemainingMinutes = (leaves: LeaveRequest[], leaveType: string, hireDate?: Date, adjustments?: LeaveAdjustment[]): number => {
   switch (leaveType) {
     case "事假":
@@ -36,8 +45,9 @@ export const calculateRemainingMinutes = (leaves: LeaveRequest[], leaveType: str
       return calculateRemainingSickLeaveMinutes(leaves, adjustments);
     case "特別休假":
       return calculateRemainingSpecialLeaveMinutes(leaves, hireDate ? new Date(hireDate) : undefined, adjustments);
+    default:
+      return calculateReservationLeaveRemainingMinutes(leaves, adjustments);
   }
-  return 0
 }
 
 /**

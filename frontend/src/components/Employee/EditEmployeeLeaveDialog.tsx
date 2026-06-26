@@ -99,11 +99,16 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     setLoading(true);
     try {
       const userData = await fetchUserLeaveData(empID, hireDate);
-      // Get the specific leave type data
-      const typeKey = leaveData.type === '事假' ? 'personalLeave'
-        : leaveData.type === '普通傷病假' ? 'sickLeave'
-          : 'specialLeave';
-      setLeaveData(userData[typeKey]);
+      if (leaveData.type === '事假') {
+        setLeaveData(userData.personalLeave);
+      } else if (leaveData.type === '普通傷病假') {
+        setLeaveData(userData.sickLeave);
+      } else if (leaveData.type === '特別休假') {
+        setLeaveData(userData.specialLeave);
+      } else {
+        const found = userData.reservationLeaves.find(l => l.type === leaveData.type);
+        if (found) setLeaveData(found);
+      }
     } catch (error) {
       console.error('Error refreshing leave data:', error);
       toast.error('刷新假別資料失敗');

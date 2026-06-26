@@ -109,11 +109,13 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     personalLeave: LeaveData | null;
     sickLeave: LeaveData | null;
     specialLeave: LeaveData | null;
+    reservationLeaves: LeaveData[];
     loading: boolean;
   }>({
     personalLeave: null,
     sickLeave: null,
     specialLeave: null,
+    reservationLeaves: [],
     loading: false
   });
 
@@ -272,6 +274,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         personalLeave: null,
         sickLeave: null,
         specialLeave: null,
+        reservationLeaves: [],
         loading: false
       });
       return;
@@ -285,6 +288,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         personalLeave: leaveData.personalLeave,
         sickLeave: leaveData.sickLeave,
         specialLeave: leaveData.specialLeave,
+        reservationLeaves: leaveData.reservationLeaves,
         loading: false
       });
     } catch (error) {
@@ -294,6 +298,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         personalLeave: null,
         sickLeave: null,
         specialLeave: null,
+        reservationLeaves: [],
         loading: false
       });
     }
@@ -1292,6 +1297,15 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                           sx={{ fontWeight: 'medium', cursor: 'pointer' }}
                           onClick={() => handleLeaveChipClick(leaveInfo.specialLeave)}
                         />
+                        {leaveInfo.reservationLeaves.map(leave => (
+                          <Chip
+                            key={leave.type}
+                            label={`${leave.displayName}：${leave.remainingHours} 小時`}
+                            color={getLeaveColorByHours(leave.remainingHours)}
+                            sx={{ fontWeight: 'medium', cursor: 'pointer' }}
+                            onClick={() => handleLeaveChipClick(leave)}
+                          />
+                        ))}
                       </Box>
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                         *點擊查看詳細記錄，剩餘時數基於過去一年的已核准請假記錄計算

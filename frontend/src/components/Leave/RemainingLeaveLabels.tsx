@@ -15,6 +15,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
   const [personalLeave, setPersonalLeave] = useState<LeaveData | null>(null);
   const [sickLeave, setSickLeave] = useState<LeaveData | null>(null);
   const [specialLeave, setSpecialLeave] = useState<LeaveData | null>(null);
+  const [reservationLeaves, setReservationLeaves] = useState<LeaveData[]>([]);
   const [hireDate, setHireDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       setPersonalLeave(leaveData.personalLeave);
       setSickLeave(leaveData.sickLeave);
       setSpecialLeave(leaveData.specialLeave);
+      setReservationLeaves(leaveData.reservationLeaves);
 
     } catch (error) {
       console.error('Error fetching remaining leave:', error);
@@ -169,6 +171,16 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
       )}
+
+      {reservationLeaves.map(leave => (
+        <Chip
+          key={leave.type}
+          label={`${leave.displayName}：${leave.remainingHours} 小時`}
+          color={getLeaveColorByHours(leave.remainingHours)}
+          onClick={() => onLabelClick(leave)}
+          sx={{ cursor: 'pointer', fontWeight: 'medium' }}
+        />
+      ))}
     </Box>
   );
 };

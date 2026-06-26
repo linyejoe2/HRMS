@@ -21,6 +21,7 @@ import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
 import { fuzzySearchAttendance, toTaipeiDate } from '../../utils/util/utility';
 import { AttendanceLog, calcAttendanceStatuses } from '../../utils/attendanceUtils';
+import dayjs from 'dayjs';
 
 const AttendanceTab: React.FC = () => {
   const { user } = useAuth();
@@ -650,6 +651,12 @@ const AttendanceTab: React.FC = () => {
                 return false;
               }
 
+              // Filter: if is holiday
+              if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6){
+                return false;
+              }
+
+
               return true;
             }).length} 筆)
           </Typography>
@@ -672,6 +679,11 @@ const AttendanceTab: React.FC = () => {
                   if (!fuzzySearchAttendance(record, searchQuery, record.empID ?? "")) {
                     return false;
                   }
+
+              // Filter: if is holiday
+              if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6){
+                return false;
+              }
 
                   return true;
                 })

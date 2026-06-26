@@ -31,7 +31,7 @@ const leaveAdjustmentSchema = new Schema<ILeaveAdjustment>({
   leaveType: {
     type: String,
     required: true,
-    enum: ['事假', '普通傷病假', '特別休假'],
+    enum: ['事假', '普通傷病假', '特別休假', '婚假', '喪假'],
     index: true
   },
   minutes: {

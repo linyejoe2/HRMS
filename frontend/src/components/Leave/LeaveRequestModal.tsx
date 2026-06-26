@@ -28,7 +28,7 @@ import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchUserLeaveData } from '../../services/leaveService';
+import { fetchUserLeaveData, RESERVATION_LEAVE_TYPES } from '../../services/leaveService';
 import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 
 interface LeaveRequestModalProps {
@@ -151,7 +151,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       return true; // Skip validation if user info not available
     }
 
-    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假'];
+    const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
+    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
     if (!leaveTypesToCheck.includes(data.leaveType)) {
       return true; // Skip validation for other leave types
     }
@@ -177,6 +178,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
           remainingHours = leaveData.specialLeave.remainingHours;
           leaveTypeName = '特休';
           break;
+        default: {
+          const found = leaveData.reservationLeaves.find(l => l.type === data.leaveType);
+          if (found) {
+            remainingHours = found.remainingHours;
+            leaveTypeName = found.displayName;
+          }
+        }
       }
 
       if (requestedHours > remainingHours) {
