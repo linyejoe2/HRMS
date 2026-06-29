@@ -118,7 +118,8 @@ export enum UserLevel {
   ADMIN = 'admin',
   HR = 'hr',
   EMPLOYEE = 'employee',
-  MANAGER = 'manager'
+  MANAGER = 'manager',
+  DIRECTOR = 'director'
 }
 
 export interface AuthRequest {

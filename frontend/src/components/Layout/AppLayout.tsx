@@ -80,6 +80,8 @@ const AppLayout: React.FC = () => {
         return '人資';
       case UserLevel.EMPLOYEE:
         return '員工';
+      case UserLevel.DIRECTOR:
+        return '董事';
       case UserLevel.MANAGER:
         return '主管';
     }

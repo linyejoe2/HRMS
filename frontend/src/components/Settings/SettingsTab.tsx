@@ -125,6 +125,8 @@ const SettingsTab: React.FC = () => {
         return '管理員';
       case 'hr':
         return '人資';
+      case 'director':
+        return '董事';
       case 'manager':
         return '主管';
       case 'employee':

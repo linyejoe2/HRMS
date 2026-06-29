@@ -11,7 +11,7 @@ export interface IEmployee extends Document {
   cardID: string; // 卡號 / Original ID from Access DB
   password?: string;
   isActive: boolean;
-  role: 'admin' | 'hr' | 'employee' | 'manager';
+  role: 'admin' | 'hr' | 'employee' | 'manager' | 'director';
   lastLogin?: Date;
   department?: string; // Department code reference (e.g., "2000", "8000")
   hireDate?: Date; // 到職日期 (入職日期)
@@ -93,7 +93,7 @@ const EmployeeSchema = new Schema<IEmployee>({
   },
   role: {
     type: String,
-    enum: ['admin', 'hr', 'employee', 'manager'],
+    enum: ['admin', 'hr', 'employee', 'manager', 'director'],
     default: 'employee'
   },
   lastLogin: {

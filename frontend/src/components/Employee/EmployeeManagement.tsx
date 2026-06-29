@@ -304,6 +304,7 @@ const EmployeeManagement: React.FC = () => {
       case UserLevel.ADMIN: return '管理員';
       case UserLevel.HR: return '人資';
       case UserLevel.MANAGER: return '主管';
+      case UserLevel.DIRECTOR: return '董事';
       case UserLevel.EMPLOYEE: return '員工';
       default: return role;
     }
