@@ -600,7 +600,7 @@ export class LeaveService {
           continue;
         }
 
-        const endDate = parseChineseDate(year, endStr);
+        const endDate = parseChineseDate(year, endStr, true);
         if (!endDate) {
           errors.push({ index: i, empID, message: `無法解析日期: ${endStr}` });
           continue;
