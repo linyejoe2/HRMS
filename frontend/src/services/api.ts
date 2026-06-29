@@ -313,15 +313,16 @@ export const leaveAPI = {
     api.get(`/leave/sequence/${sequenceNumber}`),
 
   // Approve leave request (HR/Admin only)
-  approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+  approve: (id: string, reason: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
     if (files && files.length > 0) {
       const formData = new FormData();
+      formData.append('reason', reason);
       files.forEach(file => formData.append('files', file));
       return api.put(`/leave/${id}/approve`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
     }
-    return api.put(`/leave/${id}/approve`);
+    return api.put(`/leave/${id}/approve`, { reason });
   },
 
   // Reject leave request (HR/Admin only)

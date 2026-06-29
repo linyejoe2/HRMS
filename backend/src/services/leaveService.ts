@@ -125,7 +125,7 @@ export class LeaveService {
     return await Leave.find(query).sort({ createdAt: -1 });
   }
 
-  static async approveLeaveRequest(leaveId: string, approvedBy: string, supportingInfo?: string[]): Promise<ILeave> {
+  static async approveLeaveRequest(leaveId: string, rejectionReason: string, approvedBy: string, supportingInfo?: string[]): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
@@ -141,6 +141,7 @@ export class LeaveService {
     }
 
     leave.status = 'approved';
+    leave.rejectionReason = rejectionReason;
     leave.approvedBy = approvedBy;
 
     // Append new supporting files if provided

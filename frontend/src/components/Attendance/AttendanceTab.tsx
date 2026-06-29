@@ -13,13 +13,13 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { attendanceAPI, variableAPI, employeeAPI } from '../../services/api';
+import { attendanceAPI, employeeAPI } from '../../services/api';
 import * as XLSX from 'xlsx';
-import { AttendanceRecord, UserLevel, Variable } from '../../types';
+import { AttendanceRecord, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
-import { fuzzySearchAttendance, toTaipeiDate } from '../../utils/util/utility';
+import { fuzzySearchAttendance, getDepartmentDescription, getDepartments, toTaipeiDate } from '../../utils/util/utility';
 import { AttendanceLog, calcAttendanceStatuses } from '../../utils/attendanceUtils';
 import dayjs from 'dayjs';
 
@@ -33,7 +33,7 @@ const AttendanceTab: React.FC = () => {
   const [showOnlyMyRecords, setShowOnlyMyRecords] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showUnknownEmployees, setShowUnknownEmployees] = useState(false);
-  const [departments, setDepartments] = useState<Variable[]>([]);
+  // const [departments, setDepartments] = useState<Variable[]>([]);
 
   // Format date as YYYY-MM-DD
   const formatDate = (date: Date) => {
@@ -56,11 +56,11 @@ const AttendanceTab: React.FC = () => {
   };
 
   // Lookup department description by code
-  const getDepartmentDescription = (departmentCode?: string): string => {
-    if (!departmentCode) return '-';
-    const department = departments.find(dept => dept.code === departmentCode);
-    return department?.description || departmentCode;
-  };
+  // const getDepartmentDescription = (departmentCode?: string): string => {
+  //   if (!departmentCode) return '-';
+  //   const department = departments.find(dept => dept.code === departmentCode);
+  //   return department?.description || departmentCode;
+  // };
 
   // Load attendance records for selected date range
   const loadAttendanceRecords = async () => {
@@ -387,18 +387,18 @@ const AttendanceTab: React.FC = () => {
 
   // Load departments on mount
   useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const response = await variableAPI.getAll(undefined, false); // Only get active variables
-        const allVariables = response.data.data.variables;
-        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
-        setDepartments(departmentVars);
-      } catch (err: any) {
-        console.error('Failed to load departments:', err);
-        // Don't show error toast as this is a background operation
-      }
-    };
-    loadDepartments();
+    // const loadDepartments = async () => {
+    //   try {
+    //     const response = await variableAPI.getAll(undefined, false); // Only get active variables
+    //     const allVariables = response.data.data.variables;
+    //     const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+    //     setDepartments(departmentVars);
+    //   } catch (err: any) {
+    //     console.error('Failed to load departments:', err);
+    //     // Don't show error toast as this is a background operation
+    //   }
+    // };
+    getDepartments();
   }, []);
 
   // Load records when date range changes

@@ -58,13 +58,14 @@ export const getAllLeaveRequests = asyncHandler(async (req: AuthRequest, res: Re
 
 export const approveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body || "";
   const approvedBy = req.user!.empID;
 
   // Extract file paths from uploaded files
   const files = req.files as Express.Multer.File[];
   const filePaths = files?.map(file => `/uploads/leave/${file.filename}`) || [];
 
-  const leave = await LeaveService.approveLeaveRequest(id, approvedBy, filePaths.length > 0 ? filePaths : undefined);
+  const leave = await LeaveService.approveLeaveRequest(id, reason, approvedBy, filePaths.length > 0 ? filePaths : undefined);
 
   res.json({
     error: false,

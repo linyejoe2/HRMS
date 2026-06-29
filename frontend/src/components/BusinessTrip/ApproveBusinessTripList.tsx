@@ -19,14 +19,14 @@ import {
   Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
-import { BusinessTripRequest, Variable } from '../../types';
-import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest, variableAPI } from '../../services/api';
+import { BusinessTripRequest } from '../../types';
+import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
-import { fuzzySearchApproval } from '../../utils/util/utility';
+import { fuzzySearchApproval, getDepartmentDescription, getDepartments } from '../../utils/util/utility';
 
 const ApproveBusinessTripList: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);
@@ -39,7 +39,7 @@ const ApproveBusinessTripList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [departments, setDepartments] = useState<Variable[]>([]);
+  // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchBusinessTripRequests = async (status?: string) => {
     try {
@@ -60,25 +60,25 @@ const ApproveBusinessTripList: React.FC = () => {
 
   // Load departments on mount
   useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const response = await variableAPI.getAll(undefined, false);
-        const allVariables = response.data.data.variables;
-        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
-        setDepartments(departmentVars);
-      } catch (err: any) {
-        console.error('Failed to load departments:', err);
-      }
-    };
-    loadDepartments();
+    // const loadDepartments = async () => {
+    //   try {
+    //     const response = await variableAPI.getAll(undefined, false);
+    //     const allVariables = response.data.data.variables;
+    //     const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+    //     setDepartments(departmentVars);
+    //   } catch (err: any) {
+    //     console.error('Failed to load departments:', err);
+    //   }
+    // };
+    getDepartments();
   }, []);
 
   // Lookup department description by code
-  const getDepartmentDescription = (departmentCode?: string): string => {
-    if (!departmentCode) return '-';
-    const department = departments.find(dept => dept.code === departmentCode);
-    return department?.description || departmentCode;
-  };
+  // const getDepartmentDescription = (departmentCode?: string): string => {
+  //   if (!departmentCode) return '-';
+  //   const department = departments.find(dept => dept.code === departmentCode);
+  //   return department?.description || departmentCode;
+  // };
 
   const handleApproveClick = (request: BusinessTripRequest) => {
     setSelectedRequest(request);

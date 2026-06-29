@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
@@ -17,6 +17,7 @@ import VariableManagement from './components/Variable/VariableManagement';
 import { CalendarTab } from './components/Calendar/CalendarTab';
 import { KanbanPage } from './pages/KanbanPage';
 import LeaveDownloadTab from './components/Leave/LeaveDownloadTab';
+import { getDepartments } from './utils/util/utility';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -59,6 +60,22 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
+
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const initApp = async () => {
+      await getDepartments(); // 確保快取被寫入
+      setIsReady(true);       // 好了，放行渲染
+    };
+    initApp();
+  }, []);
+
+  // 資料還沒準備好前，顯示轉圈圈，不渲染子元件
+  if (!isReady) {
+    return <div>系統初始化中...</div>;
+  }
+  
   return (
     <Routes>
       <Route
@@ -69,7 +86,7 @@ const App: React.FC = () => {
           </PublicRoute>
         }
       />
-      
+
       <Route
         path="/register"
         element={
@@ -78,7 +95,7 @@ const App: React.FC = () => {
           </PublicRoute>
         }
       />
-      
+
       <Route
         path="/"
         element={

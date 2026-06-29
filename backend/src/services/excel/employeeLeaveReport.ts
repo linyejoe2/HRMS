@@ -82,7 +82,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     return {
       "起": leave.mm + "月" + leave.DD + "日",
       "迄": endMonth + "月" + endDay + "日",
-      '請假事由': leave.reason || '',
+      '請假事由': leave.rejectionReason || '',
       '請假類型': leave.leaveType,
       "特休": annualLeaveDuration,
       "特休已休累計": annualLeaveUsed,

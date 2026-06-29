@@ -25,15 +25,15 @@ import {
   Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
-import { LeaveRequest, Variable } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI, variableAPI } from '../../services/api';
+import { LeaveRequest } from '../../types';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fetchUserLeaveData } from '../../services/leaveService';
-import { errorToString, fuzzySearchApproval } from '@/utils/util/utility';
+import { errorToString, fuzzySearchApproval, getDepartmentDescription } from '@/utils/util/utility';
 import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
 
@@ -50,7 +50,7 @@ const ApproveLeaveList: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
-  const [departments, setDepartments] = useState<Variable[]>([]);
+  // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
     try {
@@ -70,26 +70,19 @@ const ApproveLeaveList: React.FC = () => {
   }, [statusFilter]);
 
   // Load departments on mount
-  useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const response = await variableAPI.getAll(undefined, false);
-        const allVariables = response.data.data.variables;
-        const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
-        setDepartments(departmentVars);
-      } catch (err: any) {
-        console.error('Failed to load departments:', err);
-      }
-    };
-    loadDepartments();
-  }, []);
-
-  // Lookup department description by code
-  const getDepartmentDescription = (departmentCode?: string): string => {
-    if (!departmentCode) return '-';
-    const department = departments.find(dept => dept.code === departmentCode);
-    return department?.description || departmentCode;
-  };
+  // useEffect(() => {
+  //   const loadDepartments = async () => {
+  //     try {
+  //       const response = await variableAPI.getAll(undefined, false);
+  //       const allVariables = response.data.data.variables;
+  //       const departmentVars = allVariables.filter((v: Variable) => v.section === 'department');
+  //       setDepartments(departmentVars);
+  //     } catch (err: any) {
+  //       console.error('Failed to load departments:', err);
+  //     }
+  //   };
+  //   loadDepartments();
+  // }, []);
 
   // Check leave balance before approval
   const checkLeaveBalance = async (request: LeaveRequest): Promise<boolean> => {
@@ -173,11 +166,11 @@ const ApproveLeaveList: React.FC = () => {
     }
   };
 
-  const handleApproveConfirm = async (_: string, files?: File[]) => {
+  const handleApproveConfirm = async (reason: string, files?: File[]) => {
     if (!selectedRequest) return;
 
     try {
-      await approveLeaveRequest(selectedRequest._id!, files);
+      await approveLeaveRequest(selectedRequest._id!, reason, files);
       toast.success('請假申請已核准');
       fetchLeaveRequests(statusFilter || undefined);
     } catch (error: any) {
