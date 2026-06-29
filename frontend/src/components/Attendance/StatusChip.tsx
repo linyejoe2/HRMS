@@ -20,6 +20,7 @@ const StatusChip: React.FC<StatusChipProps> = ({ log }) => {
     isEarlyLeave,
     isAbsent,
     hasNoClockTimes,
+    isLessThen8Hours
   } = calcAttendanceStatuses(log);
 
   const chips: ReactElement[] = [<Chip
@@ -99,7 +100,7 @@ const StatusChip: React.FC<StatusChipProps> = ({ log }) => {
   // Priority 3: Render based on calculated attendance status
   if (isAbsent) {
     chips.push(<Chip key="absent" sx={{ mr: 1 }} label="缺勤" color="error" size="small" />)
-  } else {
+  } else if (isLessThen8Hours) { chips.push(<Chip key="earlyLeave" sx={{ mr: 1 }} label="未達工時" color="warning" size="small" />) } else {
     if (isLate) chips.push(<Chip key="late" sx={{ mr: 1 }} label="遲到" color="warning" size="small" />)
     if (isEarlyLeave) chips.push(<Chip key="earlyLeave" sx={{ mr: 1 }} label="早退" color="warning" size="small" />)
 

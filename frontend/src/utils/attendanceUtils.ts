@@ -41,6 +41,7 @@ export interface AttendanceStatus {
   hasLeaveStatus: Boolean;
   hasLeaveRecords: Boolean;
   isAbsent: Boolean;
+  isLessThen8Hours: Boolean
 }
 
 export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => {
@@ -50,6 +51,7 @@ export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => 
   const isHoliday = !!log.holidayName;
   let isLate = false;
   let isEarlyLeave = false;
+  let isLessThen8Hours = false;
   let isToday = calcToday(log.date);
   const hasLeaveStatus = !!(log.status && !log.clockInTime && !log.clockOutTime);
   const hasLeaveRecords = !!(log.leaves && log.leaves.length > 0);
@@ -61,13 +63,13 @@ export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => 
     const inTimeDayjs = dayjs(log.clockInTime).tz('Asia/Taipei');
     const outTimeDayjs = dayjs(log.clockOutTime).tz('Asia/Taipei');
 
-    const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
+    // const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
     const standardEnd = inTimeDayjs.clone().hour(17).minute(20).second(0);
     const lunchStart = inTimeDayjs.clone().hour(12).minute(0).second(0);
     const lunchEnd = inTimeDayjs.clone().hour(13).minute(0).second(0);
     const flexibleStart = inTimeDayjs.clone().hour(9).minute(30).second(0);
 
-    isLate = inTimeDayjs.isAfter(standardStart);
+    isLate = inTimeDayjs.isAfter(flexibleStart);
     isEarlyLeave = outTimeDayjs.isBefore(standardEnd);
 
     const pastLunchBreak = inTimeDayjs.isBefore(lunchStart) && outTimeDayjs.isAfter(lunchEnd);
@@ -75,6 +77,7 @@ export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => 
     if (pastLunchBreak) duration -= 60;
 
     if (duration >= 470 && inTimeDayjs.isBefore(flexibleStart)) isLate = false;
+    if (duration < 470 ) isLessThen8Hours = true;
   } else if (log.clockInTime) {
     const inTimeDayjs = dayjs(log.clockInTime).tz('Asia/Taipei');
     const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
@@ -98,5 +101,6 @@ export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => 
     hasLeaveStatus,
     hasLeaveRecords,
     isAbsent,
+    isLessThen8Hours
   }
 }
