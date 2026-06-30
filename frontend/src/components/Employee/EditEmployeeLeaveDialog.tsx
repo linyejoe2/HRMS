@@ -57,7 +57,8 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   const [newAdjustment, setNewAdjustment] = useState({
     minutes: 0,
     reason: '',
-    effectiveDate: new Date().toISOString().split('T')[0]
+    effectiveDate: new Date().toISOString().split('T')[0],
+    expiryDate: ''
   });
 
   // Check if user can manage adjustments
@@ -139,12 +140,13 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
         leaveType: leaveData.type,
         minutes: newAdjustment.minutes,
         reason: newAdjustment.reason,
-        effectiveDate: newAdjustment.effectiveDate
+        effectiveDate: newAdjustment.effectiveDate,
+        ...(newAdjustment.expiryDate ? { expiryDate: newAdjustment.expiryDate } : {})
       });
 
       toast.success('假別調整已新增');
       setShowAddAdjustment(false);
-      setNewAdjustment({ minutes: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0] });
+      setNewAdjustment({ minutes: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0], expiryDate: '' });
       await refreshLeaveData(hireDate);
     } catch (error: any) {
       toast.error(error.response?.data?.error || '新增調整失敗');
@@ -374,18 +376,30 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                   </Button>
                 </Box>
 
-                <TextField
-                  label="生效日期"
-                  type="date"
-                  size="small"
-                  fullWidth
-                  value={newAdjustment.effectiveDate}
-                  onChange={(e) =>
-                    setNewAdjustment({ ...newAdjustment, effectiveDate: e.target.value })
-                  }
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ mb: 2 }}
-                />
+                <Box display="flex" gap={2} mb={2}>
+                  <TextField
+                    label="生效日期"
+                    type="date"
+                    size="small"
+                    fullWidth
+                    value={newAdjustment.effectiveDate}
+                    onChange={(e) =>
+                      setNewAdjustment({ ...newAdjustment, effectiveDate: e.target.value })
+                    }
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label="到期日（選填）"
+                    type="date"
+                    size="small"
+                    fullWidth
+                    value={newAdjustment.expiryDate}
+                    onChange={(e) =>
+                      setNewAdjustment({ ...newAdjustment, expiryDate: e.target.value })
+                    }
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
 
                 <TextField
                   label="調整原因"
@@ -414,6 +428,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                   <TableRow>
                     <TableCell>建立時間</TableCell>
                     <TableCell>生效日期</TableCell>
+                    <TableCell>到期日</TableCell>
                     <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>
                     <TableCell>調整者</TableCell>
@@ -423,7 +438,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                 <TableBody>
                   {adjustments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={canManageAdjustments ? 6 : 5} align="center">
+                      <TableCell colSpan={canManageAdjustments ? 7 : 6} align="center">
                         <Typography variant="body2" color="text.secondary">
                           無調整記錄
                         </Typography>
@@ -439,6 +454,11 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                           <TableCell>
                             {adj.effectiveDate
                               ? new Date(adj.effectiveDate).toLocaleDateString('zh-TW')
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {adj.expiryDate
+                              ? new Date(adj.expiryDate).toLocaleDateString('zh-TW')
                               : '-'}
                           </TableCell>
                           <TableCell>

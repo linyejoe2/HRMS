@@ -7,6 +7,7 @@ interface CreateAdjustmentInput {
   minutes: number;
   reason: string;
   effectiveDate: Date;
+  expiryDate?: Date;
   createdBy: string;
 }
 
@@ -30,6 +31,7 @@ export class LeaveAdjustmentService {
       minutes: data.minutes,
       reason: data.reason,
       effectiveDate: data.effectiveDate,
+      expiryDate: data.expiryDate,
       createdBy: data.createdBy
     });
 

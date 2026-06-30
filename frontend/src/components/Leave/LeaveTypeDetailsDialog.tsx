@@ -291,6 +291,8 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                 <TableHead>
                   <TableRow>
                     <TableCell>調整時間</TableCell>
+                    <TableCell>生效日期</TableCell>
+                    <TableCell>到期日</TableCell>
                     <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>
                     <TableCell>調整者</TableCell>
@@ -301,6 +303,16 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                     <TableRow key={adj._id}>
                       <TableCell>
                         {new Date(adj.createdAt || '').toLocaleString('zh-TW')}
+                      </TableCell>
+                      <TableCell>
+                        {adj.effectiveDate
+                          ? new Date(adj.effectiveDate).toLocaleDateString('zh-TW')
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {adj.expiryDate
+                          ? new Date(adj.expiryDate).toLocaleDateString('zh-TW')
+                          : '-'}
                       </TableCell>
                       <TableCell>
                         <Chip

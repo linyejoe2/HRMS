@@ -54,6 +54,7 @@ services:
       - TZ=Asia/Taipei
     ports:
       - "${BACKEND_PORT}:3000"
+      - "9229:9229"   # 偵錯的 Port（必須對外暴露，本機 VS Code 才連得進去）
     depends_on:
       - mongodb
     networks:
@@ -62,6 +63,7 @@ services:
     volumes:
       - ${DATA}:/app/data
       - ./backend/uploads:/app/uploads
+      - .:/workspace
     logging:
       driver: json-file
       options:

@@ -4,7 +4,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 
 export const createLeaveAdjustment = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { empID, leaveType, minutes, reason, effectiveDate } = req.body;
+  const { empID, leaveType, minutes, reason, effectiveDate, expiryDate } = req.body;
   const createdBy = req.user!.empID;
 
   const adjustment = await LeaveAdjustmentService.createAdjustment({
@@ -13,6 +13,7 @@ export const createLeaveAdjustment = asyncHandler(async (req: AuthRequest, res: 
     minutes,
     reason,
     effectiveDate: new Date(effectiveDate),
+    expiryDate: expiryDate ? new Date(expiryDate) : undefined,
     createdBy
   });
 
