@@ -1,4 +1,4 @@
-import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, LegacyLeave, IEmployee } from '../models';
+import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
 import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
@@ -17,6 +17,73 @@ export type DurentObject = {
   crossBreaktime: number;
   crossNight: number;
   crossholiday: number;
+}
+
+// Leave types whose total allocation comes entirely from HR-entered adjustments.
+export const RESERVATION_LEAVE_TYPES: { type: string; displayName: string }[] = [
+  { type: '婚假', displayName: '婚假' },
+  { type: '喪假', displayName: '喪假' },
+];
+
+export interface LeaveData {
+  type: string; // 婚假 喪假
+  displayName: string;
+  totalHours: number;
+  usedHours: number;
+  remainingHours: number;
+  leaves: ILeave[];
+  adjustments: ILeaveAdjustment[];
+}
+
+export interface UserLeaveData {
+  personalLeave: LeaveData;
+  sickLeave: LeaveData;
+  specialLeave: LeaveData;
+  reservationLeaves: LeaveData[];
+}
+
+// --- private helpers for getUserLeaveBalance ---
+
+function filterActiveAdjustments(adjustments: ILeaveAdjustment[], referenceDate: Date = new Date()): ILeaveAdjustment[] {
+  const ref = dayjs(referenceDate);
+  return adjustments.filter(adj => {
+    if (adj.effectiveDate && ref.isBefore(dayjs(adj.effectiveDate), 'day')) return false;
+    if (adj.expiryDate && ref.isAfter(dayjs(adj.expiryDate), 'day')) return false;
+    return true;
+  });
+}
+
+function sumUsedMinutes(leaves: ILeave[]): number {
+  return leaves.reduce((total, l) => total + (parseInt(l.hour) * 60) + parseInt(l.minutes), 0);
+}
+
+function sumAdjustmentMinutes(adjustments: ILeaveAdjustment[]): number {
+  return adjustments.reduce((total, adj) => total + adj.minutes, 0);
+}
+
+function minsToHours(minutes: number): number {
+  return minutes / 60;
+}
+
+function buildStandardLeaveData(
+  type: string,
+  displayName: string,
+  baseTotalMinutes: number,
+  leaves: ILeave[],
+  allAdjustments: ILeaveAdjustment[]
+): LeaveData {
+  // const activeAdj = filterActiveAdjustments(allAdjustments);
+  const adjustmentMinutes = sumAdjustmentMinutes(allAdjustments);
+  const usedMinutes = sumUsedMinutes(leaves);
+  return {
+    type,
+    displayName,
+    totalHours: minsToHours(baseTotalMinutes),
+    usedHours: minsToHours(usedMinutes),
+    remainingHours: minsToHours(baseTotalMinutes - usedMinutes + adjustmentMinutes),
+    leaves,
+    adjustments: allAdjustments
+  };
 }
 
 export class LeaveService {
@@ -631,5 +698,61 @@ export class LeaveService {
     }
 
     return { imported, errors };
+  }
+
+  /**
+   * Return the full leave balance for an employee.
+   * Queries DB directly; respects adjustment effectiveDate/expiryDate ranges.
+   */
+  static async getUserLeaveBalance(empID: string): Promise<UserLeaveData> {
+    const now = new Date();
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+    const oneYearLater = new Date(now);
+    oneYearLater.setFullYear(now.getFullYear() + 1);
+
+    const dateFilter = {
+      $or: [
+        { leaveStart: { $gte: oneYearAgo, $lte: oneYearLater } },
+        { leaveEnd: { $gte: oneYearAgo, $lte: oneYearLater } },
+        { leaveStart: { $lte: oneYearAgo }, leaveEnd: { $gte: oneYearLater } }
+      ]
+    };
+
+    const employee = await Employee.findOne({ empID });
+    const hireDate = employee?.hireDate ? new Date(employee.hireDate) : undefined;
+    const specialTotalDays = hireDate ? LeaveService.calcAnnualLeaveEntitlementDays(hireDate) : 0;
+
+    const [personalLeaves, sickLeaves, specialLeaves] = await Promise.all([
+      Leave.find({ empID, leaveType: '事假', status: 'approved', ...dateFilter }),
+      Leave.find({ empID, leaveType: '普通傷病假', status: 'approved', ...dateFilter }),
+      Leave.find({ empID, leaveType: '特別休假', status: 'approved', ...dateFilter })
+    ]);
+
+    const [personalAdj, sickAdj, specialAdj] = await Promise.all([
+      LeaveAdjustment.find({ empID, leaveType: '事假' }),
+      LeaveAdjustment.find({ empID, leaveType: '普通傷病假' }),
+      LeaveAdjustment.find({ empID, leaveType: '特別休假' })
+    ]);
+
+    const [reservationLeaveResults, reservationAdjResults] = await Promise.all([
+      Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
+        Leave.find({ empID, leaveType: rt.type, status: 'approved', ...dateFilter })
+      )),
+      Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
+        LeaveAdjustment.find({ empID, leaveType: rt.type })
+      ))
+    ]);
+
+    const reservationLeaves: LeaveData[] = RESERVATION_LEAVE_TYPES.map((rt, i) =>
+      buildStandardLeaveData(rt.type, rt.displayName, 0, reservationLeaveResults[i], reservationAdjResults[i])
+    );
+
+    return {
+      personalLeave: buildStandardLeaveData('事假', '事假', 14 * 8 * 60, personalLeaves, personalAdj),
+      sickLeave: buildStandardLeaveData('普通傷病假', '病假', 30 * 8 * 60, sickLeaves, sickAdj),
+      specialLeave: buildStandardLeaveData('特別休假', '特休', specialTotalDays * 8 * 60, specialLeaves, specialAdj),
+      reservationLeaves
+    };
   }
 }

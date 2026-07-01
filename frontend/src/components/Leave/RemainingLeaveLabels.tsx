@@ -39,7 +39,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       setHireDate(new Date(employeeHireDate));
 
       // Fetch all leave data using centralized service
-      const leaveData = await fetchUserLeaveData(empID, employeeHireDate);
+      const leaveData = await fetchUserLeaveData(empID);
 
       setPersonalLeave(leaveData.personalLeave);
       setSickLeave(leaveData.sickLeave);
@@ -172,15 +172,17 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         />
       )}
 
-      {reservationLeaves.map(leave => (
+      {reservationLeaves.map(leave => {
+        if (leave.remainingHours == 0) return <></>
+        return (
         <Chip
           key={leave.type}
           label={`${leave.displayName}：${leave.remainingHours} 小時`}
-          color={getLeaveColorByHours(leave.remainingHours)}
+          color={getLeaveColorByHours(leave.remainingHours, leave.type)}
           onClick={() => onLabelClick(leave)}
           sx={{ cursor: 'pointer', fontWeight: 'medium' }}
         />
-      ))}
+      )})}
     </Box>
   );
 };

@@ -284,7 +284,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     setLeaveInfo(prev => ({ ...prev, loading: true }));
 
     try {
-      const leaveData = await fetchUserLeaveData(empId, hireDate);
+      const leaveData = await fetchUserLeaveData(empId);
       setLeaveInfo({
         personalLeave: leaveData.personalLeave,
         sickLeave: leaveData.sickLeave,
@@ -1302,7 +1302,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                           <Chip
                             key={leave.type}
                             label={`${leave.displayName}：${leave.remainingHours} 小時`}
-                            color={getLeaveColorByHours(leave.remainingHours)}
+                            color={getLeaveColorByHours(leave.remainingHours, leave.type)}
                             sx={{ fontWeight: 'medium', cursor: 'pointer' }}
                             onClick={() => handleLeaveChipClick(leave)}
                           />

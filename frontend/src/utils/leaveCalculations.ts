@@ -28,6 +28,7 @@ export const calculateAdjustmentMinutes = (adjustments: LeaveAdjustment[]): numb
   return adjustments.reduce((total, adjustment) => total + adjustment.minutes, 0);
 };
 
+
 export const calculateReservationLeaveRemainingMinutes = (
   leaves: LeaveRequest[],
   adjustments?: LeaveAdjustment[]
@@ -84,7 +85,8 @@ export const formatMinutesToHours = (minutes: number): number => {
  * @param isSpecialOrPersonal Whether this is special leave or personal leave (true) or sick leave (false)
  * @returns Color string: 'success' | 'warning' | 'error'
  */
-export const getLeaveColorByHours = (remainingHours: number): 'success' | 'warning' | 'error' => {
+export const getLeaveColorByHours = (remainingHours: number, type = "defult"): 'success' | 'warning' | 'error' => {
+  if (["婚假", "喪假"].indexOf(type) != -1) return "success"
   if (remainingHours > 56) return 'success';
   if (remainingHours > 24) return 'warning';
   return 'error';

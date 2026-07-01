@@ -26,13 +26,13 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, employeeAPI } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
-import { fetchUserLeaveData } from '../../services/leaveService';
+import { fetchUserLeaveData, RESERVATION_LEAVE_TYPES } from '../../services/leaveService';
 import { errorToString, fuzzySearchApproval, getDepartmentDescription } from '@/utils/util/utility';
 import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
@@ -86,24 +86,16 @@ const ApproveLeaveList: React.FC = () => {
 
   // Check leave balance before approval
   const checkLeaveBalance = async (request: LeaveRequest): Promise<boolean> => {
-    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假'];
+    const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
+    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
     if (!leaveTypesToCheck.includes(request.leaveType)) {
-      return true; // Skip validation for other leave types
+      return true;
     }
 
     try {
-      // Get employee hire date
-      const employeeResponse = await employeeAPI.getByEmpID(request.empID);
-      const employee = employeeResponse.data.data.employee;
-
-      if (!employee?.hireDate) {
-        toast.warn("請先設定員工到職日。")
-        return false; // Skip validation if hire date not available
-      }
-
-      const leaveData = await fetchUserLeaveData(request.empID, employee.hireDate);
+      const leaveData = await fetchUserLeaveData(request.empID);
       const workingDurentObj = calcWorkingDuration(request.leaveStart, request.leaveEnd, { useStandard4HourBlocks: true });
-      const requestedHours = workingDurentObj.hourFormat
+      const requestedHours = workingDurentObj.hourFormat;
 
       let remainingHours = 0;
       let leaveTypeName = '';
@@ -121,6 +113,13 @@ const ApproveLeaveList: React.FC = () => {
           remainingHours = leaveData.specialLeave.remainingHours;
           leaveTypeName = '特休';
           break;
+        default: {
+          const found = leaveData.reservationLeaves.find(l => l.type === request.leaveType);
+          if (found) {
+            remainingHours = found.remainingHours;
+            leaveTypeName = found.displayName;
+          }
+        }
       }
 
       if (requestedHours > remainingHours) {
@@ -134,9 +133,7 @@ const ApproveLeaveList: React.FC = () => {
 
       return true;
     } catch (error) {
-      throw error
-      console.error('Error checking leave balance:', error);
-      return true; // Continue if check fails
+      throw error;
     }
   };
 

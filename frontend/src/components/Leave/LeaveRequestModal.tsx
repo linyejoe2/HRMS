@@ -158,7 +158,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
     }
 
     try {
-      const leaveData = await fetchUserLeaveData(user.empID, user.hireDate);
+      const leaveData = await fetchUserLeaveData(user.empID);
       const workingDurentObj = calcWorkingDuration(data.leaveStart, data.leaveEnd, { useStandard4HourBlocks: true });
       const requestedHours = workingDurentObj.hourFormat
 

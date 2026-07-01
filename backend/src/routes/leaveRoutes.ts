@@ -11,6 +11,7 @@ import {
   getLeaveRequestBySequenceNumber,
   queryLeaveRequests,
   importLeaveRequests,
+  getLeaveBalance,
   downloadLeaveSummaryReport,
   downloadEmployeeLeaveReport,
   downloadAnnualLeaveReport
@@ -32,6 +33,8 @@ router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllLeaveR
 router.get('/reports/summary', authenticateToken, requireRole(['hr', 'admin']), downloadLeaveSummaryReport);
 router.get('/reports/annual-leave', authenticateToken, requireRole(['hr', 'admin']), downloadAnnualLeaveReport);
 router.get('/reports/employee', authenticateToken, requireRole(['hr', 'admin']), downloadEmployeeLeaveReport);
+
+router.get('/balance/:empID', authenticateToken, getLeaveBalance);
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 

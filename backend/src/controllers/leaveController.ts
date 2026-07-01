@@ -163,6 +163,17 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
   });
 });
 
+export const getLeaveBalance = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { empID } = req.params;
+  const balance = await LeaveService.getUserLeaveBalance(empID);
+
+  res.json({
+    error: false,
+    message: '成功取得假別餘額',
+    data: balance
+  });
+});
+
 export const importLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
   const records = req.body;
 

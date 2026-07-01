@@ -38,7 +38,7 @@ interface LeaveDetailsDialogProps {
   empID: string;
   employeeName: string;
   leaveData: LeaveData;
-  hireDate?: string;
+  hireDate?: string; // kept for backward compat; balance is now fetched by empID only
 }
 
 const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
@@ -46,8 +46,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
   onClose,
   empID,
   employeeName,
-  leaveData: initialLeaveData,
-  hireDate
+  leaveData: initialLeaveData
 }) => {
   const { user } = useAuth();
   const [leaveData, setLeaveData] = useState<LeaveData>(initialLeaveData);
@@ -91,15 +90,10 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     fetchEmployees();
   }, []);
 
-  const refreshLeaveData = async (hireDate?: string) => {
-    if (!hireDate) {
-      toast.error('缺少入職日期');
-      return;
-    }
-
+  const refreshLeaveData = async () => {
     setLoading(true);
     try {
-      const userData = await fetchUserLeaveData(empID, hireDate);
+      const userData = await fetchUserLeaveData(empID);
       if (leaveData.type === '事假') {
         setLeaveData(userData.personalLeave);
       } else if (leaveData.type === '普通傷病假') {
@@ -147,7 +141,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
       toast.success('假別調整已新增');
       setShowAddAdjustment(false);
       setNewAdjustment({ minutes: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0], expiryDate: '' });
-      await refreshLeaveData(hireDate);
+      await refreshLeaveData();
     } catch (error: any) {
       toast.error(error.response?.data?.error || '新增調整失敗');
     }
@@ -161,7 +155,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
     try {
       await leaveAdjustmentAPI.delete(id);
       toast.success('調整記錄已刪除');
-      await refreshLeaveData(hireDate);
+      await refreshLeaveData();
     } catch (error: any) {
       toast.error(error.response?.data?.error || '刪除調整失敗');
     }
