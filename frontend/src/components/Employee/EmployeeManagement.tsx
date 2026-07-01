@@ -36,7 +36,7 @@ import AddEditEmployeeModal from './AddEditEmployeeModal';
 import LegacyLeaveDialog from './LegacyLeaveDialog';
 import { toast } from 'react-toastify';
 import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
-import { departmentCache, getDepartmentDescription, getDepartments } from '@/utils/util/utility';
+import { getDepartmentDescription, getDepartments, departmentCache } from '@/services/variableService';
 
 const EmployeeManagement: React.FC = () => {
   const { user } = useAuth();

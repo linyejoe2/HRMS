@@ -485,6 +485,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
               取消
             </Button>
             <Button
+              data-id='43227372-3723-45dc-a3ba-ebdcbff50867'
               type="submit"
               variant="contained"
               disabled={loading}

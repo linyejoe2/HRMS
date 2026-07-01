@@ -19,7 +19,9 @@ import { AttendanceRecord, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
-import { fuzzySearchAttendance, getDepartmentDescription, getDepartments, toTaipeiDate } from '../../utils/util/utility';
+import { fuzzySearchAttendance } from '@/utils/fuzzySearch';
+import { getDepartmentDescription, getDepartments } from '@/services/variableService';
+import { toTaipeiDate } from '../../utils/util/utility';
 import { AttendanceLog, calcAttendanceStatuses } from '../../utils/attendanceUtils';
 import dayjs from 'dayjs';
 

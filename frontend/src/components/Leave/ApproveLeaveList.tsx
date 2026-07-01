@@ -33,7 +33,9 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fetchUserLeaveData, RESERVATION_LEAVE_TYPES } from '../../services/leaveService';
-import { errorToString, fuzzySearchApproval, getDepartmentDescription } from '@/utils/util/utility';
+import { errorToString } from '@/utils/util/utility';
+import { fuzzySearchApproval } from '@/utils/fuzzySearch';
+import { getDepartmentDescription } from '@/services/variableService';
 import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
 

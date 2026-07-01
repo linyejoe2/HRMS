@@ -17,7 +17,8 @@ import VariableManagement from './components/Variable/VariableManagement';
 import { CalendarTab } from './components/Calendar/CalendarTab';
 import { KanbanPage } from './pages/KanbanPage';
 import LeaveDownloadTab from './components/Leave/LeaveDownloadTab';
-import { getDepartments } from './utils/util/utility';
+import { getDepartments } from './services/variableService';
+getDepartments
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
