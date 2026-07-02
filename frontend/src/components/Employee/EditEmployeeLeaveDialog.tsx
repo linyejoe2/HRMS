@@ -320,14 +320,33 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                     label="調整時數"
                     type="number"
                     value={newAdjustment.minutes / 60}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // 如果被清空，就給 0，否則轉成數字（這樣可以丟棄前面的 0）
+                      const parsedHours = val === '' ? 0 : parseFloat(val);
                       setNewAdjustment({
                         ...newAdjustment,
-                        minutes: parseFloat(e.target.value) * 60
+                        minutes: parsedHours * 60
                       })
+                    }
                     }
                     sx={{ width: 150, borderRadius: '8px', flexGrow: 1 }}
                     inputProps={{ sx: { padding: '8px' } }}
+                    InputLabelProps={{ sx: { borderRadius: '9px' } }}
+                  />
+
+                  <TextField
+                    label="換算天數"
+                    type="number"
+                    value={Number((newAdjustment.minutes / 60 / 8).toFixed(2))}
+                    onChange={(e) => {
+                      const days = parseInt(e.target.value, 10);
+                      if (!isNaN(days)) {
+                        setNewAdjustment({ ...newAdjustment, minutes: days * 8 * 60 });
+                      }
+                    }}
+                    sx={{ width: 150, borderRadius: '8px', flexGrow: 1 }}
+                    inputProps={{ step: 1, sx: { padding: '8px' } }}
                     InputLabelProps={{ sx: { borderRadius: '9px' } }}
                   />
 

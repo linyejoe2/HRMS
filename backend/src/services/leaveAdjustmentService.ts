@@ -1,13 +1,14 @@
 import { LeaveAdjustment, ILeaveAdjustment, Employee } from '../models';
 import { APIError } from '../middleware/errorHandler';
+import { Dayjs } from 'dayjs';
 
 interface CreateAdjustmentInput {
   empID: string;
   leaveType: string;
   minutes: number;
   reason: string;
-  effectiveDate: Date;
-  expiryDate?: Date;
+  effectiveDate: Dayjs;
+  expiryDate?: Dayjs;
   createdBy: string;
 }
 
@@ -30,8 +31,8 @@ export class LeaveAdjustmentService {
       leaveType: data.leaveType,
       minutes: data.minutes,
       reason: data.reason,
-      effectiveDate: data.effectiveDate,
-      expiryDate: data.expiryDate,
+      effectiveDate: data.effectiveDate.toDate(),
+      expiryDate: data.expiryDate?.toDate(),
       createdBy: data.createdBy
     });
 

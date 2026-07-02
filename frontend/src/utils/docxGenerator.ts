@@ -32,6 +32,7 @@ export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Prom
 
     const templateData = {
       ...leaveRequest,
+      day: Number((parseInt(leaveRequest.hour) / 8).toFixed(2)),
       leaveStart: toTaipeiString(leaveRequest.leaveStart),
       leaveEnd: toTaipeiString(leaveRequest.leaveEnd)
     }

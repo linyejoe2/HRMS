@@ -291,7 +291,7 @@ const LeaveTypeDetailsDialog: React.FC<LeaveTypeDetailsDialogProps> = ({
                 <TableHead>
                   <TableRow>
                     <TableCell>調整時間</TableCell>
-                    <TableCell>生效日期</TableCell>
+                    <TableCell>生效日</TableCell>
                     <TableCell>到期日</TableCell>
                     <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>
