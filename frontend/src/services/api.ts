@@ -1,8 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes } from '../types';
 import { toast } from 'react-toastify';
 
-const API_BASE_URL = "";
+const API_BASE_URL = "http://localhost:3000";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
 
 export const api = axios.create({
@@ -353,7 +353,14 @@ export const leaveAPI = {
     leaveType?: string;
     status?: string;
   }): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
-    api.post('/leave/query', queryParams)
+    api.post('/leave/query', queryParams),
+
+  checkLeaveBalance: (queryParams: {
+    timeStart: string;
+    timeEnd: string;
+    leaveType: string;
+  }, employeeID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: CheckLeaveBalanceRes }>> => api.post(`/leave/check-balance/${employeeID}`, queryParams)
+
 };
 
 // Convenience functions for leave operations

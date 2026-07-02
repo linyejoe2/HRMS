@@ -26,17 +26,15 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, leaveAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
-import { fetchUserLeaveData, RESERVATION_LEAVE_TYPES } from '../../services/leaveService';
 import { errorToString } from '@/utils/util/utility';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription } from '@/services/variableService';
-import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 import { Link } from 'react-router-dom';
 
 const ApproveLeaveList: React.FC = () => {
@@ -87,66 +85,20 @@ const ApproveLeaveList: React.FC = () => {
   // }, []);
 
   // Check leave balance before approval
-  const checkLeaveBalance = async (request: LeaveRequest): Promise<boolean> => {
-    const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
-    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
-    if (!leaveTypesToCheck.includes(request.leaveType)) {
-      return true;
-    }
 
-    try {
-      const leaveData = await fetchUserLeaveData(request.empID);
-      const workingDurentObj = calcWorkingDuration(request.leaveStart, request.leaveEnd, { useStandard4HourBlocks: true });
-      const requestedHours = workingDurentObj.hourFormat;
-
-      let remainingHours = 0;
-      let leaveTypeName = '';
-
-      switch (request.leaveType) {
-        case '事假':
-          remainingHours = leaveData.personalLeave.remainingHours;
-          leaveTypeName = '事假';
-          break;
-        case '普通傷病假':
-          remainingHours = leaveData.sickLeave.remainingHours;
-          leaveTypeName = '病假';
-          break;
-        case '特別休假':
-          remainingHours = leaveData.specialLeave.remainingHours;
-          leaveTypeName = '特休';
-          break;
-        default: {
-          const found = leaveData.reservationLeaves.find(l => l.type === request.leaveType);
-          if (found) {
-            remainingHours = found.remainingHours;
-            leaveTypeName = found.displayName;
-          }
-        }
-      }
-
-      if (requestedHours > remainingHours) {
-        setWarningMessage(
-          `員工「${request.name}」的${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，
-但此次申請需要 ${requestedHours.toFixed(1)} 小時。
-超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。`
-        );
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
 
   const handleApproveClick = async (request: LeaveRequest) => {
     setSelectedRequest(request);
 
     // Check leave balance first
     try {
-      const hasSufficientBalance = await checkLeaveBalance(request);
+      const hasSufficientBalance = await leaveAPI.checkLeaveBalance({
+        leaveType: request.leaveType,
+        timeStart: request.leaveStart,
+        timeEnd: request.leaveEnd
+      }, request.empID);
 
-      if (!hasSufficientBalance) {
+      if (!hasSufficientBalance.data.data.sufficient) {
         // Show warning dialog
         // toast.warn(<div>
         //   <Typography variant="subtitle2" >title</Typography>
@@ -154,6 +106,7 @@ const ApproveLeaveList: React.FC = () => {
         // </div>,{
         //   autoClose: 10000
         // })
+        setWarningMessage(hasSufficientBalance.data.data.msg)
         setWarningDialogOpen(true);
         return;
       }

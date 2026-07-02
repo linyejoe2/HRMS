@@ -37,8 +37,8 @@ interface CalcOptions {
  * 主函式：計算請假期間的工作時數
  */
 export function calcWorkingDuration(
-  from: string,
-  to: string,
+  start: Dayjs,
+  end: Dayjs,
   options: CalcOptions = {}
 ): WorkingDurationResult {
   const { holidays = [], useStandard4HourBlocks = false } = options;
@@ -50,9 +50,6 @@ export function calcWorkingDuration(
     crossNight: 0,
     crossHoliday: 0,
   };
-
-  const start = dayjs(from).tz(CONFIG.TZ);
-  const end = dayjs(to).tz(CONFIG.TZ);
 
   if (!start.isValid() || !end.isValid()) throw new Error("Invalid date format");
   if (end.isBefore(start)) return output;

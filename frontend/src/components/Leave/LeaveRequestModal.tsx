@@ -23,13 +23,11 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/zh-tw';
 import { useForm, Controller } from 'react-hook-form';
 import { LeaveRequestForm } from '../../types';
-import { createLeaveRequest } from '../../services/api';
+import { createLeaveRequest, leaveAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchUserLeaveData, RESERVATION_LEAVE_TYPES } from '../../services/leaveService';
-import { calcWorkingDuration } from '@/services/workingTimeCalcService';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -146,63 +144,63 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
   }, [leaveStartDate, leaveStartTime, leaveEndDate, leaveEndTime, setError, clearErrors]);
 
   // Check leave balance
-  const checkLeaveBalance = async (data: LeaveRequestForm): Promise<boolean> => {
-    if (!user?.empID || !user?.hireDate) {
-      return true; // Skip validation if user info not available
-    }
+  // const checkLeaveBalance = async (data: LeaveRequestForm): Promise<boolean> => {
+  //   if (!user?.empID || !user?.hireDate) {
+  //     return true; // Skip validation if user info not available
+  //   }
 
-    const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
-    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
-    if (!leaveTypesToCheck.includes(data.leaveType)) {
-      return true; // Skip validation for other leave types
-    }
+  //   const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
+  //   const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
+  //   if (!leaveTypesToCheck.includes(data.leaveType)) {
+  //     return true; // Skip validation for other leave types
+  //   }
 
-    try {
-      const leaveData = await fetchUserLeaveData(user.empID);
-      const workingDurentObj = calcWorkingDuration(data.leaveStart, data.leaveEnd, { useStandard4HourBlocks: true });
-      const requestedHours = workingDurentObj.hourFormat
+  //   try {
+  //     const leaveData = await fetchUserLeaveData(user.empID);
+  //     const workingDurentObj = calcWorkingDuration(data.leaveStart, data.leaveEnd, { useStandard4HourBlocks: true });
+  //     const requestedHours = workingDurentObj.hourFormat
 
-      let remainingHours = 0;
-      let leaveTypeName = '';
+  //     let remainingHours = 0;
+  //     let leaveTypeName = '';
 
-      switch (data.leaveType) {
-        case '事假':
-          remainingHours = leaveData.personalLeave.remainingHours;
-          leaveTypeName = '事假';
-          break;
-        case '普通傷病假':
-          remainingHours = leaveData.sickLeave.remainingHours;
-          leaveTypeName = '病假';
-          break;
-        case '特別休假':
-          remainingHours = leaveData.specialLeave.remainingHours;
-          leaveTypeName = '特休';
-          break;
-        default: {
-          const found = leaveData.reservationLeaves.find(l => l.type === data.leaveType);
-          if (found) {
-            remainingHours = found.remainingHours;
-            leaveTypeName = found.displayName;
-          }
-        }
-      }
+  //     switch (data.leaveType) {
+  //       case '事假':
+  //         remainingHours = leaveData.personalLeave.remainingHours;
+  //         leaveTypeName = '事假';
+  //         break;
+  //       case '普通傷病假':
+  //         remainingHours = leaveData.sickLeave.remainingHours;
+  //         leaveTypeName = '病假';
+  //         break;
+  //       case '特別休假':
+  //         remainingHours = leaveData.specialLeave.remainingHours;
+  //         leaveTypeName = '特休';
+  //         break;
+  //       default: {
+  //         const found = leaveData.reservationLeaves.find(l => l.type === data.leaveType);
+  //         if (found) {
+  //           remainingHours = found.remainingHours;
+  //           leaveTypeName = found.displayName;
+  //         }
+  //       }
+  //     }
 
-      if (requestedHours > remainingHours) {
-        setWarningMessage(
-          `您的${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，` +
-          `但此次申請需要 ${requestedHours.toFixed(1)} 小時。\n\n` +
-          `超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。\n\n` +
-          `您仍然可以繼續送出申請，但可能需要額外的審核。`
-        );
-        return false;
-      }
+  //     if (requestedHours > remainingHours) {
+  //       setWarningMessage(
+  //         `您的${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，` +
+  //         `但此次申請需要 ${requestedHours.toFixed(1)} 小時。\n\n` +
+  //         `超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。\n\n` +
+  //         `您仍然可以繼續送出申請，但可能需要額外的審核。`
+  //       );
+  //       return false;
+  //     }
 
-      return true;
-    } catch (error) {
-      console.error('Error checking leave balance:', error);
-      return true; // Continue if check fails
-    }
-  };
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Error checking leave balance:', error);
+  //     return true; // Continue if check fails
+  //   }
+  // };
 
   const onSubmit = async (formData: LeaveFormData) => {
     // Combine date and time into ISO format
@@ -229,10 +227,17 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
     };
 
     // Check leave balance first
-    const hasSufficientBalance = await checkLeaveBalance(data);
+    const hasSufficientBalance = await leaveAPI.checkLeaveBalance({
+      leaveType: formData.leaveType,
+      timeStart: leaveStart,
+      timeEnd: leaveEnd
+    }, user!.empID);
 
-    if (!hasSufficientBalance) {
+
+
+    if (!hasSufficientBalance.data.data.sufficient) {
       // Show warning dialog but allow submission
+      setWarningMessage(hasSufficientBalance.data.data.msg)
       setPendingSubmitData(data);
       setWarningDialogOpen(true);
       return;
@@ -512,11 +517,12 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
             <AlertTitle>剩餘時數不足</AlertTitle>
-            {warningMessage.split('\n').map((line, index) => (
+            <Typography variant="body1" gutterBottom sx={{ whiteSpace: 'pre-line' }}> 您的{warningMessage}您仍然可以繼續送出申請，但可能需要額外的審核。</Typography>
+            {/* {warningMessage.split('\n').map((line, index) => (
               <Typography key={index} variant="body2">
                 {line}
               </Typography>
-            ))}
+            ))} */}
           </Alert>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             確定要繼續送出申請嗎？

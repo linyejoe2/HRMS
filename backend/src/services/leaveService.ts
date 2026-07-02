@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, toDayjs } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 import * as XLSX from 'xlsx';
 import { promises } from 'dns';
@@ -20,13 +20,15 @@ export type DurentObject = {
 }
 
 // Leave types whose total allocation comes entirely from HR-entered adjustments.
-export const RESERVATION_LEAVE_TYPES: { type: string; displayName: string }[] = [
+export const RESERVATION_LEAVE_TYPES: { type: LeaveType; displayName: string }[] = [
   { type: '婚假', displayName: '婚假' },
   { type: '喪假', displayName: '喪假' },
 ];
 
+export type LeaveType = "婚假" | "喪假" | '事假' | '普通傷病假' | '特別休假'
+
 export interface LeaveData {
-  type: string; // 婚假 喪假
+  type: LeaveType; // 婚假 喪假
   displayName: string;
   totalHours: number;
   usedHours: number;
@@ -66,7 +68,7 @@ function minsToHours(minutes: number): number {
 }
 
 function buildStandardLeaveData(
-  type: string,
+  type: LeaveType,
   displayName: string,
   baseTotalMinutes: number,
   leaves: ILeave[],
@@ -142,10 +144,10 @@ export class LeaveService {
       throw new APIError('Employee not found', 404);
     }
 
-    const leaveStart = new Date(leaveData.leaveStart);
-    const leaveEnd = new Date(leaveData.leaveEnd);
+    const leaveStart = toDayjs(leaveData.leaveStart)
+    const leaveEnd = toDayjs(leaveData.leaveEnd)
 
-    const timeDiff = calcWorkingDuration(leaveData.leaveStart, leaveData.leaveEnd, { useStandard4HourBlocks: true });
+    const timeDiff = calcWorkingDuration(leaveStart, leaveEnd, { useStandard4HourBlocks: true });
 
     const totalMinutes = Math.floor(timeDiff.minuteFormat);
     const hours = Math.floor(totalMinutes / 60);
@@ -162,8 +164,8 @@ export class LeaveService {
       department: employee.department || '',
       leaveType: leaveData.leaveType,
       reason: leaveData.reason,
-      leaveStart,
-      leaveEnd,
+      leaveStart: leaveStart.toDate(),
+      leaveEnd: leaveEnd.toDate(),
       YYYY,
       mm,
       DD,
@@ -700,22 +702,100 @@ export class LeaveService {
     return { imported, errors };
   }
 
+  static async CheckLeaveBalance(empID: string, type: LeaveType, start: Dayjs, end: Dayjs): Promise<{ sufficient: boolean, msg: string }> {
+
+
+    const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
+    const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
+    if (!leaveTypesToCheck.includes(type)) {
+      return { sufficient: true, msg: "" }; // Skip validation for other leave types
+    }
+
+    const balance = await this.getUserLeaveBalance(empID, start, end)
+    const workingDurentObj = calcWorkingDuration(start, end, { useStandard4HourBlocks: true });
+    const requestedHours = workingDurentObj.hourFormat
+
+    let remainingHours = 0;
+    let leaveTypeName = '';
+
+    switch (type) {
+      case '事假':
+        remainingHours = balance.personalLeave.remainingHours;
+        leaveTypeName = '事假';
+        break;
+      case '普通傷病假':
+        remainingHours = balance.sickLeave.remainingHours;
+        leaveTypeName = '病假';
+        break;
+      case '特別休假':
+        remainingHours = balance.specialLeave.remainingHours;
+        leaveTypeName = '特休';
+        break;
+      default: {
+        const found = balance.reservationLeaves.find(l => l.type === type);
+        if (found) {
+          remainingHours = found.remainingHours;
+          leaveTypeName = found.displayName;
+        }
+      }
+    }
+
+    if (workingDurentObj.hourFormat > remainingHours) {
+      return {
+        sufficient: false, msg:
+          `${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，` +
+          `但此次申請需要 ${requestedHours.toFixed(1)} 小時。\n` +
+          `超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。\n`
+      };
+    }
+    return { sufficient: true, msg: "" };
+  }
+
+  //  import { Dayjs } from 'dayjs';
+
   /**
    * Return the full leave balance for an employee.
    * Queries DB directly; respects adjustment effectiveDate/expiryDate ranges.
    */
-  static async getUserLeaveBalance(empID: string): Promise<UserLeaveData> {
+  static async getUserLeaveBalance(
+    empID: string,
+    start?: Dayjs,
+    end?: Dayjs
+  ): Promise<UserLeaveData> {
     const now = new Date();
-    const oneYearAgo = new Date(now);
-    oneYearAgo.setFullYear(now.getFullYear() - 1);
-    const oneYearLater = new Date(now);
-    oneYearLater.setFullYear(now.getFullYear() + 1);
+
+    // 1. 決定 Leave 的時間篩選範圍（若無帶入則維持原本的前後一年預設值）
+    const oneYearBefore = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const oneYearAfter = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    const queryStart = start ? start.toDate() : oneYearBefore;
+    const queryEnd = end ? end.toDate() : oneYearAfter;
 
     const dateFilter = {
       $or: [
-        { leaveStart: { $gte: oneYearAgo, $lte: oneYearLater } },
-        { leaveEnd: { $gte: oneYearAgo, $lte: oneYearLater } },
-        { leaveStart: { $lte: oneYearAgo }, leaveEnd: { $gte: oneYearLater } }
+        { leaveStart: { $gte: oneYearBefore, $lte: oneYearAfter } },
+        { leaveEnd: { $gte: oneYearBefore, $lte: oneYearAfter } },
+        { leaveStart: { $lte: oneYearBefore }, leaveEnd: { $gte: oneYearAfter } }
+      ]
+    };
+
+    // 2. 建立 LeaveAdjustment 的時間篩選條件
+    // 邏輯：(effectiveDate 沒填 OR <= queryEnd) AND (expiryDate 沒填 OR >= queryStart)
+    const adjDateFilter = {
+      $and: [
+        {
+          $or: [
+            { effectiveDate: { $exists: false } },
+            { effectiveDate: null },
+            { effectiveDate: { $lte: queryEnd } }
+          ]
+        },
+        {
+          $or: [
+            { expiryDate: { $exists: false } },
+            { expiryDate: null },
+            { expiryDate: { $gte: queryStart } }
+          ]
+        }
       ]
     };
 
@@ -723,24 +803,27 @@ export class LeaveService {
     const hireDate = employee?.hireDate ? new Date(employee.hireDate) : undefined;
     const specialTotalDays = hireDate ? LeaveService.calcAnnualLeaveEntitlementDays(hireDate) : 0;
 
+    // 3. 查詢 Leaves
     const [personalLeaves, sickLeaves, specialLeaves] = await Promise.all([
       Leave.find({ empID, leaveType: '事假', status: 'approved', ...dateFilter }),
       Leave.find({ empID, leaveType: '普通傷病假', status: 'approved', ...dateFilter }),
       Leave.find({ empID, leaveType: '特別休假', status: 'approved', ...dateFilter })
     ]);
 
+    // 4. 查詢 Adjustments（加上 adjDateFilter）
     const [personalAdj, sickAdj, specialAdj] = await Promise.all([
-      LeaveAdjustment.find({ empID, leaveType: '事假' }),
-      LeaveAdjustment.find({ empID, leaveType: '普通傷病假' }),
-      LeaveAdjustment.find({ empID, leaveType: '特別休假' })
+      LeaveAdjustment.find({ empID, leaveType: '事假', ...adjDateFilter }),
+      LeaveAdjustment.find({ empID, leaveType: '普通傷病假', ...adjDateFilter }),
+      LeaveAdjustment.find({ empID, leaveType: '特別休假', ...adjDateFilter })
     ]);
 
+    // 5. 查詢彈性假別與其 Adjustments
     const [reservationLeaveResults, reservationAdjResults] = await Promise.all([
       Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
         Leave.find({ empID, leaveType: rt.type, status: 'approved', ...dateFilter })
       )),
       Promise.all(RESERVATION_LEAVE_TYPES.map(rt =>
-        LeaveAdjustment.find({ empID, leaveType: rt.type })
+        LeaveAdjustment.find({ empID, leaveType: rt.type, ...adjDateFilter })
       ))
     ]);
 

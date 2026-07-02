@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 import { generateAnnualLeaveTable } from '../services/excel/annualLeaveTable';
 import { generateLeaveSummaryReport } from '../services/excel/leaveSummaryReport';
 import { generateEmployeeLeaveReport } from '../services/excel/employeeLeaveReport';
+import { dayjsTz, errorToString, toDayjs } from '../util/utility';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
@@ -174,6 +175,22 @@ export const getLeaveBalance = asyncHandler(async (req: AuthRequest, res: Respon
   });
 });
 
+export const checkLeaveBalance = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { empID } = req.params;
+  const { leaveType, timeStart, timeEnd } = req.body
+  try {
+    const balance = await LeaveService.CheckLeaveBalance(empID, leaveType, toDayjs(timeStart), toDayjs(timeEnd));
+
+    res.json({
+      error: false,
+      message: '成功取得假別餘額',
+      data: balance
+    });
+  } catch (error) {
+    res.json({ error: true, message: errorToString(error) })
+  }
+});
+
 export const importLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
   const records = req.body;
 
@@ -203,7 +220,7 @@ export const downloadAnnualLeaveReport = asyncHandler(async (req: AuthRequest, r
     });
   }
 
-  const yearNum  = parseInt(year as string);
+  const yearNum = parseInt(year as string);
   const monthNum = parseInt(month as string);
 
   if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
@@ -233,7 +250,7 @@ export const downloadLeaveSummaryReport = asyncHandler(async (req: AuthRequest, 
     });
   }
 
-  const yearNum  = parseInt(year as string);
+  const yearNum = parseInt(year as string);
   const monthNum = parseInt(month as string);
 
   if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {

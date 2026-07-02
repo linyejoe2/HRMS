@@ -14,7 +14,8 @@ import {
   getLeaveBalance,
   downloadLeaveSummaryReport,
   downloadEmployeeLeaveReport,
-  downloadAnnualLeaveReport
+  downloadAnnualLeaveReport,
+  checkLeaveBalance
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -35,6 +36,8 @@ router.get('/reports/annual-leave', authenticateToken, requireRole(['hr', 'admin
 router.get('/reports/employee', authenticateToken, requireRole(['hr', 'admin']), downloadEmployeeLeaveReport);
 
 router.get('/balance/:empID', authenticateToken, getLeaveBalance);
+
+router.post('/check-balance/:empID', authenticateToken, checkLeaveBalance)
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 

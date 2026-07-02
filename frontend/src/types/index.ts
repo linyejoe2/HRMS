@@ -6,23 +6,23 @@ export interface User {
   lastLogin: string;
   hireDate: string;
 
-//   {
-//     "_id": "68c3ab8adae87c791839865c",
-//     "name": "林承慶",
-//     "cardID": "12638417",
-//     "empID": "A540",
-//     "isActive": true,
-//     "role": "admin",
-//     "createdAt": "2025-09-12T03:17:16.000Z",
-//     "updatedAt": "2025-11-12T08:35:34.791Z",
-//     "department": "研發課",
-//     "hireDate": "2024-01-23T00:00:00.000Z",
-//     "lastLogin": "2025-11-12T08:35:34.790Z",
-//     "sickLeaveDaysInHospitalInThePastYear": "0",
-//     "sickLeaveDaysInThePastTwoYear": "0",
-//     "sickLeaveDaysInThePastYear": "10",
-//     "sickLeaveDaysPriorToThePastTwoYear": "0"
-// }
+  //   {
+  //     "_id": "68c3ab8adae87c791839865c",
+  //     "name": "林承慶",
+  //     "cardID": "12638417",
+  //     "empID": "A540",
+  //     "isActive": true,
+  //     "role": "admin",
+  //     "createdAt": "2025-09-12T03:17:16.000Z",
+  //     "updatedAt": "2025-11-12T08:35:34.791Z",
+  //     "department": "研發課",
+  //     "hireDate": "2024-01-23T00:00:00.000Z",
+  //     "lastLogin": "2025-11-12T08:35:34.790Z",
+  //     "sickLeaveDaysInHospitalInThePastYear": "0",
+  //     "sickLeaveDaysInThePastTwoYear": "0",
+  //     "sickLeaveDaysInThePastYear": "10",
+  //     "sickLeaveDaysPriorToThePastTwoYear": "0"
+  // }
 }
 
 export interface Employee {
@@ -112,6 +112,11 @@ export interface LeaveRequest {
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CheckLeaveBalanceRes {
+  sufficient: boolean,
+  msg: string
 }
 
 export enum UserLevel {
