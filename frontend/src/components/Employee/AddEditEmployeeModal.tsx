@@ -444,9 +444,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       newErrors.empID = '員工編號只能包含英文字母和數字';
     }
 
-    if (!formData.cardID.trim()) {
-      newErrors.cardID = '請輸入門禁卡號';
-    }
+    // if (!formData.cardID.trim()) {
+    //   newErrors.cardID = '請輸入門禁卡號';
+    // }
 
     // if (!formData.department) {
     //   newErrors.department = '請選擇部門';
@@ -638,7 +638,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
               <TextField
                 fullWidth
                 label="門禁卡號"
-                required
+                // required
                 value={formData.cardID}
                 onChange={(e) => handleInputChange('cardID', e.target.value)}
                 error={!!errors.cardID}
