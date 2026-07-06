@@ -113,7 +113,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
       ...postClockRequest,
       time: dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm'),
       date2: postClockRequest.date2 ? dayjs(postClockRequest.date2).format('YYYY/MM/DD') : '',
-      time2: postClockRequest.time2 ? dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm') : '',
+      time2: postClockRequest.time2 ? "-" + dayjs(postClockRequest.time2).format('HH:mm') : '',
       type: clockTypeLabel,
       sequenceNumber: `#${postClockRequest.sequenceNumber || 'N/A'}`,
       YYYY: createdDate.format('YYYY'),
