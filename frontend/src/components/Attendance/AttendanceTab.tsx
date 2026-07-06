@@ -154,6 +154,22 @@ const AttendanceTab: React.FC = () => {
       // Process postClock records
       postClocks.forEach((pc: any) => {
         if (directorEmpIDs.has(pc.empID)) return;
+
+        if (pc.clockType === 'in&out') {
+          const inRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date));
+          if (!inRecord.clockInTime) {
+            inRecord.clockInTime = pc.time;
+            inRecord.clockInSource = '補單';
+          }
+
+          const outRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date2 || pc.date));
+          if (!outRecord.clockOutTime) {
+            outRecord.clockOutTime = pc.time2;
+            outRecord.clockOutSource = '補單';
+          }
+          return;
+        }
+
         const dateStr = toTaipeiDate(pc.date);
         const record = getOrCreateRecord(pc.empID, dateStr);
 

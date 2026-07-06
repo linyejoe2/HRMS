@@ -8,7 +8,9 @@ export interface IPostClock extends Document {
   department: string;
   date: Date; // The date for the clock correction
   time: Date; // The time to be recorded
-  clockType: 'in' | 'out'; // Clock in or out
+  date2?: Date; // The date for the clock-out correction when clockType is 'in&out'
+  time2?: Date; // The time to be recorded for the clock-out correction when clockType is 'in&out'
+  clockType: 'in' | 'out' | 'in&out'; // Clock in, out, or both
   reason: string;
   supportingInfo?: string[]; // Array of file paths or URLs to supporting documents
   status: 'created' | 'approved' | 'rejected' | 'cancel';
@@ -45,9 +47,15 @@ const postClockSchema = new Schema<IPostClock>({
     type: Date,
     required: true
   },
+  date2: {
+    type: Date
+  },
+  time2: {
+    type: Date
+  },
   clockType: {
     type: String,
-    enum: ['in', 'out'],
+    enum: ['in', 'out', 'in&out'],
     required: true
   },
   reason: {

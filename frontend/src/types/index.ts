@@ -253,9 +253,11 @@ export interface AttendanceSummary {
 }
 
 export interface PostClockRequestForm {
-  date: string; // Date for the clock correction
-  time: string; // Time to be recorded
-  clockType: 'in' | 'out'; // Clock in or out
+  date: string; // Date for the clock correction (clock-in date when clockType is 'in&out')
+  time: string; // Time to be recorded (clock-in time when clockType is 'in&out')
+  date2?: string; // Date for the clock-out correction when clockType is 'in&out'
+  time2?: string; // Time for the clock-out correction when clockType is 'in&out'
+  clockType: 'in' | 'out' | 'in&out'; // Clock in, out, or both
   reason: string;
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf)
 }
@@ -265,9 +267,11 @@ export interface PostClockRequest {
   name: string; // from table employee
   department: string; // from table employee
   empID: string; // from table employee
-  date: string; // Date for the clock correction
-  time: string; // Time to be recorded
-  clockType: 'in' | 'out'; // Clock in or out
+  date: string; // Date for the clock correction (clock-in date when clockType is 'in&out')
+  time: string; // Time to be recorded (clock-in time when clockType is 'in&out')
+  date2?: string; // Date for the clock-out correction when clockType is 'in&out'
+  time2?: string; // Time for the clock-out correction when clockType is 'in&out'
+  clockType: 'in' | 'out' | 'in&out'; // Clock in, out, or both
   reason: string;
   supportingInfo?: string[]; // Array of file paths/URLs
   status: 'created' | 'approved' | 'rejected' | 'cancel';

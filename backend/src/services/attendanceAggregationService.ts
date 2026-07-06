@@ -70,7 +70,10 @@ export class AttendanceAggregationService {
       }),
       PostClock.find({
         empID: { $in: allowedEmpIDs },
-        date: { $gte: startDate, $lte: endDate },
+        $or: [
+          { date: { $gte: startDate, $lte: endDate } },
+          { date2: { $gte: startDate, $lte: endDate } }
+        ],
         status: 'approved'
       })
     ]);

@@ -406,6 +406,8 @@ export const postClockAPI = {
     const formData = new FormData();
     formData.append('date', postClockData.date);
     formData.append('time', postClockData.time);
+    if (postClockData.date2) formData.append('date2', postClockData.date2);
+    if (postClockData.time2) formData.append('time2', postClockData.time2);
     formData.append('clockType', postClockData.clockType);
     formData.append('reason', postClockData.reason);
 

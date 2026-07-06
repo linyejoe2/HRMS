@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { PostClock, IPostClock, Employee } from '../models';
 import { APIError } from '../middleware/errorHandler';
 
@@ -5,7 +6,9 @@ export class PostClockService {
   static async createPostClockRequest(empID: string, postClockData: {
     date: string;
     time: string;
-    clockType: 'in' | 'out';
+    date2?: string;
+    time2?: string;
+    clockType: 'in' | 'out' | 'in&out';
     reason: string;
     supportingInfo?: string[];
   }): Promise<IPostClock> {
@@ -14,8 +17,15 @@ export class PostClockService {
       throw new APIError('Employee not found', 404);
     }
 
-    const date = new Date(postClockData.date);
-    const time = new Date(postClockData.time);
+    const date = dayjs(postClockData.date).toDate();
+    const time = dayjs(postClockData.time).toDate();
+
+    if (postClockData.clockType === 'in&out' && (!postClockData.date2 || !postClockData.time2)) {
+      throw new APIError('date2 and time2 are required when clockType is in&out', 400);
+    }
+
+    const date2 = postClockData.date2 ? dayjs(postClockData.date2).toDate() : undefined;
+    const time2 = postClockData.time2 ? dayjs(postClockData.time2).toDate() : undefined;
 
     const postClock = new PostClock({
       empID,
@@ -23,6 +33,8 @@ export class PostClockService {
       department: employee.department || '',
       date,
       time,
+      date2,
+      time2,
       clockType: postClockData.clockType,
       reason: postClockData.reason,
       supportingInfo: postClockData.supportingInfo,

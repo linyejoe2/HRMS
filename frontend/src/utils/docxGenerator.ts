@@ -1,5 +1,6 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import dayjs from 'dayjs';
 import { LeaveRequest, PostClockRequest, BusinessTripRequest } from '../types';
 import { toTaipeiString } from '@/utils/util/utility';
 
@@ -102,15 +103,22 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     const zip = new PizZip(arrayBuffer);
     const doc = new Docxtemplater().loadZip(zip);
 
-    const createdDate = new Date(postClockRequest.createdAt || Date.now());
+    const createdDate = dayjs(postClockRequest.createdAt || undefined);
+    const clockTypeLabel = postClockRequest.clockType === 'in'
+      ? '上班'
+      : postClockRequest.clockType === 'out'
+        ? '下班'
+        : '上下班';
     const templateData = {
       ...postClockRequest,
-      time: new Date(postClockRequest.time).toLocaleString('zh-TW'),
-      type: postClockRequest.clockType === 'in' ? '上班' : '下班',
+      time: dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm'),
+      date2: postClockRequest.date2 ? dayjs(postClockRequest.date2).format('YYYY/MM/DD') : '',
+      time2: postClockRequest.time2 ? dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm') : '',
+      type: clockTypeLabel,
       sequenceNumber: `#${postClockRequest.sequenceNumber || 'N/A'}`,
-      YYYY: createdDate.getFullYear(),
-      mm: String(createdDate.getMonth() + 1).padStart(2, '0'),
-      DD: String(createdDate.getDate()).padStart(2, '0')
+      YYYY: createdDate.format('YYYY'),
+      mm: createdDate.format('MM'),
+      DD: createdDate.format('DD')
     };
 
     // Fill the template with data
@@ -132,7 +140,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     // Create download link
     const link = document.createElement('a');
     link.href = URL.createObjectURL(output);
-    const dateStr = new Date(postClockRequest.date).toLocaleDateString('zh-TW').replace(/\//g, '_');
+    const dateStr = dayjs(postClockRequest.date).format('YYYY_MM_DD');
     link.download = `補單_${dateStr}_${postClockRequest.name}.docx`;
 
     // Trigger download

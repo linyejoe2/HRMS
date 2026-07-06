@@ -17,6 +17,7 @@ import {
   Attachment as AttachmentIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 import { PostClockRequest } from '../../types';
 import { getMyPostClockRequests, cancelPostClockRequest } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -102,7 +103,9 @@ const PostClockTab: React.FC = () => {
   };
 
   const getClockTypeLabel = (clockType: string) => {
-    return clockType === 'in' ? '上班' : '下班';
+    if (clockType === 'in') return '上班';
+    if (clockType === 'out') return '下班';
+    return '上下班';
   };
 
   const columns: GridColDef[] = [
@@ -117,14 +120,28 @@ const PostClockTab: React.FC = () => {
       field: 'date',
       headerName: '補單日期',
       flex: 1.5,
-      valueGetter: (_, row) => new Date(row.date).toLocaleDateString('zh-TW'),
+      valueGetter: (_, row) => dayjs(row.date).format('YYYY/MM/DD'),
       sortable: true
     },
     {
       field: 'time',
       headerName: '補單時間',
       flex: 1.5,
-      valueGetter: (_, row) => new Date(row.time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+      valueGetter: (_, row) => dayjs(row.time).format('HH:mm'),
+      sortable: true
+    },
+    {
+      field: 'date2',
+      headerName: '補單日期(下班)',
+      flex: 1.5,
+      valueGetter: (_, row) => row.date2 ? dayjs(row.date2).format('YYYY/MM/DD') : '-',
+      sortable: true
+    },
+    {
+      field: 'time2',
+      headerName: '補單時間(下班)',
+      flex: 1.5,
+      valueGetter: (_, row) => row.time2 ? dayjs(row.time2).format('HH:mm') : '-',
       sortable: true
     },
     {

@@ -36,7 +36,9 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
   type FormData = {
     date: string;
     time: string;
-    clockType: 'in' | 'out';
+    date2: string;
+    time2: string;
+    clockType: 'in' | 'out' | 'in&out';
     reason: string;
     dateObj: Dayjs | null;
     timeObj: Dayjs | null;
@@ -46,17 +48,23 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
       date: dayjs().toISOString(),
       time: dayjs().hour(8).minute(30).second(0).toISOString(),
+      date2: dayjs().toISOString(),
+      time2: dayjs().hour(17).minute(30).second(0).toISOString(),
       clockType: 'in' as const,
       reason: '',
       dateObj: null,
       timeObj: null
     }
   });
+
+  const clockType = watch('clockType');
+  const isInAndOut = clockType === 'in&out';
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -78,6 +86,19 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         reason: data.reason,
         supportingInfo: files.length > 0 ? files : undefined
       };
+
+      if (data.clockType === 'in&out') {
+        const date2Obj = dayjs(data.date2);
+        const time2Obj = dayjs(data.time2);
+        const combinedDateTime2 = date2Obj
+          .hour(time2Obj.hour())
+          .minute(time2Obj.minute())
+          .second(0)
+          .millisecond(0);
+
+        submitData.date2 = date2Obj.format('YYYY-MM-DD');
+        submitData.time2 = combinedDateTime2.toISOString();
+      }
 
       await createPostClockRequest(submitData);
       toast.success('補單申請已成功送出');
@@ -128,7 +149,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   rules={{ required: '請選擇補單日期' }}
                   render={({ field: { onChange, value } }) => (
                     <DatePicker
-                      label="補單日期"
+                      label={isInAndOut ? '補單日期(上班)' : '補單日期'}
                       value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
@@ -153,7 +174,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   rules={{ required: '請選擇補單時間' }}
                   render={({ field: { onChange, value } }) => (
                     <TimePicker
-                      label="補單時間"
+                      label={isInAndOut ? '補單時間(上班)' : '補單時間'}
                       value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
@@ -189,10 +210,66 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                     >
                       <MenuItem value="in">上班</MenuItem>
                       <MenuItem value="out">下班</MenuItem>
+                      <MenuItem value="in&out">上下班</MenuItem>
                     </TextField>
                   )}
                 />
               </Grid>
+
+              {isInAndOut && (
+                <>
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name="date2"
+                      control={control}
+                      rules={{ required: isInAndOut ? '請選擇下班日期' : false }}
+                      render={({ field: { onChange, value } }) => (
+                        <DatePicker
+                          label="補單日期(下班)"
+                          value={dayjs(value)}
+                          onChange={(newValue) => {
+                            onChange(newValue?.toISOString() || '');
+                          }}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              error: !!errors.date2,
+                              helperText: errors.date2?.message,
+                              required: true
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name="time2"
+                      control={control}
+                      rules={{ required: isInAndOut ? '請選擇下班時間' : false }}
+                      render={({ field: { onChange, value } }) => (
+                        <TimePicker
+                          label="補單時間(下班)"
+                          value={dayjs(value)}
+                          onChange={(newValue) => {
+                            onChange(newValue?.toISOString() || '');
+                          }}
+                          ampm={false}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              error: !!errors.time2,
+                              helperText: errors.time2?.message,
+                              required: true
+                            }
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </>
+              )}
 
               <Grid item xs={12}>
                 <Controller
