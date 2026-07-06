@@ -2,6 +2,7 @@ import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment,
 import { APIError } from '../middleware/errorHandler';
 import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, toDayjs } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
+import { holidayService } from './holidayService';
 import * as XLSX from 'xlsx';
 import { promises } from 'dns';
 import legacyLeaveJson from "../config/legacyLeave.json"
@@ -17,6 +18,12 @@ export type DurentObject = {
   crossBreaktime: number;
   crossNight: number;
   crossholiday: number;
+}
+
+export interface FixLeaveEndDatesResult {
+  scanned: number; // records matching the "leaveStart & leaveEnd both at 08:30" bug
+  fixed: number;
+  skipped: { leaveId: string; sequenceNumber?: number; reason: string }[];
 }
 
 // Leave types whose total allocation comes entirely from HR-entered adjustments.
@@ -837,5 +844,89 @@ export class LeaveService {
       specialLeave: buildStandardLeaveData('特別休假', '特休', specialTotalDays * 8 * 60, specialLeaves, specialAdj),
       reservationLeaves
     };
+  }
+
+  /**
+   * Data-fix for leave records where leaveStart and leaveEnd were both saved as 08:30
+   * (leaveEnd was never actually calculated). Recomputes leaveEnd from the stored
+   * hour/minutes duration, treating one workday as 8 standard hours
+   * (08:30-12:00 morning, 13:00-17:30 afternoon, matching workingTimeCalcService's
+   * useStandard4HourBlocks weighting) and skipping weekends/registered holidays.
+   */
+  static async fixMissingLeaveEndDates(dryRun: boolean = false): Promise<FixLeaveEndDatesResult> {
+    const TZ = 'Asia/Taipei';
+    const STD_HALF_DAY_MINS = 4 * 60;
+    const STD_FULL_DAY_MINS = STD_HALF_DAY_MINS * 2;
+    const REAL_MORNING_MINS = 3.5 * 60;
+    const REAL_AFTERNOON_MINS = 4.5 * 60;
+
+    const leaves = await Leave.find({});
+    const holidays = await holidayService.getAllHolidays();
+    const holidaySet = new Set(holidays.map(h => dayjs(h.date).tz(TZ).format('YYYY-MM-DD')));
+
+    const result: FixLeaveEndDatesResult = { scanned: 0, fixed: 0, skipped: [] };
+
+    for (const leave of leaves) {
+      const start = dayjs(leave.leaveStart).tz(TZ);
+      const end = dayjs(leave.leaveEnd).tz(TZ);
+
+      const isBrokenTime = start.hour() === 8 && start.minute() === 30 &&
+        end.hour() === 8 && end.minute() === 30;
+      if (!isBrokenTime) continue;
+
+      result.scanned++;
+
+      const hourNum = parseInt(leave.hour, 10);
+      const minuteNum = parseInt(leave.minutes || '0', 10);
+
+      if (isNaN(hourNum) || hourNum < 0) {
+        result.skipped.push({ leaveId: (leave._id as any).toString(), sequenceNumber: leave.sequenceNumber, reason: `無效的 hour 欄位: "${leave.hour}"` });
+        continue;
+      }
+
+      let remaining = hourNum * 60 + (isNaN(minuteNum) ? 0 : minuteNum);
+      if (remaining <= 0) {
+        result.skipped.push({ leaveId: (leave._id as any).toString(), sequenceNumber: leave.sequenceNumber, reason: '請假時數為 0，無需修正' });
+        continue;
+      }
+
+      let cursor = start.startOf('day');
+      let newEnd: Dayjs | null = null;
+
+      for (let safety = 0; safety < 3650 && !newEnd; safety++) {
+        const dow = cursor.day();
+        const isWeekend = dow === 0 || dow === 6;
+        const isHoliday = holidaySet.has(cursor.format('YYYY-MM-DD'));
+
+        if (isWeekend || isHoliday) {
+          cursor = cursor.add(1, 'day');
+          continue;
+        }
+
+        if (remaining <= STD_HALF_DAY_MINS) {
+          const realMinutes = (remaining / STD_HALF_DAY_MINS) * REAL_MORNING_MINS;
+          newEnd = cursor.hour(8).minute(30).second(0).millisecond(0).add(realMinutes, 'minute');
+        } else if (remaining <= STD_FULL_DAY_MINS) {
+          const realMinutes = ((remaining - STD_HALF_DAY_MINS) / STD_HALF_DAY_MINS) * REAL_AFTERNOON_MINS;
+          newEnd = cursor.hour(13).minute(0).second(0).millisecond(0).add(realMinutes, 'minute');
+        } else {
+          remaining -= STD_FULL_DAY_MINS;
+          cursor = cursor.add(1, 'day');
+        }
+      }
+
+      if (!newEnd) {
+        result.skipped.push({ leaveId: (leave._id as any).toString(), sequenceNumber: leave.sequenceNumber, reason: '無法計算結束日期（超過安全上限）' });
+        continue;
+      }
+
+      if (!dryRun) {
+        leave.leaveEnd = newEnd.toDate();
+        await leave.save();
+      }
+      result.fixed++;
+    }
+
+    return result;
   }
 }
