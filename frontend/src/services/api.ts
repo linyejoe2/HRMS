@@ -586,7 +586,9 @@ export const officialBusinessAPI = {
     formData.append('empIDs', JSON.stringify(officialBusinessData.empIDs));
     formData.append('licensePlate', officialBusinessData.licensePlate);
     formData.append('startTime', officialBusinessData.startTime);
-    formData.append('endTime', officialBusinessData.endTime);
+    if (officialBusinessData.endTime) {
+      formData.append('endTime', officialBusinessData.endTime);
+    }
     formData.append('purpose', officialBusinessData.purpose);
 
     if (officialBusinessData.supportingInfo && officialBusinessData.supportingInfo.length > 0) {
@@ -617,6 +619,10 @@ export const officialBusinessAPI = {
   // Get official business request by sequence number
   getBySequenceNumber: (sequenceNumber: number): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
     api.get(`/officialbusiness/sequence/${sequenceNumber}`),
+
+  // Update the return time (endTime) of a pending request (applicant only)
+  updateEndTime: (id: string, endTime: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/endtime`, { endTime }),
 
   // Approve official business request (HR/Admin only)
   approve: (id: string, files?: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {

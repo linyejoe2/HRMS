@@ -227,7 +227,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
       flex: 1.5,
       minWidth: 160,
       sortable: true,
-      valueGetter: (_, row) => new Date(row.endTime).toLocaleString('zh-TW')
+      valueGetter: (_, row) => row.endTime ? new Date(row.endTime).toLocaleString('zh-TW') : '尚未填寫'
     },
     {
       field: 'purpose',
@@ -293,12 +293,14 @@ const ApproveOfficialBusinessTab: React.FC = () => {
         const actions = [];
 
         if (params.row.status === 'created') {
-          // Approve
+          // Approve - blocked until the applicant has filled in a return time
           actions.push(
             <GridActionsCellItem
               icon={
-                <Tooltip title="核准">
-                  <CheckIcon color="success" />
+                <Tooltip title={'核准'}>
+                  <span>
+                    <CheckIcon color={'success'} />
+                  </span>
                 </Tooltip>
               }
               label="核准"
@@ -306,6 +308,21 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               showInMenu={false}
             />
           );
+          // actions.push(
+          //   <GridActionsCellItem
+          //     icon={
+          //       <Tooltip title={params.row.endTime ? '核准' : '申請人尚未填寫返回時間'}>
+          //         <span>
+          //           <CheckIcon color={params.row.endTime ? 'success' : 'disabled'} />
+          //         </span>
+          //       </Tooltip>
+          //     }
+          //     label="核准"
+          //     onClick={() => handleApproveClick(params.row)}
+          //     disabled={!params.row.endTime}
+          //     showInMenu={false}
+          //   />
+          // );
 
           // Reject
           actions.push(
@@ -461,7 +478,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             外出時間：{selectedRequest && new Date(selectedRequest.startTime).toLocaleString('zh-TW')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            返回時間：{selectedRequest && new Date(selectedRequest.endTime).toLocaleString('zh-TW')}
+            返回時間：{selectedRequest?.endTime ? new Date(selectedRequest.endTime).toLocaleString('zh-TW') : '尚未填寫'}
           </Typography>
           <FileUploadField
             files={approveFiles}

@@ -1,7 +1,7 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import dayjs from 'dayjs';
-import { LeaveRequest, PostClockRequest, BusinessTripRequest } from '../types';
+import { LeaveRequest, PostClockRequest, BusinessTripRequest, OfficialBusinessRequest } from '../types';
 import { toTaipeiString } from '@/utils/util/utility';
 
 export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Promise<void> => {
@@ -225,6 +225,76 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
 
   } catch (error) {
     console.error('生成出差申請失敗：', error);
+    throw error;
+  }
+};
+
+export const generateOfficialBusinessRequestDocx = async (officialBusinessRequest: OfficialBusinessRequest): Promise<void> => {
+  try {
+    // Load the template file from public directory
+    const templateUrl = '/templates/officialBusiness.docx';
+    const response = await fetch(templateUrl);
+
+    if (!response.ok) {
+      throw new Error(`無法載入外出申請範本 (HTTP ${response.status})`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+
+    // Check if we got a valid arrayBuffer
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      throw new Error('外出申請範本文件為空或無法讀取');
+    }
+
+    console.log('Template file size:', arrayBuffer.byteLength, 'bytes');
+
+    const zip = new PizZip(arrayBuffer);
+    const doc = new Docxtemplater().loadZip(zip);
+
+    const createdDate = dayjs(officialBusinessRequest.createdAt || undefined);
+    const templateData = {
+      name: officialBusinessRequest.applicantName,
+      licensePlate: officialBusinessRequest.licensePlate || '-',
+      startTime: dayjs(officialBusinessRequest.startTime).format('YYYY/MM/DD HH:mm'),
+      endTime: officialBusinessRequest.endTime ? dayjs(officialBusinessRequest.endTime).format('YYYY/MM/DD HH:mm') : '',
+      reason: officialBusinessRequest.purpose,
+      YYYY: createdDate.format('YYYY'),
+      mm: createdDate.format('MM'),
+      DD: createdDate.format('DD')
+    };
+
+    // Fill the template with data
+    doc.setData(templateData);
+
+    try {
+      doc.render();
+    } catch (error) {
+      console.error('DOCX 渲染錯誤：', error);
+      throw new Error('外出申請範本處理失敗，請檢查範本格式');
+    }
+
+    // Generate the document
+    const output = doc.getZip().generate({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(output);
+    const startDate = dayjs(officialBusinessRequest.startTime).format('YYYY_MM_DD');
+    link.download = `外出申請_${startDate}_${officialBusinessRequest.applicantName}.docx`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL
+    URL.revokeObjectURL(link.href);
+
+  } catch (error) {
+    console.error('生成外出申請失敗：', error);
     throw error;
   }
 };

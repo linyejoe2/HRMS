@@ -9,7 +9,7 @@ export interface IOfficialBusiness extends Document {
   participantNames: string[];
   licensePlate: string;
   startTime: Date;
-  endTime: Date;
+  endTime?: Date;
   purpose: string;
   supportingInfo?: string[];
   status: 'created' | 'approved' | 'rejected' | 'cancel';
@@ -51,8 +51,7 @@ const officialBusinessSchema = new Schema<IOfficialBusiness>({
     index: true
   },
   endTime: {
-    type: Date,
-    required: true
+    type: Date
   },
   purpose: {
     type: String,

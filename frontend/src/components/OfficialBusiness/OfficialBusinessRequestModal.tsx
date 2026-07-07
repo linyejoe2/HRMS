@@ -91,12 +91,12 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
     } else {
       // Set default times when modal opens
       const now = dayjs();
-      const defaultStartTime = now.hour(8).minute(30).second(0);
-      const defaultEndTime = now.hour(17).minute(30).second(0);
-      setStartTime(defaultStartTime);
-      setEndTime(defaultEndTime);
+      setStartTime(now.hour(8).minute(30).second(0));
+      // hrMode auto-approves immediately, so default the return time too;
+      // in the normal flow leave it blank so the applicant can fill it in later.
+      setEndTime(hrMode ? now.hour(17).minute(30).second(0) : null);
     }
-  }, [open, clearFiles]);
+  }, [open, clearFiles, hrMode]);
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -116,14 +116,10 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
       return;
     }
 
-    if (!endTime) {
+    // hrMode auto-approves on creation, so the return time must be known up front.
+    // In the normal flow the applicant may leave it blank and fill it in later.
+    if (hrMode && !endTime) {
       toast.error('請選擇返回時間');
-      return;
-    }
-
-    // Check if start and end times are on the same day
-    if (!startTime.isSame(endTime, 'day')) {
-      toast.error('外出時間與返回時間必須在同一天');
       return;
     }
 
@@ -135,17 +131,25 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
       return;
     }
 
-    // Check if endTime is at or before 17:30
-    const endTimeMinutes = endTime.hour() * 60 + endTime.minute();
-    const maxTimeMinutes = 17 * 60 + 30; // 17:30
-    if (endTimeMinutes > maxTimeMinutes) {
-      toast.error('返回時間必須在 17:30 之前');
-      return;
-    }
+    if (endTime) {
+      // Check if start and end times are on the same day
+      if (!startTime.isSame(endTime, 'day')) {
+        toast.error('外出時間與返回時間必須在同一天');
+        return;
+      }
 
-    if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
-      toast.error('返回時間必須晚於外出時間');
-      return;
+      // Check if endTime is at or before 17:30
+      const endTimeMinutes = endTime.hour() * 60 + endTime.minute();
+      const maxTimeMinutes = 17 * 60 + 30; // 17:30
+      if (endTimeMinutes > maxTimeMinutes) {
+        toast.error('返回時間必須在 17:30 之前');
+        return;
+      }
+
+      if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
+        toast.error('返回時間必須晚於外出時間');
+        return;
+      }
     }
 
     if (!purpose.trim()) {
@@ -160,7 +164,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         empIDs: selectedEmployees.map(emp => emp.empID),
         licensePlate: licensePlate.trim(),
         startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        endTime: endTime ? endTime.toISOString() : undefined,
         purpose: purpose.trim(),
         supportingInfo: files
       };
@@ -311,9 +315,13 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                   disabled={!startTime}
                   slotProps={{
                     textField: {
-                      required: true,
+                      required: hrMode,
                       fullWidth: true,
-                      helperText: startTime ? '必須與外出時間同一天且在 17:30 之前' : '請先選擇外出時間'
+                      helperText: !startTime
+                        ? '請先選擇外出時間'
+                        : hrMode
+                          ? '必須與外出時間同一天且在 17:30 之前'
+                          : '若尚未確定可先留空，之後再回來填寫'
                     }
                   }}
                 />

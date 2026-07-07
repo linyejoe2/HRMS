@@ -40,7 +40,7 @@ import { getDepartmentDescription, getDepartments, departmentCache } from '@/ser
 
 const EmployeeManagement: React.FC = () => {
   const { user } = useAuth();
-  
+
   // State
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,9 +88,9 @@ const EmployeeManagement: React.FC = () => {
     try {
       const response = await employeeAPI.getAll(currentPage, limit, selectedDepartment);
       let employees = response.data.data.employees
-      employees = employees.sort((a,b) => {
+      employees = employees.sort((a, b) => {
         return a.empID.localeCompare(b.empID, 'en', { numeric: true })
-    })
+      })
       setEmployees(response.data.data.employees || []);
       setTotal(response.data.data.total || 0);
       setTotalPages(response.data.data.pages || 1);
@@ -133,7 +133,7 @@ const EmployeeManagement: React.FC = () => {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSearchQuery(value);
-    
+
     // Auto-search when input is cleared
     if (!value.trim()) {
       loadEmployees(1);
@@ -497,7 +497,7 @@ const EmployeeManagement: React.FC = () => {
                             <VpnKeyIcon />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="舊系統休假時數">
+                        <Tooltip sx={{ display: "none" }} title="舊系統休假時數">
                           <IconButton
                             size="small"
                             onClick={() => setLegacyLeaveDialog({ open: true, employee })}

@@ -12,7 +12,7 @@ export class OfficialBusinessService {
       empIDs: string[];
       licensePlate: string;
       startTime: string;
-      endTime: string;
+      endTime?: string;
       purpose: string;
       supportingInfo?: string[];
     }
@@ -33,11 +33,11 @@ export class OfficialBusinessService {
       throw new APIError('部分參與人員不存在或已停用', 400);
     }
 
-    // Validate time range
+    // Validate time range - endTime is optional at creation time (may be filled in later)
     const startTime = new Date(officialBusinessData.startTime);
-    const endTime = new Date(officialBusinessData.endTime);
+    const endTime = officialBusinessData.endTime ? new Date(officialBusinessData.endTime) : undefined;
 
-    if (endTime <= startTime) {
+    if (endTime && endTime <= startTime) {
       throw new APIError('返回時間必須晚於外出時間', 400);
     }
 
@@ -57,6 +57,40 @@ export class OfficialBusinessService {
       supportingInfo: officialBusinessData.supportingInfo || [],
       status: 'created'
     });
+
+    return officialBusiness.save();
+  }
+
+  /**
+   * Update the return time (endTime) of a pending official business request.
+   * Only the original applicant may edit it, and only while it's awaiting approval.
+   */
+  static async updateOfficialBusinessRequestEndTime(
+    officialBusinessId: string,
+    requesterEmpID: string,
+    endTime: string
+  ): Promise<IOfficialBusiness> {
+    const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
+
+    if (!officialBusiness) {
+      throw new APIError('找不到該外出申請', 404);
+    }
+
+    if (officialBusiness.applicant !== requesterEmpID) {
+      throw new APIError('只有申請人可以修改此申請', 403);
+    }
+
+    if (officialBusiness.status !== 'created') {
+      throw new APIError('只能修改待審核的申請', 400);
+    }
+
+    const newEndTime = new Date(endTime);
+
+    if (newEndTime <= officialBusiness.startTime) {
+      throw new APIError('返回時間必須晚於外出時間', 400);
+    }
+
+    officialBusiness.endTime = newEndTime;
 
     return officialBusiness.save();
   }
@@ -134,6 +168,10 @@ export class OfficialBusinessService {
     if (officialBusiness.status !== 'created') {
       throw new APIError('只能核准待審核的申請', 400);
     }
+
+    // if (!officialBusiness.endTime) {
+    //   throw new APIError('請等待申請人填寫返回時間後再核准', 400);
+    // }
 
     officialBusiness.status = 'approved';
     officialBusiness.approvedBy = approvedBy;

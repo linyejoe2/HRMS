@@ -21,6 +21,7 @@ router.get('/sequence/:sequenceNumber', officialBusinessController.getOfficialBu
 
 // Dynamic routes - must come last to avoid matching specific paths
 router.get('/:id', officialBusinessController.getOfficialBusinessRequestById);
+router.put('/:id/endtime', officialBusinessController.updateOfficialBusinessRequestEndTime);
 router.put('/:id/cancel', officialBusinessController.cancelOfficialBusinessRequest);
 router.put('/:id/approve', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.approveOfficialBusinessRequest);
 router.put('/:id/reject', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.rejectOfficialBusinessRequest);

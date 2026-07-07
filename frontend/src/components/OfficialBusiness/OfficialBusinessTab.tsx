@@ -9,18 +9,29 @@ import {
   IconButton,
   Tooltip,
   Badge,
-  Chip
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs, { Dayjs } from 'dayjs';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import GetAppIcon from '@mui/icons-material/GetApp';
+import EditIcon from '@mui/icons-material/Edit';
 import { officialBusinessAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import OfficialBusinessRequestModal from './OfficialBusinessRequestModal';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import { generateOfficialBusinessRequestDocx } from '../../utils/docxGenerator';
 
 const OfficialBusinessTab: React.FC = () => {
   const { user } = useAuth();
@@ -31,6 +42,12 @@ const OfficialBusinessTab: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+
+  // Edit return time dialog
+  const [endTimeDialogOpen, setEndTimeDialogOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<OfficialBusinessRequest | null>(null);
+  const [editEndTime, setEditEndTime] = useState<Dayjs | null>(null);
+  const [savingEndTime, setSavingEndTime] = useState(false);
 
   // Load official business requests
   const loadRequests = async () => {
@@ -73,10 +90,46 @@ const OfficialBusinessTab: React.FC = () => {
     }
   };
 
+  // Handle edit return time
+  const handleEditEndTime = (request: OfficialBusinessRequest) => {
+    setEditingRequest(request);
+    setEditEndTime(request.endTime ? dayjs(request.endTime) : null);
+    setEndTimeDialogOpen(true);
+  };
+
+  const handleSaveEndTime = async () => {
+    if (!editingRequest?._id || !editEndTime) return;
+
+    setSavingEndTime(true);
+    try {
+      await officialBusinessAPI.updateEndTime(editingRequest._id, editEndTime.toISOString());
+      toast.success('返回時間已更新');
+      setEndTimeDialogOpen(false);
+      setEditingRequest(null);
+      loadRequests();
+    } catch (error: any) {
+      console.error('Error updating return time:', error);
+      toast.error(error.response?.data?.message || '更新返回時間失敗');
+    } finally {
+      setSavingEndTime(false);
+    }
+  };
+
   // Handle view files
   const handleViewFiles = (files: string[]) => {
     setSelectedFiles(files);
     setFilePreviewOpen(true);
+  };
+
+  // Handle download
+  const handleDownload = async (request: OfficialBusinessRequest) => {
+    try {
+      await generateOfficialBusinessRequestDocx(request);
+      toast.success('外出申請單下載成功');
+    } catch (error) {
+      console.error('Error downloading official business request:', error);
+      toast.error('下載失敗: ' + (error as Error).message);
+    }
   };
 
   // Get status chip
@@ -132,7 +185,7 @@ const OfficialBusinessTab: React.FC = () => {
       headerName: '返回時間',
       flex: 1.5,
       minWidth: 160,
-      valueGetter: (_, row) => new Date(row.endTime).toLocaleString('zh-TW')
+      valueGetter: (_, row) => row.endTime ? new Date(row.endTime).toLocaleString('zh-TW') : ''
     },
     {
       field: 'purpose',
@@ -182,10 +235,50 @@ const OfficialBusinessTab: React.FC = () => {
       field: 'actions',
       type: 'actions',
       headerName: '操作',
-      flex: 0.8,
-      minWidth: 80,
+      flex: 1.2,
+      minWidth: 120,
       getActions: (params) => {
         const actions = [];
+
+        actions.push(
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="下載外出申請單">
+                <GetAppIcon color="primary" />
+              </Tooltip>
+            }
+            label="下載外出申請單"
+            onClick={() => handleDownload(params.row)}
+          />
+        );
+
+
+        actions.push(
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="填寫/修改返回時間">
+                <EditIcon color="primary" />
+              </Tooltip>
+            }
+            label="填寫/修改返回時間"
+            onClick={() => handleEditEndTime(params.row)}
+          />
+        );
+
+        // Only the applicant can fill in/adjust the return time while it's pending approval
+        // if (params.row.status === 'created' && params.row.applicant === user?.empID) {
+        //   actions.push(
+        //     <GridActionsCellItem
+        //       icon={
+        //         <Tooltip title="填寫/修改返回時間">
+        //           <EditIcon color="primary" />
+        //         </Tooltip>
+        //       }
+        //       label="填寫/修改返回時間"
+        //       onClick={() => handleEditEndTime(params.row)}
+        //     />
+        //   );
+        // }
 
         // Only show cancel for 'created' status and if user is the applicant
         if (params.row.status === 'created' && params.row.applicant === user?.empID) {
@@ -302,6 +395,51 @@ const OfficialBusinessTab: React.FC = () => {
         onClose={() => setFilePreviewOpen(false)}
         files={selectedFiles}
       />
+
+      {/* Edit Return Time Dialog */}
+      <Dialog
+        open={endTimeDialogOpen}
+        onClose={() => setEndTimeDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>填寫/修改返回時間</DialogTitle>
+        <DialogContent>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateTimePicker
+              label="返回時間"
+              value={editEndTime}
+              onChange={(newValue) => setEditEndTime(newValue)}
+              format="YYYY/MM/DD HH:mm"
+              ampm={false}
+              minDateTime={editingRequest ? dayjs(editingRequest.startTime) : undefined}
+              shouldDisableDate={(date) =>
+                editingRequest ? !date.isSame(dayjs(editingRequest.startTime), 'day') : false
+              }
+              slotProps={{
+                textField: {
+                  required: true,
+                  fullWidth: true,
+                  sx: { mt: 1 },
+                  helperText: '必須與外出時間同一天，且晚於外出時間'
+                }
+              }}
+            />
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEndTimeDialogOpen(false)} disabled={savingEndTime}>
+            取消
+          </Button>
+          <Button
+            onClick={handleSaveEndTime}
+            variant="contained"
+            disabled={savingEndTime || !editEndTime}
+          >
+            {savingEndTime ? '儲存中...' : '儲存'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

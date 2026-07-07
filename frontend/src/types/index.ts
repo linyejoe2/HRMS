@@ -318,7 +318,7 @@ export interface OfficialBusinessRequestForm {
   empIDs: string[]; // Array of employee IDs (participants)
   licensePlate: string; // Vehicle license plate number
   startTime: string; // Departure time (ISO datetime)
-  endTime: string; // Return time (ISO datetime)
+  endTime?: string; // Return time (ISO datetime) - optional, can be filled in later
   purpose: string; // Purpose of the official business
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
 }
@@ -332,7 +332,7 @@ export interface OfficialBusinessRequest {
   participantNames: string[]; // Array of participant names
   licensePlate: string; // Vehicle license plate number
   startTime: string; // Departure time (ISO datetime)
-  endTime: string; // Return time (ISO datetime)
+  endTime?: string; // Return time (ISO datetime) - blank until the applicant fills it in
   purpose: string; // Purpose of the official business
   supportingInfo?: string[]; // Array of file paths/URLs - 佐證資料
   status: 'created' | 'approved' | 'rejected' | 'cancel';

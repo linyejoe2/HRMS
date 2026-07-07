@@ -153,7 +153,6 @@ const AttendanceTab: React.FC = () => {
 
       // Process postClock records
       postClocks.forEach((pc: any) => {
-        if (directorEmpIDs.has(pc.empID)) return;
 
         if (pc.clockType === 'in&out') {
           const inRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date));
@@ -184,7 +183,6 @@ const AttendanceTab: React.FC = () => {
 
       // Process businessTrip records
       businessTrips.forEach((bt: any) => {
-        if (directorEmpIDs.has(bt.empID)) return;
         const tripStart = new Date(bt.tripStart);
         const tripEnd = new Date(bt.tripEnd);
 
@@ -206,7 +204,6 @@ const AttendanceTab: React.FC = () => {
 
       // Process leave records - create records for leave days
       data.leave.records.forEach((leave: any) => {
-        if (directorEmpIDs.has(leave.empID)) return;
         const leaveStart = new Date(leave.leaveStart);
         const leaveEnd = new Date(leave.leaveEnd);
 

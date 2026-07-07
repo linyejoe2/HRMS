@@ -51,6 +51,37 @@ export class OfficialBusinessController {
   });
 
   /**
+   * Update the return time (endTime) of a pending official business request
+   * PUT /api/officialbusiness/:id/endtime
+   */
+  updateOfficialBusinessRequestEndTime = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { endTime } = req.body;
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: true, message: '未授權' });
+      return;
+    }
+
+    if (!endTime) {
+      res.status(400).json({ error: true, message: '返回時間為必填' });
+      return;
+    }
+
+    const officialBusiness = await officialBusinessService.updateOfficialBusinessRequestEndTime(
+      id,
+      user.empID,
+      endTime
+    );
+
+    res.status(200).json({
+      error: false,
+      message: '返回時間已更新',
+      data: officialBusiness
+    });
+  });
+
+  /**
    * Get my official business requests
    * GET /api/officialbusiness/my
    */
