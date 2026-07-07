@@ -22,7 +22,8 @@ import {
   Close as RejectIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Attachment as AttachmentIcon
+  Attachment as AttachmentIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { LeaveRequest } from '../../types';
@@ -30,6 +31,7 @@ import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLea
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import LeaveRequestModal from './LeaveRequestModal';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { errorToString } from '@/utils/util/utility';
@@ -50,6 +52,7 @@ const ApproveLeaveList: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
@@ -420,6 +423,15 @@ const ApproveLeaveList: React.FC = () => {
               }}
               sx={{ minWidth: 400 }}
             />
+
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateModalOpen(true)}
+              sx={{ ml: 'auto' }}
+            >
+              新增並核准
+            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -600,6 +612,16 @@ const ApproveLeaveList: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* HR Create & Auto-Approve Modal */}
+      <LeaveRequestModal
+        open={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          fetchLeaveRequests(statusFilter || undefined);
+        }}
+        hrMode
+      />
     </Box>
   );
 };

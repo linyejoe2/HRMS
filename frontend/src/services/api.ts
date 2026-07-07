@@ -276,13 +276,14 @@ export const employeeAPI = {
 };
 
 export const leaveAPI = {
-  // Create leave request
-  create: (leaveData: LeaveRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+  // Create leave request. Pass empID to create on behalf of another employee (HR/admin only).
+  create: (leaveData: LeaveRequestForm, empID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
     const formData = new FormData();
     formData.append('leaveType', leaveData.leaveType);
     formData.append('reason', leaveData.reason);
     formData.append('leaveStart', leaveData.leaveStart);
     formData.append('leaveEnd', leaveData.leaveEnd);
+    if (empID) formData.append('empID', empID);
 
     if (leaveData.supportingInfo && leaveData.supportingInfo.length > 0) {
       leaveData.supportingInfo.forEach((file) => {
@@ -401,8 +402,8 @@ export const leaveAdjustmentAPI = {
 };
 
 export const postClockAPI = {
-  // Create postclock request
-  create: (postClockData: PostClockRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+  // Create postclock request. Pass empID to create on behalf of another employee (HR/admin only).
+  create: (postClockData: PostClockRequestForm, empID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
     const formData = new FormData();
     formData.append('date', postClockData.date);
     formData.append('time', postClockData.time);
@@ -410,6 +411,7 @@ export const postClockAPI = {
     if (postClockData.time2) formData.append('time2', postClockData.time2);
     formData.append('clockType', postClockData.clockType);
     formData.append('reason', postClockData.reason);
+    if (empID) formData.append('empID', empID);
 
     if (postClockData.supportingInfo && postClockData.supportingInfo.length > 0) {
       postClockData.supportingInfo.forEach((file) => {
@@ -485,13 +487,14 @@ export const cancelPostClockRequest = postClockAPI.cancel;
 export const getCancelledPostClockRequests = postClockAPI.getCancelled;
 
 export const businessTripAPI = {
-  // Create business trip request
-  create: (businessTripData: BusinessTripRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+  // Create business trip request. Pass empID to create on behalf of another employee (HR/admin only).
+  create: (businessTripData: BusinessTripRequestForm, empID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
     const formData = new FormData();
     formData.append('destination', businessTripData.destination);
     formData.append('purpose', businessTripData.purpose);
     formData.append('tripStart', businessTripData.tripStart);
     formData.append('tripEnd', businessTripData.tripEnd);
+    if (empID) formData.append('empID', empID);
 
     if (businessTripData.transportation) {
       formData.append('transportation', businessTripData.transportation);

@@ -11,14 +11,16 @@ import {
   Typography,
   TextField,
   IconButton,
-  Badge
+  Badge,
+  Button
 } from '@mui/material';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Attachment as AttachmentIcon
+  Attachment as AttachmentIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
@@ -27,6 +29,7 @@ import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockReques
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import PostClockRequestModal from './PostClockRequestModal';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription, getDepartments } from '@/services/variableService';
 
@@ -41,6 +44,7 @@ const ApprovePostClockList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
@@ -396,6 +400,15 @@ const ApprovePostClockList: React.FC = () => {
               }}
               sx={{ minWidth: 400 }}
             />
+
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateModalOpen(true)}
+              sx={{ ml: 'auto' }}
+            >
+              新增並核准
+            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -566,6 +579,16 @@ const ApprovePostClockList: React.FC = () => {
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
         title="補單佐證資料"
+      />
+
+      {/* HR Create & Auto-Approve Modal */}
+      <PostClockRequestModal
+        open={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          fetchPostClockRequests(statusFilter || undefined);
+        }}
+        hrMode
       />
     </Box>
   );

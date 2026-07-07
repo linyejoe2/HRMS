@@ -4,8 +4,9 @@ import { BusinessTripService } from '../services/businessTripService';
 import { asyncHandler } from '../middleware/errorHandler';
 
 export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const empID = req.user!.empID;
-  const businessTripData = req.body;
+  const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
+  const empID = isHrOverride ? req.body.empID : req.user!.empID;
+  const { empID: _omit, ...businessTripData } = req.body;
 
   // Handle uploaded files
   const files = req.files as Express.Multer.File[];

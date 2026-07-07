@@ -26,12 +26,14 @@ interface OfficialBusinessRequestModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of chosen employee(s) and it's auto-approved
 }
 
 const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> = ({
   open,
   onClose,
-  onSuccess
+  onSuccess,
+  hrMode = false
 }) => {
   const { user } = useAuth();
   const { files, addFiles, clearFiles } = useFileUpload();
@@ -57,8 +59,8 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         const employeeList = response.data.data.employees || [];
         setEmployees(employeeList);
 
-        // Pre-select current user if the modal is opened
-        if (open && user) {
+        // Pre-select current user if the modal is opened (not in HR mode, where HR must explicitly choose)
+        if (open && user && !hrMode) {
           const currentEmployee = employeeList.find((emp: Employee) => emp.empID === user.empID);
           if (currentEmployee) {
             setSelectedEmployees([currentEmployee]);
@@ -75,7 +77,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
     if (open) {
       fetchEmployees();
     }
-  }, [open, user]);
+  }, [open, user, hrMode]);
 
   // Reset form when modal closes or set defaults when it opens
   useEffect(() => {
@@ -163,9 +165,12 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         supportingInfo: files
       };
 
-      await officialBusinessAPI.create(requestData);
+      const created = await officialBusinessAPI.create(requestData);
+      if (hrMode) {
+        await officialBusinessAPI.approve(created.data.data._id!);
+      }
 
-      toast.success('外出申請已成功建立');
+      toast.success(hrMode ? '外出申請已建立並核准' : '外出申請已成功建立');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -178,7 +183,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>建立外出申請</DialogTitle>
+      <DialogTitle>{hrMode ? '新增並核准外出申請' : '建立外出申請'}</DialogTitle>
 
       <DialogContent dividers>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
@@ -195,7 +200,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                 {...params}
                 label="參與人員"
                 required
-                helperText="請選擇參與本次外出的員工（可多選）"
+                helperText={hrMode ? '請選擇參與本次外出的員工（可多選），第一位將列為申請人' : '請選擇參與本次外出的員工（可多選）'}
               />
             )}
             renderTags={(value, getTagProps) =>
@@ -348,7 +353,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
           variant="contained"
           disabled={loading || loadingEmployees}
         >
-          {loading ? '送出中...' : '送出申請'}
+          {loading ? '送出中...' : hrMode ? '建立並核准' : '送出申請'}
         </Button>
       </DialogActions>
     </Dialog>

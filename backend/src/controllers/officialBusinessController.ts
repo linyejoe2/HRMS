@@ -19,6 +19,12 @@ export class OfficialBusinessController {
     // Parse empIDs if it's a string (from FormData)
     const parsedEmpIDs = typeof empIDs === 'string' ? JSON.parse(empIDs) : empIDs;
 
+    // HR/admin creating on behalf of someone else: the applicant is the first
+    // selected participant (self-serve submissions always have the submitter
+    // pre-selected first, so this is a no-op for the normal flow).
+    const isHrOverride = ['hr', 'admin'].includes(user.role) && Array.isArray(parsedEmpIDs) && parsedEmpIDs.length > 0;
+    const applicant = isHrOverride ? parsedEmpIDs[0] : user.empID;
+
     // Handle file uploads
     const files = req.files as Express.Multer.File[];
     const supportingInfo = files && files.length > 0
@@ -26,7 +32,7 @@ export class OfficialBusinessController {
       : [];
 
     const officialBusiness = await officialBusinessService.createOfficialBusinessRequest(
-      user.empID,
+      applicant,
       {
         empIDs: parsedEmpIDs,
         licensePlate,

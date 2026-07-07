@@ -18,20 +18,23 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-tw';
 import { useForm, Controller } from 'react-hook-form';
-import { PostClockRequestForm } from '../../types';
-import { createPostClockRequest } from '../../services/api';
+import { Employee, PostClockRequestForm } from '../../types';
+import { postClockAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
+import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 
 interface PostClockRequestModalProps {
   open: boolean;
   onClose: () => void;
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
 }
 
-const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onClose }) => {
+const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onClose, hrMode = false }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   type FormData = {
     date: string;
@@ -68,6 +71,11 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
 
   const onSubmit = async (data: FormData) => {
     try {
+      if (hrMode && !selectedEmployee) {
+        toast.error('請選擇員工');
+        return;
+      }
+
       setLoading(true);
 
       // Combine date and time
@@ -100,10 +108,14 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         submitData.time2 = combinedDateTime2.toISOString();
       }
 
-      await createPostClockRequest(submitData);
-      toast.success('補單申請已成功送出');
+      const created = await postClockAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      if (hrMode) {
+        await postClockAPI.approve(created.data.data._id!);
+      }
+      toast.success(hrMode ? '補單已建立並核准' : '補單申請已成功送出');
       reset();
       clearFiles();
+      setSelectedEmployee(null);
       onClose();
     } catch (error: any) {
       console.error('Error creating postclock request:', error);
@@ -118,6 +130,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
     if (!loading) {
       reset();
       clearFiles();
+      setSelectedEmployee(null);
       onClose();
     }
   };
@@ -136,13 +149,24 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            建立補單申請
+            {hrMode ? '新增並核准補單申請' : '建立補單申請'}
           </Typography>
         </DialogTitle>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Grid container spacing={3} sx={{ mt: 1 }}>
+              {hrMode && (
+                <Grid item xs={12}>
+                  <EmployeeAutocomplete
+                    value={selectedEmployee}
+                    onChange={setSelectedEmployee}
+                    label="員工"
+                    required
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={12} md={timeColumnSize}>
                 <Controller
                   name="date"
@@ -292,7 +316,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

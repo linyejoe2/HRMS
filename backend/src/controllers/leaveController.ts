@@ -10,7 +10,8 @@ import { dayjsTz, errorToString, toDayjs } from '../util/utility';
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
   const { leaveType, reason, leaveStart, leaveEnd } = req.body;
-  const empID = req.user!.empID;
+  const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
+  const empID = isHrOverride ? req.body.empID : req.user!.empID;
 
   const leaveData: any = {
     leaveType,

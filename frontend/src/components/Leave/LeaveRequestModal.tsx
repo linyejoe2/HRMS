@@ -22,16 +22,18 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-tw';
 import { useForm, Controller } from 'react-hook-form';
-import { LeaveRequestForm } from '../../types';
-import { createLeaveRequest, leaveAPI } from '../../services/api';
+import { Employee, LeaveRequestForm } from '../../types';
+import { leaveAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
+import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LeaveRequestModalProps {
   open: boolean;
   onClose: () => void;
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
 }
 
 const leaveTypes = [
@@ -69,10 +71,11 @@ interface LeaveFormData extends Omit<LeaveRequestForm, 'leaveStart' | 'leaveEnd'
   leaveEndTime: string;
 }
 
-const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) => {
+const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hrMode = false }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
   const { user } = useAuth();
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<LeaveRequestForm | null>(null);
   const [warningMessage, setWarningMessage] = useState('');
@@ -203,6 +206,11 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
   // };
 
   const onSubmit = async (formData: LeaveFormData) => {
+    if (hrMode && !selectedEmployee) {
+      toast.error('請選擇員工');
+      return;
+    }
+
     // Combine date and time into ISO format
     const [startHour, startMinute] = formData.leaveStartTime.split(':').map(Number);
     const [endHour, endMinute] = formData.leaveEndTime.split(':').map(Number);
@@ -226,12 +234,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       leaveEnd
     };
 
-    // Check leave balance first
+    // Check leave balance first (for the target employee when HR is creating on their behalf)
+    const targetEmpID = hrMode ? selectedEmployee!.empID : user!.empID;
     const hasSufficientBalance = await leaveAPI.checkLeaveBalance({
       leaveType: formData.leaveType,
       timeStart: leaveStart,
       timeEnd: leaveEnd
-    }, user!.empID);
+    }, targetEmpID);
 
 
 
@@ -254,8 +263,11 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
         ...data,
         supportingInfo: files.length > 0 ? files : undefined
       };
-      await createLeaveRequest(submitData);
-      toast.success('請假申請已成功送出');
+      const created = await leaveAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      if (hrMode) {
+        await leaveAPI.approve(created.data.data._id!, '');
+      }
+      toast.success(hrMode ? '請假申請已建立並核准' : '請假申請已成功送出');
       reset({
         leaveType: '',
         reason: '',
@@ -265,6 +277,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
         leaveEndTime: '17:30'
       });
       clearFiles();
+      setSelectedEmployee(null);
       setPendingSubmitData(null);
       onClose();
     } catch (error: any) {
@@ -294,6 +307,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
         leaveEndTime: '17:30'
       });
       clearFiles();
+      setSelectedEmployee(null);
       onClose();
     }
   };
@@ -311,13 +325,24 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            建立請假申請
+            {hrMode ? '新增並核准請假申請' : '建立請假申請'}
           </Typography>
         </DialogTitle>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Grid container rowSpacing={3} columnSpacing={1} sx={{ mt: 1 }}>
+              {hrMode && (
+                <Grid item xs={12}>
+                  <EmployeeAutocomplete
+                    value={selectedEmployee}
+                    onChange={setSelectedEmployee}
+                    label="員工"
+                    required
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={12}>
                 <Controller
                   name="leaveType"
@@ -496,7 +521,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose }) 
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

@@ -25,11 +25,13 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import AddIcon from '@mui/icons-material/Add';
 import { officialBusinessAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
 import { toast } from 'react-toastify';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import FileUploadField from '../common/FileUploadField';
+import OfficialBusinessRequestModal from './OfficialBusinessRequestModal';
 
 const ApproveOfficialBusinessTab: React.FC = () => {
   // State
@@ -37,6 +39,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('created');
   const [searchQuery, setSearchQuery] = useState('');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Rejection dialog
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -379,7 +382,16 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               }}
             />
 
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateModalOpen(true)}
+              sx={{ ml: 'auto' }}
+            >
+              新增並核准
+            </Button>
+
+            <Typography variant="body2" color="text.secondary">
               共 {filteredRequests.length} 筆
             </Typography>
           </Box>
@@ -517,6 +529,14 @@ const ApproveOfficialBusinessTab: React.FC = () => {
         open={filePreviewOpen}
         onClose={() => setFilePreviewOpen(false)}
         files={selectedFiles}
+      />
+
+      {/* HR Create & Auto-Approve Modal */}
+      <OfficialBusinessRequestModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={loadRequests}
+        hrMode
       />
     </Box>
   );

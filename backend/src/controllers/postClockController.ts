@@ -4,8 +4,9 @@ import { PostClockService } from '../services/postClockService';
 import { asyncHandler } from '../middleware/errorHandler';
 
 export const createPostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const empID = req.user!.empID;
-  const postClockData = req.body;
+  const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
+  const empID = isHrOverride ? req.body.empID : req.user!.empID;
+  const { empID: _omit, ...postClockData } = req.body;
 
   // Handle uploaded files
   const files = req.files as Express.Multer.File[];

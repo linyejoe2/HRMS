@@ -16,20 +16,23 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-tw';
 import { useForm, Controller } from 'react-hook-form';
-import { BusinessTripRequestForm } from '../../types';
-import { createBusinessTripRequest } from '../../services/api';
+import { BusinessTripRequestForm, Employee } from '../../types';
+import { businessTripAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
+import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 
 interface BusinessTripRequestModalProps {
   open: boolean;
   onClose: () => void;
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
 }
 
-const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ open, onClose }) => {
+const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ open, onClose, hrMode = false }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const {
     control,
@@ -55,6 +58,11 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
 
   const onSubmit = async (data: BusinessTripRequestForm & { tripStartObj: Dayjs | null, tripEndObj: Dayjs | null }) => {
     try {
+      if (hrMode && !selectedEmployee) {
+        toast.error('請選擇員工');
+        return;
+      }
+
       setLoading(true);
 
       // Validate dates
@@ -78,10 +86,14 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
         supportingInfo: files.length > 0 ? files : undefined
       };
 
-      await createBusinessTripRequest(submitData);
-      toast.success('出差申請已成功送出');
+      const created = await businessTripAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      if (hrMode) {
+        await businessTripAPI.approve(created.data.data._id!);
+      }
+      toast.success(hrMode ? '出差申請已建立並核准' : '出差申請已成功送出');
       reset();
       clearFiles();
+      setSelectedEmployee(null);
       onClose();
     } catch (error: any) {
       console.error('Error creating business trip request:', error);
@@ -96,6 +108,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
     if (!loading) {
       reset();
       clearFiles();
+      setSelectedEmployee(null);
       onClose();
     }
   };
@@ -113,13 +126,24 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            建立出差申請
+            {hrMode ? '新增並核准出差申請' : '建立出差申請'}
           </Typography>
         </DialogTitle>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Grid container spacing={3}>
+              {hrMode && (
+                <Grid item xs={12}>
+                  <EmployeeAutocomplete
+                    value={selectedEmployee}
+                    onChange={setSelectedEmployee}
+                    label="員工"
+                    required
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="destination"
@@ -301,7 +325,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

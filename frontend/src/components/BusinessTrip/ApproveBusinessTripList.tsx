@@ -9,14 +9,16 @@ import {
   ToggleButtonGroup,
   InputAdornment,
   Typography,
-  TextField
+  TextField,
+  Button
 } from '@mui/material';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Attachment as AttachmentIcon
+  Attachment as AttachmentIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
@@ -24,6 +26,7 @@ import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessT
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import BusinessTripRequestModal from './BusinessTripRequestModal';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
@@ -40,6 +43,7 @@ const ApproveBusinessTripList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchBusinessTripRequests = async (status?: string) => {
@@ -387,6 +391,15 @@ const ApproveBusinessTripList: React.FC = () => {
               }}
               sx={{ minWidth: 400 }}
             />
+
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateModalOpen(true)}
+              sx={{ ml: 'auto' }}
+            >
+              新增並核准
+            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -540,6 +553,16 @@ const ApproveBusinessTripList: React.FC = () => {
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
         title="出差相關資料"
+      />
+
+      {/* HR Create & Auto-Approve Modal */}
+      <BusinessTripRequestModal
+        open={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          fetchBusinessTripRequests(statusFilter || undefined);
+        }}
+        hrMode
       />
     </Box>
   );

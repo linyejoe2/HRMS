@@ -66,7 +66,9 @@ export const leaveRequestSchema = Joi.object({
     'string.empty': '結束日期為必填項目',
     'string.isoDate': '結束日期必須是有效的 ISO 日期格式',
     'any.required': '結束日期為必填項目'
-  })
+  }),
+  // Only honored server-side when the caller is hr/admin; ignored for self-serve requests.
+  empID: Joi.string().optional()
 });
 
 export const validateLeaveRequest = validateRequest(leaveRequestSchema);
