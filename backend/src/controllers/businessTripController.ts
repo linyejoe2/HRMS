@@ -19,7 +19,7 @@ export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
 
   res.status(201).json({
     error: false,
-    message: '出差申請已建立',
+    message: '因公免刷卡申請已建立',
     data: businessTrip
   });
 });
@@ -31,7 +31,7 @@ export const getMyBusinessTripRequests = asyncHandler(async (req: AuthRequest, r
 
   res.status(200).json({
     error: false,
-    message: '成功取得出差申請',
+    message: '成功取得因公免刷卡申請',
     data: businessTrips
   });
 });
@@ -43,7 +43,7 @@ export const getAllBusinessTripRequests = asyncHandler(async (req: AuthRequest, 
 
   res.status(200).json({
     error: false,
-    message: '成功取得所有出差申請',
+    message: '成功取得所有因公免刷卡申請',
     data: businessTrips
   });
 });
@@ -60,7 +60,7 @@ export const approveBusinessTripRequest = asyncHandler(async (req: AuthRequest, 
 
   res.status(200).json({
     error: false,
-    message: '出差申請已核准',
+    message: '因公免刷卡申請已核准',
     data: businessTrip
   });
 });
@@ -78,7 +78,7 @@ export const rejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
 
   res.status(200).json({
     error: false,
-    message: '出差申請已拒絕',
+    message: '因公免刷卡申請已拒絕',
     data: businessTrip
   });
 });
@@ -90,7 +90,7 @@ export const getBusinessTripRequestById = asyncHandler(async (req: AuthRequest, 
 
   res.status(200).json({
     error: false,
-    message: '成功取得出差申請',
+    message: '成功取得因公免刷卡申請',
     data: businessTrip
   });
 });
@@ -104,7 +104,7 @@ export const cancelBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
 
   res.status(200).json({
     error: false,
-    message: '出差申請已取消',
+    message: '因公免刷卡申請已取消',
     data: businessTrip
   });
 });
@@ -116,7 +116,7 @@ export const getCancelBusinessTripRequests = asyncHandler(async (req: AuthReques
 
   res.status(200).json({
     error: false,
-    message: '成功取得已取消的出差申請',
+    message: '成功取得已取消的因公免刷卡申請',
     data: businessTrips
   });
 });
@@ -128,7 +128,7 @@ export const getBusinessTripRequestBySequenceNumber = asyncHandler(async (req: A
 
   res.status(200).json({
     error: false,
-    message: '成功取得出差申請',
+    message: '成功取得因公免刷卡申請',
     data: businessTrip
   });
 });

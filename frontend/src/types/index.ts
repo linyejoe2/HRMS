@@ -228,9 +228,9 @@ export interface AttendanceRecord {
   department?: string;
   date: string;
   clockInTime?: string;
-  clockInSource?: '打卡' | '補單' | '出差';
+  clockInSource?: '打卡' | '補單' | '因公免刷卡';
   clockOutTime?: string;
-  clockOutSource?: '打卡' | '補單' | '出差';
+  clockOutSource?: '打卡' | '補單' | '因公免刷卡';
   workDuration?: number; // in minutes
   status?: string; // Holiday status if applicable
   holidayName?: string; // Holiday name if applicable

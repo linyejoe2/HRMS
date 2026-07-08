@@ -53,7 +53,7 @@ const ApproveBusinessTripList: React.FC = () => {
       setBusinessTripRequests(response.data.data);
     } catch (error) {
       console.error('Error fetching business trip requests:', error);
-      toast.error('無法載入出差申請');
+      toast.error('無法載入因公免刷卡申請');
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ const ApproveBusinessTripList: React.FC = () => {
 
     try {
       await approveBusinessTripRequest(selectedRequest._id!, files);
-      toast.success('出差申請已核准');
+      toast.success('因公免刷卡申請已核准');
       fetchBusinessTripRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error approving business trip request:', error);
@@ -115,7 +115,7 @@ const ApproveBusinessTripList: React.FC = () => {
 
     try {
       await rejectBusinessTripRequest(selectedRequest._id!, reason, files);
-      toast.success('出差申請已拒絕');
+      toast.success('因公免刷卡申請已拒絕');
       fetchBusinessTripRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error rejecting business trip request:', error);
@@ -135,7 +135,7 @@ const ApproveBusinessTripList: React.FC = () => {
 
     try {
       await cancelBusinessTripRequest(selectedRequest._id!, reason);
-      toast.success('出差申請已抽單');
+      toast.success('因公免刷卡申請已抽單');
       fetchBusinessTripRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error cancelling business trip request:', error);
@@ -424,8 +424,8 @@ const ApproveBusinessTripList: React.FC = () => {
               disableRowSelectionOnClick
               localeText={{
                 noRowsLabel: statusFilter
-                  ? `目前沒有${statusFilter === 'created' ? '待審核' : statusFilter === 'approved' ? '已核准' : '已拒絕'}的出差申請`
-                  : '沒有出差申請資料',
+                  ? `目前沒有${statusFilter === 'created' ? '待審核' : statusFilter === 'approved' ? '已核准' : '已拒絕'}的因公免刷卡申請`
+                  : '沒有因公免刷卡申請資料',
                 toolbarDensity: '密度',
                 toolbarDensityLabel: '密度',
                 toolbarDensityCompact: '緊密',
@@ -448,7 +448,7 @@ const ApproveBusinessTripList: React.FC = () => {
         open={approveDialogOpen}
         onClose={() => setApproveDialogOpen(false)}
         onConfirm={handleApproveConfirm}
-        title="確認核准出差申請"
+        title="確認核准因公免刷卡申請"
         label="備註（選填）"
         placeholder="可填寫備註資訊..."
         confirmText="確認核准"
@@ -485,9 +485,9 @@ const ApproveBusinessTripList: React.FC = () => {
         open={rejectDialogOpen}
         onClose={() => setRejectDialogOpen(false)}
         onConfirm={handleRejectConfirm}
-        title="拒絕出差申請"
+        title="拒絕因公免刷卡申請"
         label="拒絕原因"
-        placeholder="請說明拒絕此出差申請的原因..."
+        placeholder="請說明拒絕此因公免刷卡申請的原因..."
         confirmText="確認拒絕"
         cancelText="取消"
         confirmColor="error"
@@ -539,8 +539,8 @@ const ApproveBusinessTripList: React.FC = () => {
                 當前狀態: {getStatusChip(selectedRequest.status)}
               </Typography>
               <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-                {selectedRequest.status === 'approved' && '注意：此出差已核准，抽單將撤銷核准狀態'}
-                {selectedRequest.status === 'rejected' && '注意：此出差已拒絕，抽單將移除此記錄'}
+                {selectedRequest.status === 'approved' && '注意：此因公免刷卡已核准，抽單將撤銷核准狀態'}
+                {selectedRequest.status === 'rejected' && '注意：此因公免刷卡已拒絕，抽單將移除此記錄'}
               </Typography>
             </Box>
           )
@@ -552,7 +552,7 @@ const ApproveBusinessTripList: React.FC = () => {
         open={fileDialogOpen}
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
-        title="出差相關資料"
+        title="因公免刷卡相關資料"
       />
 
       {/* HR Create & Auto-Approve Modal */}

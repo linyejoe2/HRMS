@@ -130,7 +130,7 @@ const AppLayout: React.FC = () => {
     });
 
     baseItems.push({
-      text: '出差申請',
+      text: '因公免刷卡申請',
       icon: <BusinessTripIcon />,
       path: '/business-trip'
     });
@@ -151,7 +151,7 @@ const AppLayout: React.FC = () => {
         subItems: [
           { text: '請假審核', path: '/leave/approve?tab=leave' },
           { text: '補單審核', path: '/leave/approve?tab=postclock' },
-          { text: '出差審核', path: '/leave/approve?tab=travel' },
+          { text: '因公免刷卡審核', path: '/leave/approve?tab=travel' },
           { text: '外出審核', path: '/leave/approve?tab=officialbusiness' },
         ]
       });

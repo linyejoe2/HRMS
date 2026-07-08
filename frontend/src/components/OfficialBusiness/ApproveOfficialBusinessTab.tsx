@@ -361,10 +361,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        外出審核
-      </Typography>
+    <Box>
 
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
@@ -408,9 +405,9 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               新增並核准
             </Button>
 
-            <Typography variant="body2" color="text.secondary">
+            {/* <Typography variant="body2" color="text.secondary">
               共 {filteredRequests.length} 筆
-            </Typography>
+            </Typography> */}
           </Box>
         </CardContent>
       </Card>

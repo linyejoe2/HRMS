@@ -90,14 +90,14 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
       if (hrMode) {
         await businessTripAPI.approve(created.data.data._id!);
       }
-      toast.success(hrMode ? '出差申請已建立並核准' : '出差申請已成功送出');
+      toast.success(hrMode ? '因公免刷卡申請已建立並核准' : '因公免刷卡申請已成功送出');
       reset();
       clearFiles();
       setSelectedEmployee(null);
       onClose();
     } catch (error: any) {
       console.error('Error creating business trip request:', error);
-      const message = error.response?.data?.message || '建立出差申請失敗';
+      const message = error.response?.data?.message || '建立因公免刷卡申請失敗';
       toast.error(message);
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            {hrMode ? '新增並核准出差申請' : '建立出差申請'}
+            {hrMode ? '新增並核准因公免刷卡申請' : '建立因公免刷卡申請'}
           </Typography>
         </DialogTitle>
 
@@ -148,11 +148,11 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                 <Controller
                   name="destination"
                   control={control}
-                  rules={{ required: '請填寫出差目的地' }}
+                  rules={{ required: '請填寫因公免刷卡目的地' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="出差目的地"
+                      label="因公免刷卡目的地"
                       fullWidth
                       error={!!errors.destination}
                       helperText={errors.destination?.message}
@@ -237,17 +237,17 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                 <Controller
                   name="purpose"
                   control={control}
-                  rules={{ required: '請填寫出差目的' }}
+                  rules={{ required: '請填寫因公免刷卡目的' }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="出差目的"
+                      label="因公免刷卡目的"
                       multiline
                       rows={3}
                       fullWidth
                       error={!!errors.purpose}
                       helperText={errors.purpose?.message}
-                      placeholder="請說明出差的目的與行程..."
+                      placeholder="請說明因公免刷卡的目的與行程..."
                       required
                     />
                   )}
@@ -259,7 +259,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                   files={files}
                   onFilesChange={setFiles}
                   label="相關資料 (選填)"
-                  helperText="可上傳多個檔案作為出差證明"
+                  helperText="可上傳多個檔案作為因公免刷卡證明"
                   disabled={loading}
                 />
               </Grid>

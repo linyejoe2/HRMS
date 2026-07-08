@@ -198,11 +198,11 @@ const AttendanceTab: React.FC = () => {
 
           if (!record.clockInTime) {
             record.clockInTime = bt.tripStart;
-            record.clockInSource = '出差';
+            record.clockInSource = '因公免刷卡';
           }
           if (!record.clockOutTime) {
             record.clockOutTime = bt.tripEnd;
-            record.clockOutSource = '出差';
+            record.clockOutSource = '因公免刷卡';
           }
         }
       });

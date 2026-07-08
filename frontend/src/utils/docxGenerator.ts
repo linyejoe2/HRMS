@@ -164,14 +164,14 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
     const response = await fetch(templateUrl);
 
     if (!response.ok) {
-      throw new Error(`無法載入出差申請範本 (HTTP ${response.status})`);
+      throw new Error(`無法載入因公免刷卡申請範本 (HTTP ${response.status})`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
 
     // Check if we got a valid arrayBuffer
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      throw new Error('出差申請範本文件為空或無法讀取');
+      throw new Error('因公免刷卡申請範本文件為空或無法讀取');
     }
 
     console.log('Template file size:', arrayBuffer.byteLength, 'bytes');
@@ -200,7 +200,7 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
       doc.render();
     } catch (error) {
       console.error('DOCX 渲染錯誤：', error);
-      throw new Error('出差申請範本處理失敗，請檢查範本格式');
+      throw new Error('因公免刷卡申請範本處理失敗，請檢查範本格式');
     }
 
     // Generate the document
@@ -213,7 +213,7 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
     const link = document.createElement('a');
     link.href = URL.createObjectURL(output);
     const startDate = new Date(businessTripRequest.tripStart).toLocaleDateString('zh-TW').replace(/\//g, '_');
-    link.download = `出差單_${startDate}_${businessTripRequest.name}.docx`;
+    link.download = `因公免刷卡單_${startDate}_${businessTripRequest.name}.docx`;
 
     // Trigger download
     document.body.appendChild(link);
@@ -224,7 +224,7 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
     URL.revokeObjectURL(link.href);
 
   } catch (error) {
-    console.error('生成出差申請失敗：', error);
+    console.error('生成因公免刷卡申請失敗：', error);
     throw error;
   }
 };
