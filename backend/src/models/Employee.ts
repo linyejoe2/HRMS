@@ -40,6 +40,10 @@ export interface IEmployee extends Document {
   jobLevel?: string; // 職等 - stores variable code
   endDate?: Date; // 離職日期
 
+  // Populated at query time only (via Variable lookup on jobTitle, section 'jobType') - not stored on the document
+  jobTitleCode2?: string; // e.g. 'HA' = Hide on Attendance list
+  jobTitleDescription?: string;
+
   // 薪資/保險/退休相關
   baseSalary?: number; // 底薪
   jobAllowance?: number; // 職務加給

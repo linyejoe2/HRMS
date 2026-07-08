@@ -90,8 +90,10 @@ const AttendanceTab: React.FC = () => {
       const employees = employeesResponse.data.data.employees;
       const employeeMap = new Map(employees.map((e: any) => [e.empID, e]));
       const empIDToCardID = new Map(employees.map((e: any) => [e.empID, e.cardID]));
-      const directorEmpIDs = new Set<string>(
-        employees.filter((e: any) => e.role === 'director').map((e: any) => e.empID)
+      // jobTitleCode2 'HA' (Hide on Attendance list) comes from the Variable table
+      // (section 'jobType', keyed by employee.jobTitle), aggregated by the backend.
+      const hiddenFromAttendanceEmpIDs = new Set<string>(
+        employees.filter((e: any) => e.jobTitleCode2 === 'HA').map((e: any) => e.empID)
       );
 
       // Create holiday map for quick lookup
@@ -133,7 +135,7 @@ const AttendanceTab: React.FC = () => {
         const employee = employeeMap.get(att.empID);
         const resolvedEmpID = att.empID || employee?.empID;
         if (!resolvedEmpID && !employee) return;
-        if (directorEmpIDs.has(resolvedEmpID)) return;
+        if (hiddenFromAttendanceEmpIDs.has(resolvedEmpID)) return;
 
         const dateStr = toTaipeiDate(att.date);
         const record = getOrCreateRecord(resolvedEmpID || employee.empID, dateStr, att.cardID);
@@ -153,6 +155,7 @@ const AttendanceTab: React.FC = () => {
 
       // Process postClock records
       postClocks.forEach((pc: any) => {
+        if (hiddenFromAttendanceEmpIDs.has(pc.empID)) return;
 
         if (pc.clockType === 'in&out') {
           const inRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date));
@@ -183,6 +186,8 @@ const AttendanceTab: React.FC = () => {
 
       // Process businessTrip records
       businessTrips.forEach((bt: any) => {
+        
+        if (hiddenFromAttendanceEmpIDs.has(bt.empID)) return;
         const tripStart = new Date(bt.tripStart);
         const tripEnd = new Date(bt.tripEnd);
 
@@ -204,6 +209,8 @@ const AttendanceTab: React.FC = () => {
 
       // Process leave records - create records for leave days
       data.leave.records.forEach((leave: any) => {
+        
+        if (hiddenFromAttendanceEmpIDs.has(leave.empID)) return;
         const leaveStart = new Date(leave.leaveStart);
         const leaveEnd = new Date(leave.leaveEnd);
 

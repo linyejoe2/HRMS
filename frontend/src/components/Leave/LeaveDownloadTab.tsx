@@ -156,7 +156,7 @@ const LeaveDownloadTab: React.FC = () => {
                     請假總表
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    匯出所有員工指定月份的休假統計：特休總時數、休餘、特休、事假、病假、喪假、產假、婚假、公假、出差、公傷
+                    匯出所有員工指定月份的休假統計：特休總時數、休餘、特休、事假、病假、喪假、產假、婚假、公假、公傷
                   </Typography>
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

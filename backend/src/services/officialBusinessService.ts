@@ -80,9 +80,9 @@ export class OfficialBusinessService {
       throw new APIError('只有申請人可以修改此申請', 403);
     }
 
-    if (officialBusiness.status !== 'created') {
-      throw new APIError('只能修改待審核的申請', 400);
-    }
+    // if (officialBusiness.status !== 'created') {
+    //   throw new APIError('只能修改待審核的申請', 400);
+    // }
 
     const newEndTime = new Date(endTime);
 
@@ -165,9 +165,9 @@ export class OfficialBusinessService {
       throw new APIError('找不到該外出申請', 404);
     }
 
-    if (officialBusiness.status !== 'created') {
-      throw new APIError('只能核准待審核的申請', 400);
-    }
+    // if (officialBusiness.status !== 'created') {
+    //   throw new APIError('只能核准待審核的申請', 400);
+    // }
 
     // if (!officialBusiness.endTime) {
     //   throw new APIError('請等待申請人填寫返回時間後再核准', 400);
@@ -199,9 +199,9 @@ export class OfficialBusinessService {
       throw new APIError('找不到該外出申請', 404);
     }
 
-    if (officialBusiness.status !== 'created') {
-      throw new APIError('只能拒絕待審核的申請', 400);
-    }
+    // if (officialBusiness.status !== 'created') {
+    //   throw new APIError('只能拒絕待審核的申請', 400);
+    // }
 
     officialBusiness.status = 'rejected';
     officialBusiness.rejectionReason = rejectionReason;

@@ -106,12 +106,39 @@ export class EmployeeService {
 
     const skip = (page - 1) * limit;
 
+    // Join each employee's jobTitle code against the 'jobType' Variable section so
+    // consumers (e.g. attendance list) can key off code2 (e.g. 'HA' = Hide on Attendance list)
+    // without needing a separate lookup.
     const [employees, total] = await Promise.all([
-      Employee.find(filter)
-        .select('-password')
-        .skip(skip)
-        .limit(limit)
-        .sort({ name: 1 }),
+      Employee.aggregate([
+        { $match: filter },
+        { $sort: { name: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'variables',
+            let: { jobTitleCode: '$jobTitle' },
+            pipeline: [
+              {
+                $match: {
+                  section: 'jobType',
+                  $expr: { $eq: ['$code', '$$jobTitleCode'] }
+                }
+              },
+              { $project: { _id: 0, code2: 1, description: 1 } }
+            ],
+            as: 'jobTitleVariable'
+          }
+        },
+        {
+          $addFields: {
+            jobTitleCode2: { $arrayElemAt: ['$jobTitleVariable.code2', 0] },
+            jobTitleDescription: { $arrayElemAt: ['$jobTitleVariable.description', 0] }
+          }
+        },
+        { $project: { password: 0, jobTitleVariable: 0 } }
+      ]),
       Employee.countDocuments(filter)
     ]);
 

@@ -160,9 +160,9 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   // Role options
   const roleOptions = [
     { value: UserLevel.EMPLOYEE, label: '員工' },
-    { value: UserLevel.MANAGER, label: '主管' },
+    // { value: UserLevel.MANAGER, label: '主管' },
     { value: UserLevel.HR, label: '人資' },
-    { value: UserLevel.DIRECTOR, label: '董事' },
+    // { value: UserLevel.DIRECTOR, label: '董事' },
     { value: UserLevel.ADMIN, label: '管理員' }
   ];
 

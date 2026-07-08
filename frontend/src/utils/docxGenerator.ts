@@ -254,6 +254,7 @@ export const generateOfficialBusinessRequestDocx = async (officialBusinessReques
     const createdDate = dayjs(officialBusinessRequest.createdAt || undefined);
     const templateData = {
       name: officialBusinessRequest.applicantName,
+      members: officialBusinessRequest.participantNames.join("\n"),
       licensePlate: officialBusinessRequest.licensePlate || '-',
       startTime: dayjs(officialBusinessRequest.startTime).format('YYYY/MM/DD HH:mm'),
       endTime: officialBusinessRequest.endTime ? dayjs(officialBusinessRequest.endTime).format('YYYY/MM/DD HH:mm') : '',

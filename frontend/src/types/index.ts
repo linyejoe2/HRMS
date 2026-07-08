@@ -57,6 +57,10 @@ export interface Employee {
   jobLevel?: string; // 職等
   endDate?: string; // 離職日期
 
+  // Populated by the backend via Variable lookup on jobTitle (section 'jobType') - not a stored field
+  jobTitleCode2?: string; // e.g. 'HA' = Hide on Attendance list
+  jobTitleDescription?: string;
+
   // Salary breakdown (sensitive)
   baseSalary?: number; // 底薪
   jobAllowance?: number; // 職務加給
