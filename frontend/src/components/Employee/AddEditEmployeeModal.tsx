@@ -472,7 +472,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       const payload: any = {
         name: formData.name.trim(),
         empID: formData.empID.trim(),
-        cardID: formData.cardID.trim(),
+        cardID: formData.cardID ? formData.cardID.trim() : undefined,
         department: formData.department,
         role: formData.role,
         isActive: formData.isActive

@@ -29,7 +29,7 @@ export interface Employee {
   _id?: string;
   name: string;
   empID: string;
-  cardID: string;
+  cardID?: string;
   isActive: boolean;
   role: UserLevel;
   lastLogin?: string;
