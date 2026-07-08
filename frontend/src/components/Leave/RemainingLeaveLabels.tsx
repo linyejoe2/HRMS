@@ -5,6 +5,7 @@ import { authAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import { getLeaveColorByHours } from '../../utils/leaveCalculations';
 import { fetchUserLeaveData, LeaveData } from '../../services/leaveService';
+import OtherLeaveBenefitsDialog from './OtherLeaveBenefitsDialog';
 
 interface RemainingLeaveLabelProps {
   onLabelClick: (leaveData: LeaveData, hireDate?: Date) => void;
@@ -17,6 +18,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
   const [specialLeave, setSpecialLeave] = useState<LeaveData | null>(null);
   const [reservationLeaves, setReservationLeaves] = useState<LeaveData[]>([]);
   const [hireDate, setHireDate] = useState<Date | null>(null);
+  const [otherLeaveDialogOpen, setOtherLeaveDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchRemainingLeave();
@@ -175,14 +177,30 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       {reservationLeaves.map(leave => {
         if (leave.remainingHours == 0) return <></>
         return (
-        <Chip
-          key={leave.type}
-          label={`${leave.displayName}：${leave.remainingHours} 小時`}
-          color={getLeaveColorByHours(leave.remainingHours, leave.type)}
-          onClick={() => onLabelClick(leave)}
-          sx={{ cursor: 'pointer', fontWeight: 'medium' }}
-        />
-      )})}
+          <Chip
+            key={leave.type}
+            label={`${leave.displayName}：${leave.remainingHours} 小時`}
+            color={getLeaveColorByHours(leave.remainingHours, leave.type)}
+            onClick={() => onLabelClick(leave)}
+            sx={{ cursor: 'pointer', fontWeight: 'medium' }}
+          />
+        )
+      })}
+
+      <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', height: 24 }} />
+
+      <Chip
+        label={`其他假別權益說明`}
+        color={"primary"}
+        onClick={() => setOtherLeaveDialogOpen(true)}
+        sx={{ cursor: 'pointer', fontWeight: 'medium' }}
+      />
+
+      <OtherLeaveBenefitsDialog
+        open={otherLeaveDialogOpen}
+        onClose={() => setOtherLeaveDialogOpen(false)}
+      />
+
     </Box>
   );
 };
