@@ -41,6 +41,7 @@ interface AttendanceRecord {
 
 interface ApprovalRecord {
   sequenceNumber?: number;
+  empID?: string;
   name?: string;
   department?: string;
 }
@@ -71,6 +72,7 @@ export const fuzzySearchApproval = (
 ): boolean => {
   return fuzzySearch(record, searchQuery, (rec) => [
     rec.sequenceNumber,
+    rec.empID,
     rec.name,
     rec.department,
     getDepartmentDescription(rec.department || '')

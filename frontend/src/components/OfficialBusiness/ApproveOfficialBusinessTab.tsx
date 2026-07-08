@@ -176,6 +176,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
     const query = searchQuery.toLowerCase();
     const searchFields = [
       request.sequenceNumber.toString(),
+      request.applicant,
       request.applicantName,
       request.participantNames.join(' '),
       request.licensePlate,
@@ -191,14 +192,17 @@ const ApproveOfficialBusinessTab: React.FC = () => {
       field: 'sequenceNumber',
       headerName: '編號',
       valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
-      flex: 0.8,
-      minWidth: 80
+      flex: 0.8
+    },
+    {
+      field: 'applicant',
+      headerName: '員編',
+      flex: 0.6
     },
     {
       field: 'applicantName',
       headerName: '申請人',
-      flex: 1,
-      minWidth: 100
+      flex: 0.8
     },
     {
       field: 'participantNames',
@@ -382,7 +386,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
 
             {/* Search */}
             <TextField
-              placeholder="搜尋編號、申請人、參與人員、車牌、事由"
+              placeholder="搜尋編號、員工編號、申請人、參與人員、車牌、事由"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               size="small"

@@ -177,22 +177,28 @@ const ApproveBusinessTripList: React.FC = () => {
       sortable: true
     },
     {
+      field: 'empID',
+      headerName: '員編',
+      flex: 0.8,
+      sortable: true
+    },
+    {
       field: 'name',
-      headerName: '員工姓名',
-      flex: 1,
+      headerName: '姓名',
+      flex: 0.8,
       sortable: true
     },
     {
       field: 'department',
       headerName: '部門',
-      flex: 1,
+      flex: 0.8,
       valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
     {
       field: 'destination',
       headerName: '目的地',
-      flex: 1,
+      flex: 0.6,
       sortable: true
     },
     {
@@ -379,7 +385,7 @@ const ApproveBusinessTripList: React.FC = () => {
 
             <TextField
               size="small"
-              placeholder="搜尋編號、姓名或部門 (空格分隔多個關鍵字)"
+              placeholder="搜尋編號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
