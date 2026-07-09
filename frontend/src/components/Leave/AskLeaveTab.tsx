@@ -124,6 +124,8 @@ const AskLeaveTab: React.FC = () => {
       field: 'leaveType',
       headerName: '請假類型',
       flex: 1,
+      // patch07091508
+      valueGetter: (_, row) => row.leaveType == "特別休假" ? "特休" : row.leaveType
     },
     {
       field: 'requestDate',

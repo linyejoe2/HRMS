@@ -78,6 +78,8 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     const endMonth = String(leave.leaveEnd.getMonth() + 1).padStart(2, '0');
     const endDay = String(leave.leaveEnd.getDate()).padStart(2, '0');
 
+    // patch07091508
+    if (leave.leaveType == "特別休假") leave.leaveType = "特休"
 
     return {
       "起": leave.mm + "月" + leave.DD + "日",

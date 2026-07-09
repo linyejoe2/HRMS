@@ -341,11 +341,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                       helperText={errors.leaveType?.message}
                       required
                     >
-                      {LeaveTypes.map((type) => (
+                      {LeaveTypes.map((type) => {
+                        // patch07091508
+                        const type2 = type == "特別休假" ? "特休" : type 
+                        return(
                         <MenuItem key={type} value={type}>
-                          {type}
+                          {type2}
                         </MenuItem>
-                      ))}
+                      )})}
                     </TextField>
                   )}
                 />

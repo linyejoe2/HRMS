@@ -183,6 +183,7 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
     const templateData = {
       ...businessTripRequest,
       YYYY: createdDate.getFullYear(),
+      transportation: businessTripRequest.transportation ? businessTripRequest.transportation: "",
       mm: String(createdDate.getMonth() + 1).padStart(2, '0'),
       DD: String(createdDate.getDate()).padStart(2, '0'),
       start: new Date(businessTripRequest.tripStart).toLocaleString('zh-TW'),

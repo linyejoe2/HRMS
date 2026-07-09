@@ -186,7 +186,7 @@ const AttendanceTab: React.FC = () => {
 
       // Process businessTrip records
       businessTrips.forEach((bt: any) => {
-        
+
         if (hiddenFromAttendanceEmpIDs.has(bt.empID)) return;
         const tripStart = new Date(bt.tripStart);
         const tripEnd = new Date(bt.tripEnd);
@@ -209,7 +209,7 @@ const AttendanceTab: React.FC = () => {
 
       // Process leave records - create records for leave days
       data.leave.records.forEach((leave: any) => {
-        
+
         if (hiddenFromAttendanceEmpIDs.has(leave.empID)) return;
         const leaveStart = new Date(leave.leaveStart);
         const leaveEnd = new Date(leave.leaveEnd);
@@ -591,24 +591,26 @@ const AttendanceTab: React.FC = () => {
                   重新載入
                 </Button>
                 {isAdminOrHr && (
-                  <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={manualupdateAttendanceData}
-                    disabled={importing}
-                  >
-                    {importing ? '更新中...' : '更新資料'}
-                  </Button>
+                  <>
+                    <Button
+                      variant="contained"
+                      startIcon={<DownloadIcon />}
+                      onClick={manualupdateAttendanceData}
+                      disabled={importing}
+                    >
+                      {importing ? '更新中...' : '更新資料'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      startIcon={<FileDownloadIcon />}
+                      onClick={downloadAsExcel}
+                      disabled={loading || attendanceRecords.length === 0}
+                    >
+                      下載報表
+                    </Button>
+                  </>
                 )}
-                <Button
-                  variant="outlined"
-                  color="success"
-                  startIcon={<FileDownloadIcon />}
-                  onClick={downloadAsExcel}
-                  disabled={loading || attendanceRecords.length === 0}
-                >
-                  下載報表
-                </Button>
               </Box>
             </Grid>
             <Grid item xs={12} md={2}>
@@ -681,7 +683,7 @@ const AttendanceTab: React.FC = () => {
               }
 
               // Filter: if is holiday
-              if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6){
+              if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6) {
                 return false;
               }
 
@@ -709,10 +711,10 @@ const AttendanceTab: React.FC = () => {
                     return false;
                   }
 
-              // Filter: if is holiday
-              if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6){
-                return false;
-              }
+                  // Filter: if is holiday
+                  if (dayjs(record.date).day() === 0 || dayjs(record.date).day() === 6) {
+                    return false;
+                  }
 
                   return true;
                 })
