@@ -391,7 +391,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
 
                 <Box display="flex" gap={2} mb={2}>
                   <TextField
-                    label="生效日期"
+                    label="生效日"
                     type="date"
                     size="small"
                     fullWidth
@@ -402,7 +402,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                     InputLabelProps={{ shrink: true }}
                   />
                   <TextField
-                    label="到期日（選填）"
+                    label="到期日"
                     type="date"
                     size="small"
                     fullWidth
@@ -440,7 +440,7 @@ const LeaveDetailsDialog: React.FC<LeaveDetailsDialogProps> = ({
                 <TableHead>
                   <TableRow>
                     <TableCell>建立時間</TableCell>
-                    <TableCell>生效日期</TableCell>
+                    <TableCell>生效日</TableCell>
                     <TableCell>到期日</TableCell>
                     <TableCell>調整時數</TableCell>
                     <TableCell>原因</TableCell>

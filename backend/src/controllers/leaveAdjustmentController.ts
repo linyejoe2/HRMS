@@ -14,7 +14,7 @@ export const createLeaveAdjustment = asyncHandler(async (req: AuthRequest, res: 
     minutes,
     reason,
     effectiveDate: toDayjs(effectiveDate).startOf("day"),
-    expiryDate: toDayjs(expiryDate).endOf("day"),
+    expiryDate: expiryDate ? toDayjs(expiryDate).endOf("day") : undefined,
     createdBy
   });
 

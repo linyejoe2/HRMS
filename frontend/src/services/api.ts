@@ -2,8 +2,8 @@ import axios, { AxiosResponse } from 'axios';
 import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes } from '../types';
 import { toast } from 'react-toastify';
 
-const API_BASE_URL = ""
-// const API_BASE_URL = "http://localhost:3000";
+// const API_BASE_URL = ""
+const API_BASE_URL = "http://localhost:3000";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
 
 export const api = axios.create({
@@ -14,6 +14,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  if (config.baseURL?.indexOf("http://localhost:3000") != -1 ) console.log(`%c listening to Dev server now! `, 'background: rgb(162, 40, 187); color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 30px;');
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

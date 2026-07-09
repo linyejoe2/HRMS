@@ -32,7 +32,17 @@ const leaveAdjustmentSchema = new Schema<ILeaveAdjustment>({
   leaveType: {
     type: String,
     required: true,
-    enum: ['事假', '普通傷病假', '特別休假', '婚假', '喪假'],
+    enum: ['事假', '普通傷病假', '特別休假', '婚假', '喪假',
+      '生理假',
+      // '普通傷病假(住院)',
+      '公傷病假',
+      '公假',
+      '產假',
+      '產檢假',
+      '陪產檢及陪產假',
+      // '家庭照顧假',
+      '安胎休養請假',
+      '育嬰留職停薪'],
     index: true
   },
   minutes: {

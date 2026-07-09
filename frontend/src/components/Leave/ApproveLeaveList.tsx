@@ -26,8 +26,9 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, leaveAPI } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, leaveAPI, leaveAdjustmentAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -37,7 +38,91 @@ import Badge from '@mui/material/Badge';
 import { errorToString } from '@/utils/util/utility';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription } from '@/services/variableService';
-import { Link } from 'react-router-dom';
+
+// Default leave adjustment suggested when approving a request with insufficient balance.
+// TODO: fill in the day/hour rules for the remaining leave types.
+const getDefaultAdjustmentForLeaveType = (
+  leaveType: string,
+  leaveStart: string
+): { minutes: number; effectiveDate: string; expiryDate: string, reason: string } => {
+  const effectiveDate = leaveStart ? dayjs(leaveStart).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+
+  switch (leaveType) {
+    case '婚假':
+      return {
+        minutes: 8 * 8 * 60, // 8 days
+        effectiveDate,
+        expiryDate: dayjs(effectiveDate).add(3, 'month').format('YYYY-MM-DD'),
+        reason: "按勞基法核假"
+      };
+    case '喪假':
+      return {
+        minutes: 8 * 8 * 60, // 8 days
+        effectiveDate,
+        expiryDate: dayjs(effectiveDate).add(3, 'month').format('YYYY-MM-DD'),
+        reason: "按勞基法核假"
+      };
+    case '生理假':
+      return {
+        minutes: 1 * 8 * 60,
+        effectiveDate,
+        expiryDate: dayjs(effectiveDate).endOf("month").format('YYYY-MM-DD'),
+        reason: "按勞基法核假"
+      };
+    case '公假':
+      return {
+        minutes: 1 * 8 * 60,
+        effectiveDate,
+        expiryDate: "",
+        reason: "按勞基法核假"
+      };
+    case '公傷病假':
+      return {
+        minutes: 1 * 8 * 60,
+        effectiveDate,
+        expiryDate: "",
+        reason: "按勞基法核假"
+      };
+    case '產假':
+      return {
+        minutes: 56 * 8 * 60,
+        effectiveDate,
+        expiryDate: "",
+        reason: "按勞基法核假"
+      };
+    case '產檢假':
+      return {
+        minutes: 7 * 8 * 60,
+        effectiveDate,
+        expiryDate: "",
+        reason: "按勞基法核假"
+      };
+    case '陪產檢及陪產假':
+      return {
+        minutes: 7 * 8 * 60,
+        effectiveDate,
+        expiryDate: dayjs(effectiveDate).add(30, "day").format('YYYY-MM-DD'),
+        reason: "按勞基法核假"
+      };
+    case '安胎休養請假':
+      return {
+        minutes: 1 * 8 * 60,
+        effectiveDate,
+        expiryDate: "",
+        reason: "按勞基法核假"
+      };
+    case '育嬰留職停薪':
+      return {
+        minutes: 30 * 8 * 60,
+        effectiveDate,
+        expiryDate: effectiveDate,
+        reason: "按勞基法核假"
+      };
+    // TODO: 喪假、產假、陪產假、生理假、安胎假、育嬰留職停薪...
+    default:
+      return { minutes: 0, effectiveDate, expiryDate: '', reason: "" };
+  }
+};
 
 const ApproveLeaveList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -52,6 +137,13 @@ const ApproveLeaveList: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
+  const [warningAdjustment, setWarningAdjustment] = useState({
+    minutes: 0,
+    reason: '',
+    effectiveDate: new Date().toISOString().split('T')[0],
+    expiryDate: ''
+  });
+  const [submittingAdjustmentApproval, setSubmittingAdjustmentApproval] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
@@ -102,14 +194,9 @@ const ApproveLeaveList: React.FC = () => {
       }, request.empID);
 
       if (!hasSufficientBalance.data.data.sufficient) {
-        // Show warning dialog
-        // toast.warn(<div>
-        //   <Typography variant="subtitle2" >title</Typography>
-        //   <Typography variant="body1" >body</Typography>
-        // </div>,{
-        //   autoClose: 10000
-        // })
         setWarningMessage(hasSufficientBalance.data.data.msg)
+        const defaults = getDefaultAdjustmentForLeaveType(request.leaveType, request.leaveStart);
+        setWarningAdjustment(defaults);
         setWarningDialogOpen(true);
         return;
       }
@@ -133,6 +220,49 @@ const ApproveLeaveList: React.FC = () => {
       const message = error.response?.data?.message || '核准失敗';
       toast.error(message);
       throw error;
+    }
+  };
+
+  const handleAddAdjustmentAndApprove = async () => {
+    if (!selectedRequest) return;
+
+    if (!warningAdjustment.reason.trim()) {
+      toast.error('請輸入調整原因');
+      return;
+    }
+
+    if (warningAdjustment.minutes === 0) {
+      toast.error('請輸入調整時數');
+      return;
+    }
+
+    if (!warningAdjustment.effectiveDate) {
+      toast.error('請選擇生效日期');
+      return;
+    }
+
+    setSubmittingAdjustmentApproval(true);
+    try {
+      await leaveAdjustmentAPI.create({
+        empID: selectedRequest.empID,
+        leaveType: selectedRequest.leaveType,
+        minutes: warningAdjustment.minutes,
+        reason: warningAdjustment.reason,
+        effectiveDate: warningAdjustment.effectiveDate,
+        ...(warningAdjustment.expiryDate ? { expiryDate: warningAdjustment.expiryDate } : {})
+      });
+
+      await approveLeaveRequest(selectedRequest._id!, '');
+
+      toast.success('已新增假別調整並核准請假申請');
+      setWarningDialogOpen(false);
+      setSelectedRequest(null);
+      fetchLeaveRequests(statusFilter || undefined);
+    } catch (error: any) {
+      console.error('Error adding adjustment and approving leave request:', error);
+      toast.error(error.response?.data?.message || error.response?.data?.error || '新增調整並核准失敗');
+    } finally {
+      setSubmittingAdjustmentApproval(false);
     }
   };
 
@@ -189,6 +319,17 @@ const ApproveLeaveList: React.FC = () => {
       default:
         return <Chip label={status} size="small" />;
     }
+  };
+
+  const buttonStyle = {
+    borderRadius: 2,
+    textTransform: 'none',
+    px: 1.5,
+    minWidth: 80,
+    '&:hover': {
+      backgroundColor: 'action.hover',
+      borderColor: 'primary.main',
+    },
   };
 
   const handleStatusFilterChange = (_: React.MouseEvent<HTMLElement>, newValue: string | null) => {
@@ -606,15 +747,113 @@ const ApproveLeaveList: React.FC = () => {
             <Typography variant="body1" gutterBottom sx={{ whiteSpace: 'pre-line' }}> {warningMessage}</Typography>
           </Alert>
 
-          <Typography sx={{ mt: 2 }}>
-            請先到「<Link to="/employees" style={{ textDecoration: 'none', color: '#1976d2' }}>
-              員工管理
-            </Link>」頁面為此員工進行假別調整，<br />增加其假別額度後再核准此申請。
+          <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
+            新增假別調整
           </Typography>
+          <Box display="flex" gap={1.5} alignItems="center" mb={2} flexWrap="wrap" justifyContent="center">
+            <Button
+              variant="outlined"
+              size="small"
+              sx={buttonStyle}
+              onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes - 480 })}
+            >
+              - 一天
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{...buttonStyle, display: "none"}}
+              onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes - 60 })}
+            >
+              - 一小時
+            </Button>
+
+            <TextField
+              label="調整天數"
+              type="number"
+              value={Number((warningAdjustment.minutes / 60 / 8).toFixed(0))}
+              onChange={(e) => {
+                const days = parseInt(e.target.value, 10);
+                if (!isNaN(days)) {
+                  setWarningAdjustment({ ...warningAdjustment, minutes: days * 8 * 60 });
+                }
+              }}
+              sx={{ width: 50, flexGrow: 1 }}
+            />
+
+            <TextField
+              label="換算時數"
+              type="number"
+              disabled={true}
+              value={warningAdjustment.minutes / 60}
+              onChange={(e) => {
+                const val = e.target.value;
+                const parsedHours = val === '' ? 0 : parseFloat(val);
+                setWarningAdjustment({ ...warningAdjustment, minutes: parsedHours * 60 });
+              }}
+              sx={{ width: 50, flexGrow: 1 }}
+            />
+
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{...buttonStyle, display: "none"}}
+              onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes + 60 })}
+            >
+              + 一小時
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={buttonStyle}
+              onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes + 480 })}
+            >
+              + 一天
+            </Button>
+          </Box>
+
+          <Box display="flex" gap={2} mb={2}>
+            <TextField
+              label="生效日"
+              type="date"
+              size="small"
+              fullWidth
+              value={warningAdjustment.effectiveDate}
+              onChange={(e) => setWarningAdjustment({ ...warningAdjustment, effectiveDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="到期日"
+              type="date"
+              size="small"
+              fullWidth
+              value={warningAdjustment.expiryDate}
+              onChange={(e) => setWarningAdjustment({ ...warningAdjustment, expiryDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+
+          <TextField
+            label="調整原因"
+            size="small"
+            multiline
+            rows={3}
+            fullWidth
+            value={warningAdjustment.reason}
+            onChange={(e) => setWarningAdjustment({ ...warningAdjustment, reason: e.target.value })}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setWarningDialogOpen(false)} variant="contained">
-            知道了
+          <Button onClick={() => setWarningDialogOpen(false)} disabled={submittingAdjustmentApproval}>
+            取消
+          </Button>
+          <Button
+            onClick={handleAddAdjustmentAndApprove}
+            variant="contained"
+            color="success"
+            disabled={submittingAdjustmentApproval}
+          >
+            {submittingAdjustmentApproval ? '處理中...' : '新增調整並核准'}
           </Button>
         </DialogActions>
       </Dialog>

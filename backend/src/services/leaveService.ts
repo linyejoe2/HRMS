@@ -27,12 +27,20 @@ export interface FixLeaveEndDatesResult {
 }
 
 // Leave types whose total allocation comes entirely from HR-entered adjustments.
-export const RESERVATION_LEAVE_TYPES: { type: LeaveType; displayName: string }[] = [
+export const RESERVATION_LEAVE_TYPES: { type: LeaveType; displayName?: string }[] = [
   { type: '婚假', displayName: '婚假' },
   { type: '喪假', displayName: '喪假' },
+  { type: '生理假', displayName: '生理假' },
+  { type: '公傷病假', displayName: '公傷病假' },
+  { type: '公假', displayName: '公假' },
+  { type: '產假', displayName: '產假' },
+  { type: '產檢假', displayName: '產檢假' },
+  { type: '陪產檢及陪產假', displayName: '陪產檢及陪產假' },
+  { type: '安胎休養請假', displayName: '安胎休養請假' },
+  { type: '育嬰留職停薪', displayName: '育嬰留職停薪' },
 ];
 
-export type LeaveType = "婚假" | "喪假" | '事假' | '普通傷病假' | '特別休假'
+export type LeaveType = "婚假" | "喪假" | '事假' | '普通傷病假' | '特別休假' | "生理假" | "公傷病假" | "公假" | "產假" | "產檢假" | "陪產檢及陪產假" | "安胎休養請假" | "育嬰留職停薪"
 
 export interface LeaveData {
   type: LeaveType; // 婚假 喪假
@@ -750,9 +758,9 @@ export class LeaveService {
     if (workingDurentObj.hourFormat > remainingHours) {
       return {
         sufficient: false, msg:
-          `${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(1)} 小時，` +
-          `但此次申請需要 ${requestedHours.toFixed(1)} 小時。\n` +
-          `超出額度 ${(requestedHours - remainingHours).toFixed(1)} 小時。\n`
+          `${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(0)} 小時，` +
+          `但此次申請需要 ${requestedHours.toFixed(0)} 小時。\n` +
+          `超出額度 ${(requestedHours - remainingHours).toFixed(0)} 小時。\n`
       };
     }
     return { sufficient: true, msg: "" };
@@ -835,7 +843,7 @@ export class LeaveService {
     ]);
 
     const reservationLeaves: LeaveData[] = RESERVATION_LEAVE_TYPES.map((rt, i) =>
-      buildStandardLeaveData(rt.type, rt.displayName, 0, reservationLeaveResults[i], reservationAdjResults[i])
+      buildStandardLeaveData(rt.type, rt.displayName ? rt.displayName : rt.type, 0, reservationLeaveResults[i], reservationAdjResults[i])
     );
 
     return {

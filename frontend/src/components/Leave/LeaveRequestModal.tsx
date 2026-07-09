@@ -29,30 +29,13 @@ import FileUploadField from '../common/FileUploadField';
 import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
+import { LeaveTypes } from '@/services/leaveService';
 
 interface LeaveRequestModalProps {
   open: boolean;
   onClose: () => void;
   hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
 }
-
-const leaveTypes = [
-  '普通傷病假',
-  '事假',
-  '特別休假',
-  '婚假',
-  '喪假',
-  '生理假',
-  '普通傷病假(住院)',
-  '公傷病假',
-  '公假',
-  '產假',
-  '產檢假',
-  '陪產檢及陪產假',
-  '家庭照顧假',
-  '安胎休養請假',
-  '育嬰留職停薪'
-];
 
 const startTimeOptions = [
   { value: '08:30', label: '08:30' },
@@ -358,7 +341,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                       helperText={errors.leaveType?.message}
                       required
                     >
-                      {leaveTypes.map((type) => (
+                      {LeaveTypes.map((type) => (
                         <MenuItem key={type} value={type}>
                           {type}
                         </MenuItem>

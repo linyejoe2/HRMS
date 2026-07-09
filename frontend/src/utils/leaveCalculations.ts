@@ -2,6 +2,7 @@ import { LeaveRequest, LeaveAdjustment } from '../types';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { ReservationLeaveTypes } from '@/services/leaveService';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -86,7 +87,7 @@ export const formatMinutesToHours = (minutes: number): number => {
  * @returns Color string: 'success' | 'warning' | 'error'
  */
 export const getLeaveColorByHours = (remainingHours: number, type = "defult"): 'success' | 'warning' | 'error' => {
-  if (["婚假", "喪假"].indexOf(type) != -1) return "success"
+  if (ReservationLeaveTypes.indexOf(type) != -1) return "success"
   if (remainingHours > 56) return 'success';
   if (remainingHours > 24) return 'warning';
   return 'error';
