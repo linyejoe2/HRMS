@@ -14,7 +14,8 @@ import {
   AlertTitle,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  Box
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -29,7 +30,7 @@ import FileUploadField from '../common/FileUploadField';
 import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { LeaveTypes } from '@/services/leaveService';
+import { LeaveTypes, getLeaveBenefitSection } from '@/services/leaveService';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -82,10 +83,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
     }
   });
 
+  const leaveType = watch('leaveType');
   const leaveStartDate = watch('leaveStartDate');
   const leaveStartTime = watch('leaveStartTime');
   const leaveEndDate = watch('leaveEndDate');
   const leaveEndTime = watch('leaveEndTime');
+
+  const leaveBenefitSection = leaveType ? getLeaveBenefitSection(leaveType) : undefined;
 
   // Validate date/time combination
   React.useEffect(() => {
@@ -313,7 +317,15 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
         </DialogTitle>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent>
+          <DialogContent dividers>
+            {leaveBenefitSection && (
+              <Box sx={{ mb: 1, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
+                <Typography variant="body1" gutterBottom sx={{ whiteSpace: 'pre-line' }}>
+                  {leaveBenefitSection.content}
+                </Typography>
+              </Box>
+            )}
+
             <Grid container rowSpacing={3} columnSpacing={1} sx={{ mt: 1 }}>
               {hrMode && (
                 <Grid item xs={12}>
@@ -343,12 +355,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                     >
                       {LeaveTypes.map((type) => {
                         // patch07091508
-                        const type2 = type == "特別休假" ? "特休" : type 
-                        return(
-                        <MenuItem key={type} value={type}>
-                          {type2}
-                        </MenuItem>
-                      )})}
+                        const type2 = type == "特別休假" ? "特休" : type
+                        return (
+                          <MenuItem key={type} value={type}>
+                            {type2}
+                          </MenuItem>
+                        )
+                      })}
                     </TextField>
                   )}
                 />

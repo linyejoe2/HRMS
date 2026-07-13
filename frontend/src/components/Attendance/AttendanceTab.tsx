@@ -196,7 +196,7 @@ const AttendanceTab: React.FC = () => {
           const dateStr = toTaipeiDate(d);
           const record = getOrCreateRecord(bt.empID, dateStr);
 
-          if (!record.clockInTime) {
+          if (!record.clockInTime || dayjs(record.clockInTime).isAfter(dayjs(bt.tripStart))) {
             record.clockInTime = bt.tripStart;
             record.clockInSource = '因公免刷卡';
           }

@@ -80,7 +80,7 @@ export const calcAttendanceStatuses = (log: AttendanceLog): AttendanceStatus => 
     if (duration < 470 ) isLessThen8Hours = true;
   } else if (log.clockInTime) {
     const inTimeDayjs = dayjs(log.clockInTime).tz('Asia/Taipei');
-    const standardStart = inTimeDayjs.clone().hour(8).minute(30).second(0);
+    const standardStart = inTimeDayjs.clone().hour(9).minute(30).second(0);
     isLate = inTimeDayjs.isAfter(standardStart);
   } else if (log.clockOutTime) {
     const outTimeDayjs = dayjs(log.clockOutTime).tz('Asia/Taipei');

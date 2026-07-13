@@ -190,7 +190,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', height: 24 }} />
 
       <Chip
-        label={`其他假別權益說明`}
+        label={`請假權益說明`}
         color={"primary"}
         onClick={() => setOtherLeaveDialogOpen(true)}
         sx={{ cursor: 'pointer', fontWeight: 'medium' }}
