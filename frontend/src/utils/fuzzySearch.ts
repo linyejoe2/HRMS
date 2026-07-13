@@ -1,3 +1,4 @@
+import { leaveDisplaynameConverter } from "@/services/leaveService";
 import { getDepartmentDescription } from "@/services/variableService";
 
 /**
@@ -27,7 +28,7 @@ export const fuzzySearch = <T>(
     .map(text => (text?.toString() || '').toLowerCase());
 
   // 所有的關鍵字都必須符合 (AND 邏輯)
-  return keywords.every(keyword => 
+  return keywords.every(keyword =>
     // 該關鍵字只要符合其中一個欄位即可 (OR 邏輯)
     targetTexts.some(text => text.includes(keyword))
   );
@@ -44,6 +45,7 @@ interface ApprovalRecord {
   empID?: string;
   name?: string;
   department?: string;
+  leaveType?: string;
 }
 
 /**
@@ -75,6 +77,8 @@ export const fuzzySearchApproval = (
     rec.empID,
     rec.name,
     rec.department,
+    rec.leaveType,
+    leaveDisplaynameConverter(rec.leaveType || ""),
     getDepartmentDescription(rec.department || '')
   ]);
 };

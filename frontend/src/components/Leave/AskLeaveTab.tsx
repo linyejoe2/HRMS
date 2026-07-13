@@ -26,7 +26,7 @@ import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import RemainingLeaveLabels from './RemainingLeaveLabels';
 import LeaveTypeDetailsDialog from './LeaveTypeDetailsDialog';
-import { LeaveData } from '../../services/leaveService';
+import { LeaveData, leaveDisplaynameConverter } from '../../services/leaveService';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -125,7 +125,7 @@ const AskLeaveTab: React.FC = () => {
       headerName: '請假類型',
       flex: 1,
       // patch07091508
-      valueGetter: (_, row) => row.leaveType == "特別休假" ? "特休" : row.leaveType
+      valueGetter: (_, row) => leaveDisplaynameConverter(row.leaveType)
     },
     {
       field: 'requestDate',

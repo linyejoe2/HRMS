@@ -30,7 +30,7 @@ import FileUploadField from '../common/FileUploadField';
 import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { LeaveTypes, getLeaveBenefitSection } from '@/services/leaveService';
+import { LeaveTypes, getLeaveBenefitSection, leaveDisplaynameConverter } from '@/services/leaveService';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -355,10 +355,9 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                     >
                       {LeaveTypes.map((type) => {
                         // patch07091508
-                        const type2 = type == "特別休假" ? "特休" : type
                         return (
                           <MenuItem key={type} value={type}>
-                            {type2}
+                            {leaveDisplaynameConverter(type)}
                           </MenuItem>
                         )
                       })}

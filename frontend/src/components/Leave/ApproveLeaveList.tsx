@@ -38,6 +38,7 @@ import Badge from '@mui/material/Badge';
 import { errorToString } from '@/utils/util/utility';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription } from '@/services/variableService';
+import { leaveDisplaynameConverter } from '@/services/leaveService';
 
 // Default leave adjustment suggested when approving a request with insufficient balance.
 // TODO: fill in the day/hour rules for the remaining leave types.
@@ -371,6 +372,8 @@ const ApproveLeaveList: React.FC = () => {
       field: 'leaveType',
       headerName: '請假類型',
       flex: 1,
+      // patch07091508
+      valueGetter: (_, row) => leaveDisplaynameConverter(row.leaveType),
       sortable: true
     },
     {
@@ -558,7 +561,7 @@ const ApproveLeaveList: React.FC = () => {
 
             <TextField
               size="small"
-              placeholder="搜尋編號、員工編號、姓名或部門 (空格分隔多個關鍵字)"
+              placeholder="搜尋編號、員工編號、姓名、部門、請假類型 (空格分隔多個關鍵字)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{

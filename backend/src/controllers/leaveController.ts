@@ -5,7 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 import { generateAnnualLeaveTable } from '../services/excel/annualLeaveTable';
 import { generateLeaveSummaryReport } from '../services/excel/leaveSummaryReport';
 import { generateEmployeeLeaveReport } from '../services/excel/employeeLeaveReport';
-import { dayjsTz, errorToString, toDayjs } from '../util/utility';
+import { dayjsTz, errorToString, dayjsToTz } from '../util/utility';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
@@ -180,7 +180,7 @@ export const checkLeaveBalance = asyncHandler(async (req: AuthRequest, res: Resp
   const { empID } = req.params;
   const { leaveType, timeStart, timeEnd } = req.body
   try {
-    const balance = await LeaveService.CheckLeaveBalance(empID, leaveType, toDayjs(timeStart), toDayjs(timeEnd));
+    const balance = await LeaveService.CheckLeaveBalance(empID, leaveType, dayjsToTz(timeStart), dayjsToTz(timeEnd));
 
     res.json({
       error: false,

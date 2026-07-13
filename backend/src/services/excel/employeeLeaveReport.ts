@@ -1,12 +1,12 @@
 import ExcelJS from 'exceljs';
 import legacyLeave from "../../config/legacyLeave.json"
 import { Employee, IEmployee, ILeave, Leave, LeaveAdjustment, LegacyLeave } from '../../models';
-import { LeaveService } from '../leaveService';
+import { leaveDisplaynameConverter, LeaveService } from '../leaveService';
 import { APIError } from '../../middleware';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { dayjsTz, isSameDay, isToday, toDayjs } from '../../util/utility';
+import { dayjsTz, isSameDay, isToday, dayjsToTz } from '../../util/utility';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -44,7 +44,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
 
   const remain = legacyLeave.find(l => l.id === employee.empID)?.remain || 0;
   console.log("remain: ", remain)
-  const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(employee, end.month(12).day(23).endOf("day"));
+  const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(employee, end.month(12).day(23).endOf("day"));
   const yearRange = LeaveService.getYearRanges(dayjsTz(employee.hireDate), end);
   const annualLeaveUsed = annualLeaveDays[1] - remain;
 
@@ -78,14 +78,13 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     const endMonth = String(leave.leaveEnd.getMonth() + 1).padStart(2, '0');
     const endDay = String(leave.leaveEnd.getDate()).padStart(2, '0');
 
-    // patch07091508
-    if (leave.leaveType == "特別休假") leave.leaveType = "特休"
 
     return {
       "起": leave.mm + "月" + leave.DD + "日",
       "迄": endMonth + "月" + endDay + "日",
       '請假事由': leave.rejectionReason || '',
-      '請假類型': leave.leaveType,
+      // patch07091508
+      '請假類型': leaveDisplaynameConverter(leave.leaveType),
       "特休": annualLeaveDuration,
       "特休已休累計": annualLeaveUsed,
       "剩餘特休時數": remain - annualLeaveDuration,
@@ -104,7 +103,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
         hour: '2-digit',
         minute: '2-digit'
       }),
-      "leaveStartDate": toDayjs(leaveStartDate),
+      "leaveStartDate": dayjsToTz(leaveStartDate),
       '審核人': leave.approvedBy || ''
     };
   });
@@ -114,7 +113,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
     yearRange: yearRange,
     annualLeaveUsed: annualLeaveUsed,
     remain: remain,
-    lastYearEnd: toDayjs(yearRange.lastYearEnd),
+    lastYearEnd: dayjsToTz(yearRange.lastYearEnd),
     year: year
   }
 

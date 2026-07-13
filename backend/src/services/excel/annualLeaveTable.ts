@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { Employee, Leave } from '../../models';
 import { LeaveService } from '../leaveService';
-import { dayjsNum, dayjsTz, toDayjs } from '../../util/utility';
+import { dayjsNum, dayjsTz, dayjsToTz } from '../../util/utility';
 
 export const generateAnnualLeaveTable = async (year: number, month?: number): Promise<ExcelJS.Buffer> => {
   const title = month ? `${year}年${month}月特休表` : `${year}年特休表`
@@ -29,7 +29,7 @@ export const generateAnnualLeaveTable = async (year: number, month?: number): Pr
 
   for (const emp of employees) {
     const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(emp, referenceDate);
-    const yearRange = LeaveService.getYearRanges(toDayjs(emp.hireDate), referenceDate);
+    const yearRange = LeaveService.getYearRanges(dayjsToTz(emp.hireDate), referenceDate);
 
     reportData.push({
       '員工編號': emp.empID,

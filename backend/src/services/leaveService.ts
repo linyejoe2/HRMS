@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, toDayjs } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 import { holidayService } from './holidayService';
 import * as XLSX from 'xlsx';
@@ -24,6 +24,18 @@ export interface FixLeaveEndDatesResult {
   scanned: number; // records matching the "leaveStart & leaveEnd both at 08:30" bug
   fixed: number;
   skipped: { leaveId: string; sequenceNumber?: number; reason: string }[];
+}
+
+
+export const leaveDisplaynameConverter = (type: string): string => {
+  switch (type) {
+    case "普通傷病假":
+      return "病假"
+    case "特別休假":
+      return "特休"
+    default:
+      return type
+  }
 }
 
 // Leave types whose total allocation comes entirely from HR-entered adjustments.
@@ -159,8 +171,8 @@ export class LeaveService {
       throw new APIError('Employee not found', 404);
     }
 
-    const leaveStart = toDayjs(leaveData.leaveStart)
-    const leaveEnd = toDayjs(leaveData.leaveEnd)
+    const leaveStart = dayjsToTz(leaveData.leaveStart)
+    const leaveEnd = dayjsToTz(leaveData.leaveEnd)
 
     const timeDiff = calcWorkingDuration(leaveStart, leaveEnd, { useStandard4HourBlocks: true });
 
@@ -778,18 +790,21 @@ export class LeaveService {
     end?: Dayjs
   ): Promise<UserLeaveData> {
     const now = new Date();
+    const nowDayJS = dayjsTz(now)
 
     // 1. 決定 Leave 的時間篩選範圍（若無帶入則維持原本的前後一年預設值）
-    const oneYearBefore = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    const oneYearAfter = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-    const queryStart = start ? start.toDate() : oneYearBefore;
-    const queryEnd = end ? end.toDate() : oneYearAfter;
+    // const oneYearBefore = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    // const oneYearAfter = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    const leaveBeforeBound = nowDayJS.subtract(1,"year").month(12).day(24).startOf('day');
+    const leaveAfterBound = nowDayJS.month(12).day(23).endOf('day');
+    const queryStart = start ? start.toDate() : leaveBeforeBound;
+    const queryEnd = end ? end.toDate() : leaveAfterBound;
 
     const dateFilter = {
       $or: [
-        { leaveStart: { $gte: oneYearBefore, $lte: oneYearAfter } },
-        { leaveEnd: { $gte: oneYearBefore, $lte: oneYearAfter } },
-        { leaveStart: { $lte: oneYearBefore }, leaveEnd: { $gte: oneYearAfter } }
+        { leaveStart: { $gte: leaveBeforeBound, $lte: leaveAfterBound } },
+        { leaveEnd: { $gte: leaveBeforeBound, $lte: leaveAfterBound } },
+        { leaveStart: { $lte: leaveBeforeBound }, leaveEnd: { $gte: leaveAfterBound } }
       ]
     };
 
@@ -815,14 +830,31 @@ export class LeaveService {
     };
 
     const employee = await Employee.findOne({ empID });
-    const hireDate = employee?.hireDate ? new Date(employee.hireDate) : undefined;
+    const hireDate = employee?.hireDate ? dayjsTz(employee.hireDate) : dayjsTz();
     const specialTotalDays = hireDate ? LeaveService.calcAnnualLeaveEntitlementDays(hireDate) : 0;
+
+    // 針對特休 假設今天在今年到職日前
+    // 應該找出去年到職日後到現在請的假
+    // 假設在今年到職日後
+    // 應該找出今年到職日後請的假
+    const hireDateThisYear = hireDate.set('year', dayjs().year())
+    const hireDateBeforeaYear = hireDateThisYear.subtract(1, "year")
+    const hireDateAfteraYear = hireDateThisYear.add(1, "year")
+    const annualLeaveBeforeBound = nowDayJS.isBefore(hireDateThisYear) ? hireDateBeforeaYear : hireDateThisYear
+    const annualLeaveAfterBound = nowDayJS.isBefore(hireDateThisYear) ? hireDateThisYear : hireDateAfteraYear
+    const annualLeaveFilter = {
+      $or: [
+        { leaveStart: { $gte: annualLeaveBeforeBound, $lte: annualLeaveAfterBound } },
+        { leaveEnd: { $gte: annualLeaveBeforeBound, $lte: annualLeaveAfterBound } },
+        { leaveStart: { $lte: annualLeaveBeforeBound }, leaveEnd: { $gte: annualLeaveAfterBound } }
+      ]
+    };
 
     // 3. 查詢 Leaves
     const [personalLeaves, sickLeaves, specialLeaves] = await Promise.all([
       Leave.find({ empID, leaveType: '事假', status: 'approved', ...dateFilter }),
       Leave.find({ empID, leaveType: '普通傷病假', status: 'approved', ...dateFilter }),
-      Leave.find({ empID, leaveType: '特別休假', status: 'approved', ...dateFilter })
+      Leave.find({ empID, leaveType: '特別休假', status: 'approved', ...annualLeaveFilter })
     ]);
 
     // 4. 查詢 Adjustments（加上 adjDateFilter）

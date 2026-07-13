@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { toDayjs, toSeparatVariable, isWeekend } from '../util/utility';
+import { dayjsToTz, toSeparatVariable, isWeekend } from '../util/utility';
 import { AuthRequest } from '../middleware/auth';
 
 export const validateLeaveRule = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -13,8 +13,8 @@ export const validateLeaveRule = async (req: AuthRequest, res: Response, next: N
 
     const leaveStartObject = toSeparatVariable(leaveStart)
     const leaveEndObject = toSeparatVariable(leaveEnd)
-    const leaveStartDayjs = toDayjs(leaveStart)
-    const leaveEndDayjs = toDayjs(leaveEnd)
+    const leaveStartDayjs = dayjsToTz(leaveStart)
+    const leaveEndDayjs = dayjsToTz(leaveEnd)
 
     if (isWeekend(leaveStart))
       return res.status(400).json({ error: true, message: "不得開始於假日" });

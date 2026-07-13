@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { LeaveAdjustmentService } from '../services/leaveAdjustmentService';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
-import { toDayjs } from '../util/utility';
+import { dayjsToTz } from '../util/utility';
 
 export const createLeaveAdjustment = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { empID, leaveType, minutes, reason, effectiveDate, expiryDate } = req.body;
@@ -13,8 +13,8 @@ export const createLeaveAdjustment = asyncHandler(async (req: AuthRequest, res: 
     leaveType,
     minutes,
     reason,
-    effectiveDate: toDayjs(effectiveDate).startOf("day"),
-    expiryDate: expiryDate ? toDayjs(expiryDate).endOf("day") : undefined,
+    effectiveDate: dayjsToTz(effectiveDate).startOf("day"),
+    expiryDate: expiryDate ? dayjsToTz(expiryDate).endOf("day") : undefined,
     createdBy
   });
 

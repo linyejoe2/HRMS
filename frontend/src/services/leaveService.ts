@@ -1,6 +1,17 @@
 import { api } from './api';
 import { LeaveRequest, LeaveAdjustment } from '../types';
 
+export const leaveDisplaynameConverter = (type: string): string => {
+  switch (type) {
+    case "普通傷病假":
+      return "病假"
+    case "特別休假":
+      return "特休"
+    default:
+      return type
+  }
+}
+
 export const RESERVATION_LEAVE_TYPES: { type: string; displayName: string }[] = [
   { type: '婚假', displayName: '婚假' },
   { type: '喪假', displayName: '喪假' },
