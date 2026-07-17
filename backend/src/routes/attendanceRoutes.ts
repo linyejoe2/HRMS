@@ -12,6 +12,7 @@ router.get('/create-attendance-record/:date', async (req, res) => {
   res.status(200).json(await cronService.runCreateAttendanceNow(new Date(req.params.date)))
 });
 router.get('/clean-holidays', attendanceController.cleanHolidayRecords);
+router.post("/create/now", attendanceController.runAttendanceCreationNow)
 
 // All routes require authentication
 router.use(authenticateToken);

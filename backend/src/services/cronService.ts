@@ -162,7 +162,9 @@ export class CronService {
       }
 
       // Get all active employees
-      const employees = await Employee.find({ isActive: true });
+      const employees = await Employee.find({
+        isActive: true, cardID: { $nin: [null, ""] }
+      });
       const employeeCount = employees.length;
 
       // Process each employee

@@ -92,6 +92,21 @@ services:
         max-size: "10m"
         max-file: "4"
 
+  # The dedicated Scheduler container
+  scheduler:
+    image: mcuadros/ofelia:latest
+    container_name: HRMS-scheduler
+    depends_on:
+      - backend
+    # Mount the config file we wrote above
+    volumes:
+      - ./ofelia.ini:/etc/ofelia/config.ini:ro
+    networks:
+      - hrms-network
+      # If you want to use "job-exec" to trigger things inside other containers,
+      # you must pass the docker socket:
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+
 networks:
   hrms-network:
     driver: bridge

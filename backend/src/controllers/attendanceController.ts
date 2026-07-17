@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { attendanceService, fileScanService } from '../services';
+import { attendanceService, cronService, CronService, fileScanService } from '../services';
 import { attendanceAggregationService } from '../services/attendanceAggregationService';
 import { asyncHandler, AuthRequest } from '../middleware';
 
@@ -235,6 +235,17 @@ export class AttendanceController {
     res.status(200).json({
       error: false,
       message: '手動掃描完成',
+      data: result
+    });
+  });
+
+  runAttendanceCreationNow = asyncHandler(async (req: Request, res: Response) => {
+    const date = req.body.date ? new Date(req.body.date) : new Date()
+    const result = await cronService.createAttendance(date);
+
+    res.status(200).json({
+      error: false,
+      message: '成功建立空出勤紀錄',
       data: result
     });
   });
