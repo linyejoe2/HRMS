@@ -200,7 +200,7 @@ const AttendanceTab: React.FC = () => {
             record.clockInTime = bt.tripStart;
             record.clockInSource = '因公免刷卡';
           }
-          if (!record.clockOutTime) {
+          if (!record.clockOutTime || dayjs(record.clockOutTime).isBefore(dayjs(bt.tripEnd))) {
             record.clockOutTime = bt.tripEnd;
             record.clockOutSource = '因公免刷卡';
           }

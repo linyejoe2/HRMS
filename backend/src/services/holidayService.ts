@@ -1,6 +1,6 @@
 import { Holiday, IHoliday } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { toTaipeiDate } from '../util/utility';
+import { dayjsTz, toTaipeiDate } from '../util/utility';
 
 export class HolidayService {
   /**
@@ -14,8 +14,8 @@ export class HolidayService {
    * Get holidays within a date range (for calendar view)
    */
   async getHolidaysByDateRange(startDate: string, endDate: string): Promise<IHoliday[]> {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = dayjsTz(startDate).toDate();
+    const end = dayjsTz(endDate).toDate();
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new APIError('無效的日期格式', 400);
