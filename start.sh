@@ -1,203 +1,142 @@
-#!/bin/bash
-# ============================================
-# HRMS Start Script for Linux/Mac (Docker)
-# ============================================
-# This script builds and starts all HRMS
-# services using Docker Compose
-# ============================================
+#!/usr/bin/env bash
 
-set -e  # Exit on error
-ERROR_COUNT=0
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+PROJECT_ROOT="$SCRIPT_DIR"
+ENV_FILE="$PROJECT_ROOT/.env"
+COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
 START_TIME=$(date +%T)
 
-# Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo ""
-echo "============================================"
-echo "  HRMS Application Start Script"
-echo "============================================"
-echo "Start Time: $START_TIME"
-echo ""
+compose() {
+    docker compose --project-directory "$PROJECT_ROOT" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
 
-# Step 1: Check Docker installation
-echo -e "${BLUE}[Step 1/8]${NC} Checking Docker installation..."
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}[ERROR]${NC} Docker is not installed or not in PATH"
-    echo "Please install Docker from: https://www.docker.com/get-started"
-    ((ERROR_COUNT++))
+fail() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
     exit 1
+}
+
+port_url() {
+    local service="$1"
+    local container_port="$2"
+    local mapping
+    mapping=$(compose port "$service" "$container_port") || return 1
+    printf 'http://localhost:%s' "${mapping##*:}"
+}
+
+wait_for() {
+    local name="$1"
+    shift
+    local deadline=$((SECONDS + 90))
+
+    while [ "$SECONDS" -lt "$deadline" ]; do
+        if "$@" >/dev/null 2>&1; then
+            echo -e "  ${GREEN}[OK]${NC} $name"
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo -e "  ${RED}[FAILED]${NC} $name" >&2
+    return 1
+}
+
+cd -- "$PROJECT_ROOT"
+
+echo
+echo '============================================'
+echo '  HRMS Application Start Script'
+echo '============================================'
+echo "Start Time: $START_TIME"
+echo
+
+echo -e "${BLUE}[Step 1/9]${NC} Preparing release files..."
+[ -x "$PROJECT_ROOT/download_and_extract.sh" ] || fail "Release installer is not executable: $PROJECT_ROOT/download_and_extract.sh"
+"$PROJECT_ROOT/download_and_extract.sh" --target-dir "$PROJECT_ROOT" --preserve-launcher || fail 'Release download or extraction failed; existing containers were not changed.'
+echo -e "${GREEN}[OK]${NC} Release files are ready"
+echo
+
+echo -e "${BLUE}[Step 2/9]${NC} Preparing environment configuration..."
+if [ ! -f "$ENV_FILE" ]; then
+    [ -f "$PROJECT_ROOT/.env.example" ] || fail "Missing environment template: $PROJECT_ROOT/.env.example"
+    cp "$PROJECT_ROOT/.env.example" "$ENV_FILE"
+    echo 'Created .env from .env.example'
 fi
+if ! grep -Eq '^[[:space:]]*DATA=' "$ENV_FILE"; then
+    printf '\nDATA=./data\n' >> "$ENV_FILE"
+    echo 'Added DATA=./data to .env'
+fi
+mkdir -p "$PROJECT_ROOT/data"
+echo -e "${GREEN}[OK]${NC} Environment configuration is ready"
+echo
+
+echo -e "${BLUE}[Step 3/9]${NC} Checking Docker installation..."
+command -v docker >/dev/null 2>&1 || fail 'Docker is not installed or not in PATH.'
 docker --version
 echo -e "${GREEN}[OK]${NC} Docker is installed"
-echo ""
+echo
 
-# Step 2: Check Docker Compose installation
-echo -e "${BLUE}[Step 2/8]${NC} Checking Docker Compose installation..."
-if ! docker compose version &> /dev/null; then
-    echo -e "${RED}[ERROR]${NC} Docker Compose is not available"
-    echo "Please ensure Docker is properly installed with Compose V2"
-    ((ERROR_COUNT++))
-    exit 1
-fi
+echo -e "${BLUE}[Step 4/9]${NC} Checking Docker Compose..."
+docker compose version >/dev/null 2>&1 || fail 'Docker Compose V2 is not available.'
 docker compose version
 echo -e "${GREEN}[OK]${NC} Docker Compose is available"
-echo ""
+echo
 
-# Step 3: Check Docker daemon
-echo -e "${BLUE}[Step 3/8]${NC} Checking Docker daemon status..."
-if ! docker ps &> /dev/null; then
-    echo -e "${RED}[ERROR]${NC} Docker daemon is not running"
-    echo "Please start the Docker daemon:"
-    echo "  - Linux: sudo systemctl start docker"
-    echo "  - Mac: Start Docker Desktop"
-    ((ERROR_COUNT++))
-    exit 1
-fi
+echo -e "${BLUE}[Step 5/9]${NC} Checking Docker daemon..."
+docker ps >/dev/null 2>&1 || fail 'Docker daemon is not running or the current user cannot access it.'
 echo -e "${GREEN}[OK]${NC} Docker daemon is running"
-echo ""
+echo
 
-# Step 4: Check .env file
-echo -e "${BLUE}[Step 4/8]${NC} Checking environment configuration..."
-if [ ! -f ".env" ]; then
-    echo -e "${YELLOW}[WARNING]${NC} .env file not found"
-    echo "Using default configuration from docker-compose.yml"
-    echo "For production, please create .env file from .env.example"
-else
-    echo -e "${GREEN}[OK]${NC} .env file found"
-fi
-echo ""
+echo -e "${BLUE}[Step 6/9]${NC} Validating Docker Compose configuration..."
+compose config -q || fail 'Docker Compose configuration is invalid.'
+echo -e "${GREEN}[OK]${NC} Docker Compose configuration is valid"
+echo
 
-# Step 5: Build Docker images
-echo -e "${BLUE}[Step 5/8]${NC} Building Docker images..."
-echo "This may take several minutes on first build..."
-echo ""
+echo -e "${BLUE}[Step 7/9]${NC} Building Docker images..."
+compose build backend frontend || fail 'Docker image build failed.'
+echo -e "${GREEN}[OK]${NC} Docker images built successfully"
+echo
 
-echo "Building backend image..."
-if ! docker compose build backend; then
-    echo -e "${RED}[ERROR]${NC} Backend Docker build failed"
-    ((ERROR_COUNT++))
-    exit 1
-fi
-echo -e "${GREEN}[OK]${NC} Backend image built successfully"
-echo ""
-
-echo "Building frontend image..."
-if ! docker compose build frontend; then
-    echo -e "${RED}[ERROR]${NC} Frontend Docker build failed"
-    ((ERROR_COUNT++))
-    exit 1
-fi
-echo -e "${GREEN}[OK]${NC} Frontend image built successfully"
-echo ""
-
-# Step 6: Stop existing containers (if any)
-echo -e "${BLUE}[Step 6/8]${NC} Stopping existing containers..."
-docker compose down &> /dev/null || true
-echo -e "${GREEN}[OK]${NC} Previous containers stopped (if any)"
-echo ""
-
-# Step 7: Start all services
-echo -e "${BLUE}[Step 7/8]${NC} Starting all services..."
-echo "This may take a moment..."
-echo ""
-
-if ! docker compose up -d; then
-    echo -e "${RED}[ERROR]${NC} Failed to start services"
-    echo "Run 'docker compose logs' for details"
-    ((ERROR_COUNT++))
-    exit 1
-fi
+echo -e "${BLUE}[Step 8/9]${NC} Starting all services..."
+compose down || fail 'Failed to stop existing containers.'
+compose up -d || fail 'Failed to start services. Run docker compose logs from the project directory for details.'
 echo -e "${GREEN}[OK]${NC} All services started"
-echo ""
+echo
 
-# Wait a moment for services to initialize
-echo "Waiting for services to initialize..."
-sleep 5
-echo ""
+echo -e "${BLUE}[Step 9/9]${NC} Performing health checks..."
+command -v curl >/dev/null 2>&1 || fail 'curl is required for health checks.'
+backend_url=$(port_url backend 3000) || fail 'Unable to determine the backend port mapping.'
+nginx_url=$(port_url nginx 80) || fail 'Unable to determine the Nginx port mapping.'
 
-# Step 8: Health checks
-echo -e "${BLUE}[Step 8/8]${NC} Performing health checks..."
-echo ""
-echo "Checking running containers..."
-docker compose ps
-echo ""
+echo 'Checking running containers...'
+compose ps
+echo
 
-echo "Checking MongoDB status..."
-if docker compose exec -T mongodb mongosh --eval "db.adminCommand('ping')" &> /dev/null; then
-    echo -e "  ${GREEN}[OK]${NC} MongoDB is responding"
-else
-    echo -e "  ${YELLOW}[WARNING]${NC} MongoDB connection check failed"
-    echo "  It may still be starting up. Check logs if issues persist."
+health_failed=0
+wait_for 'MongoDB is responding' compose exec -T mongodb mongosh --quiet --eval "db.adminCommand('ping')" || health_failed=1
+wait_for 'Backend API is responding' curl --fail --silent --show-error "$backend_url/api/health" || health_failed=1
+wait_for 'Nginx proxy API is responding' curl --fail --silent --show-error "$nginx_url/api/health" || health_failed=1
+wait_for 'Frontend is responding' curl --fail --silent --show-error "$nginx_url/" || health_failed=1
+wait_for 'Release archive is available' curl --fail --silent --show-error "$nginx_url/public/release.zip" || health_failed=1
+
+if [ "$health_failed" -ne 0 ]; then
+    echo
+    echo -e "${RED}[FAILED]${NC} One or more health checks did not complete within 90 seconds."
+    echo "Inspect logs with: docker compose --project-directory $PROJECT_ROOT --env-file $ENV_FILE -f $COMPOSE_FILE logs --tail=200"
+    exit 1
 fi
 
-echo "Checking backend health endpoint..."
-sleep 3
-if curl -s http://localhost:6002/api/health &> /dev/null; then
-    echo -e "  ${GREEN}[OK]${NC} Backend API is responding"
-else
-    echo -e "  ${YELLOW}[WARNING]${NC} Backend health check failed"
-    echo "  Service may still be starting. Check logs: docker compose logs backend"
-fi
-
-echo "Checking frontend..."
-if curl -s http://localhost:80 &> /dev/null; then
-    echo -e "  ${GREEN}[OK]${NC} Frontend is responding"
-else
-    echo -e "  ${YELLOW}[WARNING]${NC} Frontend check failed"
-    echo "  Check NGINX_PORT in .env or logs: docker compose logs frontend"
-fi
-echo ""
-
-# Summary
-echo "============================================"
-echo "  Startup Summary"
-echo "============================================"
-END_TIME=$(date +%T)
-echo "Start Time: $START_TIME"
-echo "End Time:   $END_TIME"
-echo ""
-
-if [ $ERROR_COUNT -eq 0 ]; then
-    echo -e "${GREEN}[SUCCESS]${NC} HRMS application started successfully!"
-    echo ""
-    echo "Services Running:"
-    echo "  - MongoDB:  Running on port 27019"
-    echo "  - Backend:  Running on port 6002"
-    echo "  - Frontend: Running on port 80 (via Nginx)"
-    echo ""
-    echo "Access Points:"
-    echo "  - Application: http://localhost"
-    echo "  - API Health:  http://localhost:6002/api/health"
-    echo "  - API Docs:    http://localhost:6002/api"
-    echo ""
-    echo "Useful Commands:"
-    echo "  - View logs:        docker compose logs -f"
-    echo "  - View status:      docker compose ps"
-    echo "  - Stop services:    docker compose down"
-    echo "  - Restart service:  docker compose restart [service]"
-    echo "  - Rebuild & restart: ./start.sh (this script)"
-    echo ""
-    echo "Note: If health checks show warnings, wait a minute for"
-    echo "      services to fully initialize, then check again."
-    echo ""
-else
-    echo -e "${RED}[FAILED]${NC} Startup encountered $ERROR_COUNT error(s)"
-    echo ""
-    echo "Troubleshooting:"
-    echo "  1. Ensure Docker daemon is running"
-    echo "  2. Check docker-compose.yml syntax"
-    echo "  3. Review Dockerfile in backend/ and frontend/"
-    echo "  4. Check logs: docker compose logs"
-    echo "  5. Verify .env configuration"
-    echo "  6. Check port availability (80, 6002, 27019)"
-    echo "  7. Check available disk space"
-    echo ""
-fi
-
-echo "============================================"
-exit $ERROR_COUNT
+echo
+echo '============================================'
+echo -e "${GREEN}[SUCCESS]${NC} HRMS application started successfully!"
+echo "Application: $nginx_url"
+echo "API Health:  $nginx_url/api/health"
+echo "Direct API:  $backend_url/api/health"
+echo "Release:     $nginx_url/public/release.zip"
+echo '============================================'

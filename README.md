@@ -16,22 +16,51 @@ A modern HRMS built with **React**, **Node.js**, and **MongoDB**. Provides emplo
 
 ### Prerequisites
 
-- Docker & Compose  
-- Node.js 18+  
-- `PGA.mdb` in `./data/`  
+- Docker & Compose
+- Node.js 18+
+- `PGA.mdb` in `./data/` only when importing Access data
 
 ### Production
 
 ```
 git clone <repo>
 cd HRMS
-cp .env.example .env
-docker-compose up -d
+./start.sh
 ```
 
-- Web: <http://localhost>  
-- API: <http://localhost/api/health>  
-- DB Admin: <http://localhost:27019>  
+`start.sh` downloads and extracts the latest `release.zip`, then creates `.env` from `.env.example` when needed, adds `DATA=./data` to existing environment files that lack it, and creates the default `./data/` directory. The release archive is retained at `./release.zip` and is served from `/public/release.zip`. Release files with matching names are updated, while the local launch scripts, Compose file, and `.env.example` are retained. Put `PGA.mdb` in that directory before importing data.
+
+On Linux, the current user needs Docker socket access. If the script reports a permission error, review the security implications of Docker group membership and run:
+
+```
+sudo usermod -aG docker "$USER"
+```
+
+Then log out and back in, or start a new interactive shell with `newgrp docker` before running `./start.sh` again. On macOS, start Docker Desktop instead.
+
+For manual startup, copy `.env.example` to `.env` and run:
+
+```
+docker compose up -d
+```
+
+- Web: <http://localhost:5200>
+- API: <http://localhost:5200/api/health>
+- Direct API: <http://localhost:5201/api/health>
+- Release archive: <http://localhost:5200/public/release.zip>
+- MongoDB: `localhost:27019`
+
+### Linux/macOS Release Download
+
+`./start.sh` downloads and extracts the published release automatically before starting Docker. To download a release without starting Docker, run:
+
+```
+/path/to/HRMS/download_and_extract.sh --target-dir /path/to/HRMS
+```
+
+The script overwrites files with matching names while extracting. It requires Bash, either `curl` or `wget`, and one of `7z`, `7za`, or `unzip`. The downloaded archive is retained as `release.zip`.
+
+The release source uses HTTPS, but no checksum or signature is currently published; verify the release through your trusted distribution process before running it.
 
 ### Development
 

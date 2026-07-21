@@ -66,6 +66,8 @@ venv.bak/
 # Custom
 data/
 data/Employee.csv
+data-test/
+database/
 7za.exe
 release.zip
 ~$*

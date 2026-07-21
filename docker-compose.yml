@@ -13,7 +13,7 @@ services:
       - ./database/data/db:/data/db
       # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
-      - hrms-network    
+      - hrms-network
     logging:
       driver: json-file
       options:
@@ -28,7 +28,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./release.zip:/etc/nginx/html/public/release.zip
+      - ./release.zip:/etc/nginx/html/public/release.zip:ro
     depends_on:
       - backend
       - frontend
@@ -77,7 +77,7 @@ services:
       #   - "linux/amd64"
     container_name: HRMS-frontend
     expose:
-      - "${FRONTEND_PORT}:80"
+      - "80"
     environment:
       - name=value
       - TZ=Asia/Taipei
