@@ -7,7 +7,7 @@ import { dayjsNum, dayjsTz } from '../../util/utility';
 
 /**
   * Generate 請假總表 (Leave Summary Report) Excel for a given year and month.
-  * Columns: 員工編號, 姓名, 特休總時數, 休餘, 特休, 事假, 病假, 喪假, 產假, 婚假, 公假, 出差, 公傷
+  * Columns: 員工編號, 姓名, 特休總時數, 休餘, 特休, 病假, 事假, 婚假, 喪假, 公假, 公傷
   * - 特休總時數: annual entitlement hours (seniority at month-end)
   * - 休餘: 特休總時數 minus 特別休假 used from hire anniversary to month-end
   * - 特休..公傷: only approved leaves whose leaveStart falls within the selected month
@@ -86,13 +86,11 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
       'totalSpecialHours': remainAnnualLeaveDays[2],
       'remainingHours': remainAnnualLeaveDays[3],
       'annualLeave': monthH('特別休假'),
-      'personalLeave': monthH('事假'),
       'sickLeave': monthH('普通傷病假'),
-      'funeralLeave': monthH('喪假'),
-      'maternityLeave': monthH('產假'),
+      'personalLeave': monthH('事假'),
       'marriageLeave': monthH('婚假'),
+      'funeralLeave': monthH('喪假'),
       'officialLeave': monthH('公假'),
-      'businessTrip': monthH('出差'),
       'injuryLeave': monthH('公傷病假')
     });
   }
@@ -108,45 +106,43 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
   const worksheet = workbook.addWorksheet(title);
 
   worksheet.columns = [
-    { header: '員工編號', key: 'empId', width: 12 },
-    { header: '姓名', key: 'name', width: 10 },
-    { header: `到職日前應休天數`, key: 'lastYearDays', width: 20 },
-    { header: `剩餘應修時數`, key: 'remain', width: 20 },
-    { header: `起`, key: 't1', width: 14 },
-    { header: `迄`, key: 't2', width: 14 },
-    { header: `到職日後應休天數`, key: 'days', width: 20 },
-    { header: `剩餘應修時數`, key: 'remain2', width: 20 },
-    { header: `起`, key: 't3', width: 14 },
-    { header: `迄`, key: 't4', width: 14 },
-    { header: '特休總時數', key: 'totalSpecialHours', width: 14 },
-    { header: '休餘', key: 'remainingHours', width: 8 },
-    { header: '特休', key: 'annualLeave', width: 8 },
-    { header: '事假', key: 'personalLeave', width: 8 },
-    { header: '病假', key: 'sickLeave', width: 8 },
-    { header: '喪假', key: 'funeralLeave', width: 8 },
-    { header: '產假', key: 'maternityLeave', width: 8 },
-    { header: '婚假', key: 'marriageLeave', width: 8 },
-    { header: '公假', key: 'officialLeave', width: 8 },
-    { header: '出差', key: 'businessTrip', width: 8 },
-    { header: '公傷', key: 'injuryLeave', width: 8 }
+    { header: '員工編號', key: 'empId', width: 6.70 },
+    { header: '姓名', key: 'name', width: 5.31 },
+    { header: `到職日前應休天數`, key: 'lastYearDays', width: 12.27 },
+    { header: `剩餘應修時數`, key: 'remain', width: 9.3 },
+    { header: `起`, key: 't1', width: 8.24 },
+    { header: `迄`, key: 't2', width: 8.24 },
+    { header: `到職日後應休天數`, key: 'days', width: 12.27 },
+    { header: `剩餘應修時數`, key: 'remain2', width: 9.3 },
+    { header: `起`, key: 't3', width: 8.24 },
+    { header: `迄`, key: 't4', width: 8.24 },
+    { header: '特休總時數', key: 'totalSpecialHours', width: 8.09 },
+    { header: '休餘', key: 'remainingHours', width: 3.92 },
+    { header: '特休', key: 'annualLeave', width: 3.92 },
+    { header: '病假', key: 'sickLeave', width: 3.92 },
+    { header: '事假', key: 'personalLeave', width: 3.92 },
+    { header: '婚假', key: 'marriageLeave', width: 3.92 },
+    { header: '喪假', key: 'funeralLeave', width: 3.92 },
+    { header: '公假', key: 'officialLeave', width: 3.92 },
+    { header: '公傷', key: 'injuryLeave', width: 3.92 }
   ];
 
   //-------------
   // 設定大標題
   //-------------
   worksheet.insertRow(1, [
-    '臺龍電子股份有限公司 特休表', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+    '臺龍電子股份有限公司 特休表', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
   ]);
-  worksheet.mergeCells(1, 1, 1, 21);
+  worksheet.mergeCells(1, 1, 1, 19);
   const row1 = worksheet.getRow(1);
-  row1.height = 40; // 40 到 50 的高度很適合放標題
+  row1.height = 41.4; // 40 到 50 的高度很適合放標題
   const cellA1 = row1.getCell(1);
   cellA1.alignment = { horizontal: 'center', vertical: 'middle' };
   cellA1.font = {
     bold: true,
     color: { argb: 'FF000000' }, // 改為黑色字 (ARGB: FF000000)
     name: '微軟正黑體',
-    size: 18 // 建議 18 ~ 24 級字就很顯眼了，72 級字會太大
+    size: 16
   };
 
   //-------------
@@ -156,18 +152,18 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
     '員工資料', '',
     '2025年到職日前可請休天數', '', '', '',
     '2025年到職日後可請休天數', '', '', '',
-    '01假況(時)', '', '', '', '', '', '', '', '', '', ''
+    '01假況(時)', '', '', '', '', '', '', '', ''
   ];
   worksheet.insertRow(2, superHeader);
   const row2 = worksheet.getRow(2);
-  row2.height = 30; // 調整大分類列高
-  row2.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: '微軟正黑體' }; // 白色粗體字
+  row2.height = 30.6; // 調整大分類列高
+  row2.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: '微軟正黑體', size: 10 }; // 白色粗體字
   worksheet.mergeCells(2, 1, 2, 2);   // 員工資料 (Row 2, 1~2 欄)
   worksheet.mergeCells(2, 3, 2, 6);   // 到職日前 (Row 2, 3~6 欄)
   worksheet.mergeCells(2, 7, 2, 10);  // 到職日後 (Row 2, 7~10 欄)
-  worksheet.mergeCells(2, 11, 2, 21); // 01假況 (Row 2, 11~21 欄)
+  worksheet.mergeCells(2, 11, 2, 19); // 01假況 (Row 2, 11~19 欄)
 
-  for (let i = 1; i <= 21; i++) {
+  for (let i = 1; i <= 19; i++) {
     const cell = row2.getCell(i);
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -192,7 +188,7 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
     { start: 1, end: 2 },   // 員工資料
     { start: 3, end: 6 },   // 到職日前
     { start: 7, end: 10 },  // 到職日後
-    { start: 11, end: 21 }  // 01假況
+    { start: 11, end: 19 }  // 01假況
   ];
 
   groups.forEach(group => {
@@ -222,9 +218,9 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
   // 設定第三列小標題
   //-------------
   const row3 = worksheet.getRow(3);
-  row3.height = 25;
-  row3.font = { bold: true, name: '微軟正黑體' };
-  for (let i = 1; i <= 21; i++) {
+  row3.height = 24.95;
+  row3.font = { bold: true, name: '微軟正黑體', size: 8 };
+  for (let i = 1; i <= 19; i++) {
     const cell = row3.getCell(i);
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
@@ -268,24 +264,24 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
   // 設定資料格式
   //-------------
   const rowCount = worksheet.getColumn('A').values.length - 1;
-  const allCols = Array.from({ length: 21 }, (_, index) => String.fromCharCode(65 + index)); // 生成 ['A', 'B', ..., 'U']
+  const allCols = Array.from({ length: 19 }, (_, index) => String.fromCharCode(65 + index)); // 生成 ['A', 'B', ..., 'S']
 
   // 所有資料
   for (let i = 3; i <= rowCount; i++) {
     if (worksheet.getCell(`A${i}`)) {
-      allCols.forEach(([col]) => {
+      allCols.forEach(col => {
         const cell = worksheet.getCell(`${col}${i}`);
         cell.border = {
           left: { style: 'thin', color: { argb: 'FF000000' } }, right: { style: 'thin', color: { argb: 'FF000000' } }, top: { style: 'thin', color: { argb: 'FF000000' } }, bottom: { style: 'thin', color: { argb: 'FF000000' } }
         }
-        cell.font = { bold: true, name: '微軟正黑體' };
+        cell.font = { bold: true, name: '微軟正黑體', size: 8 };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       });
     }
   }
 
   // 粗框線
-  const borderConfig = [['A', 'left'], ['B', 'right'], ['C', 'left'], ['F', 'right'], ['G', 'left'], ['J', 'right'], ['K', 'left'], ['U', 'right']];
+  const borderConfig = [['A', 'left'], ['B', 'right'], ['C', 'left'], ['F', 'right'], ['G', 'left'], ['J', 'right'], ['K', 'left'], ['S', 'right']];
   for (let i = 1; i <= rowCount; i++) {
     if (worksheet.getCell(`A${i}`)) {
       borderConfig.forEach(([col, side]) => {
@@ -300,12 +296,12 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
   });
 
   // 設定資料顏色
-  const colorConfig = [['A', 'FFFFFEDD', "FF000000"], ['B', 'FFFFFEDD', "FF000000"], ['C', 'FFC5D9F1', "FF31869B"], ['D', 'FFC5D9F1', "FF31869B"], ['G', 'FFC5D9F1', "FF31869B"], ['H', 'FFC5D9F1', "FF31869B"]].concat(Array.from({ length: 11 }, (_, index) => {
+  const colorConfig = [['A', 'FFFFFEDD', "FF000000"], ['B', 'FFFFFEDD', "FF000000"], ['C', 'FFC5D9F1', "FF31869B"], ['D', 'FFC5D9F1', "FF31869B"], ['G', 'FFC5D9F1', "FF31869B"], ['H', 'FFC5D9F1', "FF31869B"]].concat(Array.from({ length: 9 }, (_, index) => {
     return [String.fromCharCode(75 + index), 'FFFFFF', "FF31869B"]
   }));
 
   for (let i = 4; i <= rowCount; i++) {
-    worksheet.getRow(i).height = 20
+    worksheet.getRow(i).height = 24.95
     if (worksheet.getCell(`A${i}`)) {
       colorConfig.forEach(([col, color, fontColor]) => {
         const cell = worksheet.getCell(`${col}${i}`);
@@ -314,7 +310,7 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
           pattern: 'solid',
           fgColor: { argb: color }
         };
-        cell.font = { bold: true, color: { argb: fontColor }, name: '微軟正黑體' };
+        cell.font = { bold: true, color: { argb: fontColor }, name: '微軟正黑體', size: 8 };
       });
     }
   }
@@ -323,26 +319,5 @@ const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;
 
-  // const worksheet = XLSX.utils.json_to_sheet(reportData);
-  // const workbook = XLSX.utils.book_new();
-  // XLSX.utils.book_append_sheet(workbook, worksheet, '請假總表');
 
-  // worksheet['!cols'] = [
-  //   { wch: 12 }, // 員工編號
-  //   { wch: 10 }, // 姓名
-  //   { wch: 12 }, // 特休總時數
-  //   { wch: 10 }, // 休餘
-  //   { wch: 8 },  // 特休
-  //   { wch: 8 },  // 事假
-  //   { wch: 8 },  // 病假
-  //   { wch: 8 },  // 喪假
-  //   { wch: 8 },  // 產假
-  //   { wch: 8 },  // 婚假
-  //   { wch: 8 },  // 公假
-  //   { wch: 8 },  // 出差
-  //   { wch: 8 }   // 公傷
-  // ];
-
-  // const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-  // return buffer;
 }

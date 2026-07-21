@@ -56,13 +56,10 @@ echo '============================================'
 echo "Start Time: $START_TIME"
 echo
 
-echo -e "${BLUE}[Step 1/9]${NC} Preparing release files..."
-[ -x "$PROJECT_ROOT/download_and_extract.sh" ] || fail "Release installer is not executable: $PROJECT_ROOT/download_and_extract.sh"
-"$PROJECT_ROOT/download_and_extract.sh" --target-dir "$PROJECT_ROOT" --preserve-launcher || fail 'Release download or extraction failed; existing containers were not changed.'
-echo -e "${GREEN}[OK]${NC} Release files are ready"
-echo
+RELEASE_ARCHIVE="$PROJECT_ROOT/release.zip"
+[ -f "$RELEASE_ARCHIVE" ] && [ -s "$RELEASE_ARCHIVE" ] && [ -r "$RELEASE_ARCHIVE" ] || fail "Missing, empty, or unreadable release archive: $RELEASE_ARCHIVE. start.sh does not download or extract releases; run ./download_and_extract.sh --target-dir \"$PROJECT_ROOT\" --preserve-launcher first."
 
-echo -e "${BLUE}[Step 2/9]${NC} Preparing environment configuration..."
+echo -e "${BLUE}[Step 1/8]${NC} Preparing environment configuration..."
 if [ ! -f "$ENV_FILE" ]; then
     [ -f "$PROJECT_ROOT/.env.example" ] || fail "Missing environment template: $PROJECT_ROOT/.env.example"
     cp "$PROJECT_ROOT/.env.example" "$ENV_FILE"
@@ -76,40 +73,40 @@ mkdir -p "$PROJECT_ROOT/data"
 echo -e "${GREEN}[OK]${NC} Environment configuration is ready"
 echo
 
-echo -e "${BLUE}[Step 3/9]${NC} Checking Docker installation..."
+echo -e "${BLUE}[Step 2/8]${NC} Checking Docker installation..."
 command -v docker >/dev/null 2>&1 || fail 'Docker is not installed or not in PATH.'
 docker --version
 echo -e "${GREEN}[OK]${NC} Docker is installed"
 echo
 
-echo -e "${BLUE}[Step 4/9]${NC} Checking Docker Compose..."
+echo -e "${BLUE}[Step 3/8]${NC} Checking Docker Compose..."
 docker compose version >/dev/null 2>&1 || fail 'Docker Compose V2 is not available.'
 docker compose version
 echo -e "${GREEN}[OK]${NC} Docker Compose is available"
 echo
 
-echo -e "${BLUE}[Step 5/9]${NC} Checking Docker daemon..."
+echo -e "${BLUE}[Step 4/8]${NC} Checking Docker daemon..."
 docker ps >/dev/null 2>&1 || fail 'Docker daemon is not running or the current user cannot access it.'
 echo -e "${GREEN}[OK]${NC} Docker daemon is running"
 echo
 
-echo -e "${BLUE}[Step 6/9]${NC} Validating Docker Compose configuration..."
+echo -e "${BLUE}[Step 5/8]${NC} Validating Docker Compose configuration..."
 compose config -q || fail 'Docker Compose configuration is invalid.'
 echo -e "${GREEN}[OK]${NC} Docker Compose configuration is valid"
 echo
 
-echo -e "${BLUE}[Step 7/9]${NC} Building Docker images..."
+echo -e "${BLUE}[Step 6/8]${NC} Building Docker images..."
 compose build backend frontend || fail 'Docker image build failed.'
 echo -e "${GREEN}[OK]${NC} Docker images built successfully"
 echo
 
-echo -e "${BLUE}[Step 8/9]${NC} Starting all services..."
+echo -e "${BLUE}[Step 7/8]${NC} Starting all services..."
 compose down || fail 'Failed to stop existing containers.'
 compose up -d || fail 'Failed to start services. Run docker compose logs from the project directory for details.'
 echo -e "${GREEN}[OK]${NC} All services started"
 echo
 
-echo -e "${BLUE}[Step 9/9]${NC} Performing health checks..."
+echo -e "${BLUE}[Step 8/8]${NC} Performing health checks..."
 command -v curl >/dev/null 2>&1 || fail 'curl is required for health checks.'
 backend_url=$(port_url backend 3000) || fail 'Unable to determine the backend port mapping.'
 nginx_url=$(port_url nginx 80) || fail 'Unable to determine the Nginx port mapping.'

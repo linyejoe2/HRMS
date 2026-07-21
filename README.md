@@ -25,10 +25,13 @@ A modern HRMS built with **React**, **Node.js**, and **MongoDB**. Provides emplo
 ```
 git clone <repo>
 cd HRMS
+./download_and_extract.sh --target-dir "$PWD" --preserve-launcher
 ./start.sh
 ```
 
-`start.sh` downloads and extracts the latest `release.zip`, then creates `.env` from `.env.example` when needed, adds `DATA=./data` to existing environment files that lack it, and creates the default `./data/` directory. The release archive is retained at `./release.zip` and is served from `/public/release.zip`. Release files with matching names are updated, while the local launch scripts, Compose file, and `.env.example` are retained. Put `PGA.mdb` in that directory before importing data.
+`download_and_extract.sh` is the only tool that downloads, verifies, extracts, and retains the latest `release.zip`. With `--preserve-launcher`, it updates release files with matching names while retaining the local `start.sh`, `download_and_extract.sh`, `docker-compose.yml`, and `.env.example`. The archive is retained at `./release.zip` and served from `/public/release.zip`.
+
+`start.sh` starts an already prepared release: it creates `.env` from `.env.example` when needed, adds `DATA=./data` to existing environment files that lack it, creates the default `./data/` directory, builds and starts Docker services, and runs health checks. It does not download or extract releases. Put `PGA.mdb` in `./data/` before importing data.
 
 On Linux, the current user needs Docker socket access. If the script reports a permission error, review the security implications of Docker group membership and run:
 
@@ -38,9 +41,11 @@ sudo usermod -aG docker "$USER"
 
 Then log out and back in, or start a new interactive shell with `newgrp docker` before running `./start.sh` again. On macOS, start Docker Desktop instead.
 
-For manual startup, copy `.env.example` to `.env` and run:
+For manual startup, first download and extract the release so `./release.zip` exists for the Nginx bind mount, then copy `.env.example` to `.env` and run:
 
 ```
+./download_and_extract.sh --target-dir "$PWD" --preserve-launcher
+cp .env.example .env
 docker compose up -d
 ```
 
@@ -52,13 +57,13 @@ docker compose up -d
 
 ### Linux/macOS Release Download
 
-`./start.sh` downloads and extracts the published release automatically before starting Docker. To download a release without starting Docker, run:
+Before the first startup, and whenever updating a release, download and extract it with:
 
 ```
-/path/to/HRMS/download_and_extract.sh --target-dir /path/to/HRMS
+/path/to/HRMS/download_and_extract.sh --target-dir /path/to/HRMS --preserve-launcher
 ```
 
-The script overwrites files with matching names while extracting. It requires Bash, either `curl` or `wget`, and one of `7z`, `7za`, or `unzip`. The downloaded archive is retained as `release.zip`.
+Run `./start.sh` only after this command succeeds. The script downloads, verifies, extracts, and retains `release.zip`; it overwrites release files with matching names, while `--preserve-launcher` retains the local launch scripts, Compose file, and `.env.example`. It requires Bash, either `curl` or `wget`, and one of `7z`, `7za`, or `unzip`.
 
 The release source uses HTTPS, but no checksum or signature is currently published; verify the release through your trusted distribution process before running it.
 
