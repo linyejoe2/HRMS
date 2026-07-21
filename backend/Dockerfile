@@ -10,8 +10,9 @@ COPY tsconfig.json ./
 # Install dependencies
 RUN npm ci && npm cache clean --force
 
-# Copy source code
+# Copy source code and report templates
 COPY src/ ./src/
+COPY assets/ ./assets/
 
 # Build the application
 RUN npm run build
@@ -27,8 +28,9 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application from builder stage
+# Copy built application and report templates from builder stage
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/assets ./assets
 
 # Create uploads directory and set permissions
 RUN mkdir -p uploads
