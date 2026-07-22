@@ -9,8 +9,15 @@ import { dayjsTz, dayjsToTz } from '../../util/utility';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../../assets/report-templates/employee-leave-report.xlsx');
 const WORKSHEET_NAME = '請假表';
-const FIRST_DETAIL_ROW = 7;
-const LAST_DETAIL_ROW = 19;
+const PREVIOUS_YEAR_DETAIL_START = 7;
+const PREVIOUS_YEAR_TEMPLATE_DETAIL_END = 19;
+const CURRENT_YEAR_TEMPLATE_DETAIL_START = 28;
+const CURRENT_YEAR_TEMPLATE_DETAIL_END = 41;
+const PREVIOUS_YEAR_CAPACITY = PREVIOUS_YEAR_TEMPLATE_DETAIL_END - PREVIOUS_YEAR_DETAIL_START + 1;
+const CURRENT_YEAR_CAPACITY = CURRENT_YEAR_TEMPLATE_DETAIL_END - CURRENT_YEAR_TEMPLATE_DETAIL_START + 1;
+
+const INPUT_COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'R'];
+const LEAVE_TOTAL_COLUMNS = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 
 type LeaveReportRow = {
   leaveStart: Date;
@@ -28,10 +35,22 @@ type YearColumns = {
   accumulatedSpecialLeave: string;
   remainingSpecialLeave: string;
   note: string;
-  specialLeaveHours: string;
 };
 
-const PREVIOUS_YEAR_COLUMNS: YearColumns = {
+type YearBlockLayout = {
+  empIDCell: string;
+  departmentCell: string;
+  periodCell: string;
+  nameCell: string;
+  annualLeaveDaysCell: string;
+  annualLeaveHoursCell: string;
+  detailStartRow: number;
+  detailEndRow: number;
+  totalRow: number;
+  openingRow?: number;
+};
+
+const YEAR_COLUMNS: YearColumns = {
   start: 'A',
   end: 'B',
   leaveTypes: {
@@ -52,39 +71,8 @@ const PREVIOUS_YEAR_COLUMNS: YearColumns = {
   specialLeave: 'O',
   accumulatedSpecialLeave: 'P',
   remainingSpecialLeave: 'Q',
-  note: 'R',
-  specialLeaveHours: 'L'
+  note: 'R'
 };
-
-const CURRENT_YEAR_COLUMNS: YearColumns = {
-  start: 'T',
-  end: 'U',
-  leaveTypes: {
-    '普通傷病假': 'V',
-    '事假': 'W',
-    '婚假': 'X',
-    '喪假': 'Y',
-    '生理假': 'Z',
-    '公假': 'AA',
-    '公傷病假': 'AB',
-    '產假': 'AC',
-    '產檢假': 'AD',
-    '陪產檢及陪產假': 'AE',
-    '安胎休養請假': 'AF',
-    '育嬰留職停薪': 'AG',
-    '特別休假': 'AH'
-  },
-  specialLeave: 'AH',
-  accumulatedSpecialLeave: 'AI',
-  remainingSpecialLeave: 'AJ',
-  note: 'AK',
-  specialLeaveHours: 'AE'
-};
-
-const DETAIL_COLUMNS = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'R',
-  'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AK'
-];
 
 const leaveDuration = (hour: string, minutes: string): number => Number(hour) + Number(minutes) / 60;
 
@@ -152,8 +140,7 @@ const formatOutput = async (
     throw new APIError(`請假表範本缺少工作表：${WORKSHEET_NAME}`, 500);
   }
 
-  setMetadata(worksheet, metadata);
-  clearTemplateDetails(worksheet);
+  trimTemplateRows(worksheet);
 
   const previousYearRows: LeaveReportRow[] = [];
   const currentYearRows: LeaveReportRow[] = [];
@@ -166,10 +153,114 @@ const formatOutput = async (
     }
   }
 
-  writeYearRows(worksheet, previousYearRows, PREVIOUS_YEAR_COLUMNS);
-  writeYearRows(worksheet, currentYearRows, CURRENT_YEAR_COLUMNS);
+  const layouts = expandDetailRows(worksheet, previousYearRows.length, currentYearRows.length);
+  setMetadata(worksheet, metadata, layouts);
+  clearTemplateDetails(worksheet, layouts.previousYear);
+  clearTemplateDetails(worksheet, layouts.currentYear);
+  writeYearRows(worksheet, previousYearRows, layouts.previousYear);
+  writeYearRows(worksheet, currentYearRows, layouts.currentYear);
+  setBlockFooter(worksheet, layouts.previousYear);
+  setBlockFooter(worksheet, layouts.currentYear);
+  worksheet.pageSetup.printArea = `A1:R${layouts.currentYear.totalRow}`;
 
   return workbook.xlsx.writeBuffer();
+};
+
+const trimTemplateRows = (worksheet: ExcelJS.Worksheet): void => {
+  const rows = (worksheet as ExcelJS.Worksheet & { _rows: Array<ExcelJS.Row | undefined> })._rows;
+
+  rows.length = 43;
+};
+
+const expandDetailRows = (
+  worksheet: ExcelJS.Worksheet,
+  previousYearCount: number,
+  currentYearCount: number
+): { previousYear: YearBlockLayout; currentYear: YearBlockLayout } => {
+  const previousOverflow = Math.max(0, previousYearCount - PREVIOUS_YEAR_CAPACITY);
+  const currentOverflow = Math.max(0, currentYearCount - CURRENT_YEAR_CAPACITY);
+
+  const mergeRanges = [...worksheet.model.merges];
+  mergeRanges.forEach(range => worksheet.unMergeCells(range));
+
+  worksheet.spliceRows(42, 1);
+  worksheet.spliceRows(20, 1);
+  insertDetailRows(worksheet, 20, previousOverflow);
+  insertDetailRows(worksheet, 41 + previousOverflow, currentOverflow);
+  restoreMergedCells(worksheet, mergeRanges, previousOverflow, currentOverflow);
+
+  return {
+    previousYear: {
+      empIDCell: 'D2',
+      departmentCell: 'H2',
+      periodCell: 'L2',
+      nameCell: 'D3',
+      annualLeaveDaysCell: 'H3',
+      annualLeaveHoursCell: 'L3',
+      detailStartRow: PREVIOUS_YEAR_DETAIL_START,
+      detailEndRow: PREVIOUS_YEAR_TEMPLATE_DETAIL_END + previousOverflow,
+      totalRow: 20 + previousOverflow,
+      openingRow: 6
+    },
+    currentYear: {
+      empIDCell: `D${23 + previousOverflow}`,
+      departmentCell: `H${23 + previousOverflow}`,
+      periodCell: `L${23 + previousOverflow}`,
+      nameCell: `D${24 + previousOverflow}`,
+      annualLeaveDaysCell: `H${24 + previousOverflow}`,
+      annualLeaveHoursCell: `L${24 + previousOverflow}`,
+      detailStartRow: 27 + previousOverflow,
+      detailEndRow: 40 + previousOverflow + currentOverflow,
+      totalRow: 41 + previousOverflow + currentOverflow
+    }
+  };
+};
+
+const insertDetailRows = (worksheet: ExcelJS.Worksheet, insertAt: number, count: number): void => {
+  if (count === 0) {
+    return;
+  }
+
+  const sourceRow = worksheet.getRow(insertAt - 1);
+  const sourceCells = Array.from({ length: 18 }, (_, index) => worksheet.getCell(insertAt - 1, index + 1));
+  worksheet.spliceRows(insertAt, 0, ...Array.from({ length: count }, () => []));
+
+  for (let rowNumber = insertAt; rowNumber < insertAt + count; rowNumber += 1) {
+    const targetRow = worksheet.getRow(rowNumber);
+    targetRow.height = sourceRow.height;
+    sourceCells.forEach((sourceCell, index) => {
+      const targetCell = worksheet.getCell(rowNumber, index + 1);
+      targetCell.style = { ...sourceCell.style };
+      targetCell.numFmt = sourceCell.numFmt;
+    });
+  }
+};
+
+const restoreMergedCells = (
+  worksheet: ExcelJS.Worksheet,
+  mergeRanges: string[],
+  previousOverflow: number,
+  currentOverflow: number
+): void => {
+  const moveRow = (row: number): number => {
+    if (row > CURRENT_YEAR_TEMPLATE_DETAIL_END + 1) {
+      return row + previousOverflow + currentOverflow - 2;
+    }
+    if (row > PREVIOUS_YEAR_TEMPLATE_DETAIL_END) {
+      return row + previousOverflow - 1;
+    }
+    return row;
+  };
+
+  mergeRanges.forEach(range => {
+    const [start, end] = range.split(':');
+    const startMatch = start.match(/^([A-Z]+)(\d+)$/);
+    const endMatch = end.match(/^([A-Z]+)(\d+)$/);
+    if (!startMatch || !endMatch) {
+      return;
+    }
+    worksheet.mergeCells(`${startMatch[1]}${moveRow(Number(startMatch[2]))}:${endMatch[1]}${moveRow(Number(endMatch[2]))}`);
+  });
 };
 
 const setMetadata = (
@@ -180,66 +271,84 @@ const setMetadata = (
     annualLeaveUsed: number;
     yearRange: ReturnType<typeof LeaveService.getYearRanges>;
     year: number;
-  }
+  },
+  layouts: { previousYear: YearBlockLayout; currentYear: YearBlockLayout }
 ): void => {
   const { employee, annualLeaveDays, annualLeaveUsed, yearRange, year } = metadata;
+  const setBlockMetadata = (layout: YearBlockLayout, period: string, days: number, hours: number): void => {
+    worksheet.getCell(layout.empIDCell).value = employee.empID;
+    worksheet.getCell(layout.departmentCell).value = employee.department || '';
+    worksheet.getCell(layout.periodCell).value = period;
+    worksheet.getCell(layout.nameCell).value = employee.name;
+    worksheet.getCell(layout.annualLeaveDaysCell).value = days;
+    worksheet.getCell(layout.annualLeaveHoursCell).value = hours;
+  };
 
-  worksheet.getCell('D2').value = employee.empID;
-  worksheet.getCell('H2').value = employee.department || '';
-  worksheet.getCell('L2').value = ` ${yearRange.lastYearStart.format('YYYY/MM/DD')} ~ ${yearRange.lastYearEnd.format('YYYY/MM/DD')}`;
-  worksheet.getCell('D3').value = employee.name;
-  worksheet.getCell('H3').value = annualLeaveDays[0];
-  worksheet.getCell('L3').value = annualLeaveDays[1];
-
-  worksheet.getCell('W2').value = employee.empID;
-  worksheet.getCell('AA2').value = employee.department || '';
-  worksheet.getCell('AE2').value = ` ${yearRange.thisYearStart.format('YYYY/MM/DD')} ~ ${yearRange.thisYearEnd.format('YYYY/MM/DD')}`;
-  worksheet.getCell('W3').value = employee.name;
-  worksheet.getCell('AA3').value = annualLeaveDays[2];
-  worksheet.getCell('AE3').value = annualLeaveDays[3];
+  setBlockMetadata(
+    layouts.previousYear,
+    ` ${yearRange.lastYearStart.format('YYYY/MM/DD')} ~ ${yearRange.lastYearEnd.format('YYYY/MM/DD')}`,
+    annualLeaveDays[0],
+    annualLeaveDays[1]
+  );
+  setBlockMetadata(
+    layouts.currentYear,
+    ` ${yearRange.thisYearStart.format('YYYY/MM/DD')} ~ ${yearRange.thisYearEnd.format('YYYY/MM/DD')}`,
+    annualLeaveDays[2],
+    annualLeaveDays[3]
+  );
 
   worksheet.getCell('A6').value = `${year}年度已請時數`;
   worksheet.getCell('O6').value = annualLeaveUsed;
   worksheet.getCell('P6').value = { formula: 'O6', result: annualLeaveUsed };
   worksheet.getCell('Q6').value = { formula: 'L3-P6' };
-  worksheet.getCell('AH6').value = 0;
-  worksheet.getCell('AI6').value = { formula: 'AH6', result: 0 };
-  worksheet.getCell('AI6').numFmt = 'General';
-  worksheet.getCell('AJ6').value = { formula: 'AE3-AI6' };
 };
 
-const clearTemplateDetails = (worksheet: ExcelJS.Worksheet): void => {
-  for (let row = FIRST_DETAIL_ROW; row <= LAST_DETAIL_ROW; row += 1) {
-    for (const column of DETAIL_COLUMNS) {
+const clearTemplateDetails = (worksheet: ExcelJS.Worksheet, layout: YearBlockLayout): void => {
+  for (let row = layout.detailStartRow; row <= layout.detailEndRow; row += 1) {
+    for (const column of INPUT_COLUMNS) {
       worksheet.getCell(`${column}${row}`).value = null;
     }
-    worksheet.getCell(`P${row}`).value = { formula: `P${row - 1}+O${row}` };
-    worksheet.getCell(`Q${row}`).value = { formula: `L3-P${row}` };
-    worksheet.getCell(`AI${row}`).value = { formula: `AI${row - 1}+AH${row}` };
-    worksheet.getCell(`AJ${row}`).value = { formula: `AE3-AI${row}` };
+
+    const previousAccumulated = row === layout.detailStartRow
+      ? layout.openingRow ? `P${layout.openingRow}` : '0'
+      : `P${row - 1}`;
+    worksheet.getCell(`P${row}`).value = { formula: `${previousAccumulated}+O${row}` };
+    worksheet.getCell(`Q${row}`).value = { formula: `${layout.annualLeaveHoursCell}-P${row}` };
   }
 };
 
-const writeYearRows = (worksheet: ExcelJS.Worksheet, rows: LeaveReportRow[], columns: YearColumns): void => {
-  if (rows.length > LAST_DETAIL_ROW - FIRST_DETAIL_ROW + 1) {
-    throw new APIError('請假明細超出範本可容納的列數', 400);
-  }
-
+const writeYearRows = (worksheet: ExcelJS.Worksheet, rows: LeaveReportRow[], layout: YearBlockLayout): void => {
   rows.forEach((row, index) => {
-    const targetRow = FIRST_DETAIL_ROW + index;
-    const leaveColumn = columns.leaveTypes[row.leaveType];
+    const targetRow = layout.detailStartRow + index;
+    const leaveColumn = YEAR_COLUMNS.leaveTypes[row.leaveType];
 
-    worksheet.getCell(`${columns.start}${targetRow}`).value = row.leaveStart;
-    worksheet.getCell(`${columns.end}${targetRow}`).value = row.leaveEnd;
+    worksheet.getCell(`${YEAR_COLUMNS.start}${targetRow}`).value = row.leaveStart;
+    worksheet.getCell(`${YEAR_COLUMNS.end}${targetRow}`).value = row.leaveEnd;
 
     if (leaveColumn) {
       worksheet.getCell(`${leaveColumn}${targetRow}`).value = row.duration;
     } else {
-      worksheet.getCell(`${columns.note}${targetRow}`).value = `${row.leaveType} ${row.duration} 小時${row.reason ? `；${row.reason}` : ''}`;
+      worksheet.getCell(`${YEAR_COLUMNS.note}${targetRow}`).value = `${row.leaveType} ${row.duration} 小時${row.reason ? `；${row.reason}` : ''}`;
     }
 
     if (leaveColumn && row.reason) {
-      worksheet.getCell(`${columns.note}${targetRow}`).value = row.reason;
+      worksheet.getCell(`${YEAR_COLUMNS.note}${targetRow}`).value = row.reason;
     }
   });
+};
+
+const setBlockFooter = (worksheet: ExcelJS.Worksheet, layout: YearBlockLayout): void => {
+  worksheet.getCell(`A${layout.totalRow}`).value = '總計';
+  for (const column of LEAVE_TOTAL_COLUMNS) {
+    const detailTotal = `SUM(${column}${layout.detailStartRow}:${column}${layout.detailEndRow})`;
+    worksheet.getCell(`${column}${layout.totalRow}`).value = {
+      formula: column === YEAR_COLUMNS.specialLeave && layout.openingRow
+        ? `${detailTotal}+O${layout.openingRow}`
+        : detailTotal
+    };
+  }
+  worksheet.getCell(`P${layout.totalRow}`).value = { formula: `P${layout.detailEndRow}` };
+  worksheet.getCell(`Q${layout.totalRow}`).value = { formula: `Q${layout.detailEndRow}` };
+  worksheet.unMergeCells(`A${layout.totalRow}:B${layout.totalRow}`);
+  worksheet.mergeCells(`A${layout.totalRow}:B${layout.totalRow}`);
 };
