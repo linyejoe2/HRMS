@@ -10,9 +10,12 @@ import { dayjsTz, dayjsToTz } from '../../util/utility';
 const TEMPLATE_PATH = path.resolve(__dirname, '../../../assets/report-templates/employee-leave-report.xlsx');
 const WORKSHEET_NAME = '請假表';
 const PREVIOUS_YEAR_DETAIL_START = 7;
-const PREVIOUS_YEAR_TEMPLATE_DETAIL_END = 19;
-const CURRENT_YEAR_TEMPLATE_DETAIL_START = 28;
-const CURRENT_YEAR_TEMPLATE_DETAIL_END = 41;
+const PREVIOUS_YEAR_TEMPLATE_DETAIL_END = 18;
+const PREVIOUS_YEAR_TOTAL_ROW = 19;
+const CURRENT_YEAR_TEMPLATE_DETAIL_START = 26;
+const CURRENT_YEAR_TEMPLATE_DETAIL_END = 38;
+const CURRENT_YEAR_TOTAL_ROW = 39;
+const TEMPLATE_LAST_ROW = 40;
 const PREVIOUS_YEAR_CAPACITY = PREVIOUS_YEAR_TEMPLATE_DETAIL_END - PREVIOUS_YEAR_DETAIL_START + 1;
 const CURRENT_YEAR_CAPACITY = CURRENT_YEAR_TEMPLATE_DETAIL_END - CURRENT_YEAR_TEMPLATE_DETAIL_START + 1;
 
@@ -169,7 +172,7 @@ const formatOutput = async (
 const trimTemplateRows = (worksheet: ExcelJS.Worksheet): void => {
   const rows = (worksheet as ExcelJS.Worksheet & { _rows: Array<ExcelJS.Row | undefined> })._rows;
 
-  rows.length = 43;
+  rows.length = TEMPLATE_LAST_ROW;
 };
 
 const expandDetailRows = (
@@ -183,10 +186,8 @@ const expandDetailRows = (
   const mergeRanges = [...worksheet.model.merges];
   mergeRanges.forEach(range => worksheet.unMergeCells(range));
 
-  worksheet.spliceRows(42, 1);
-  worksheet.spliceRows(20, 1);
-  insertDetailRows(worksheet, 20, previousOverflow);
-  insertDetailRows(worksheet, 41 + previousOverflow, currentOverflow);
+  insertDetailRows(worksheet, PREVIOUS_YEAR_TOTAL_ROW, previousOverflow);
+  insertDetailRows(worksheet, CURRENT_YEAR_TOTAL_ROW + previousOverflow, currentOverflow);
   restoreMergedCells(worksheet, mergeRanges, previousOverflow, currentOverflow);
 
   return {
@@ -199,19 +200,19 @@ const expandDetailRows = (
       annualLeaveHoursCell: 'L3',
       detailStartRow: PREVIOUS_YEAR_DETAIL_START,
       detailEndRow: PREVIOUS_YEAR_TEMPLATE_DETAIL_END + previousOverflow,
-      totalRow: 20 + previousOverflow,
+      totalRow: PREVIOUS_YEAR_TOTAL_ROW + previousOverflow,
       openingRow: 6
     },
     currentYear: {
-      empIDCell: `D${23 + previousOverflow}`,
-      departmentCell: `H${23 + previousOverflow}`,
-      periodCell: `L${23 + previousOverflow}`,
-      nameCell: `D${24 + previousOverflow}`,
-      annualLeaveDaysCell: `H${24 + previousOverflow}`,
-      annualLeaveHoursCell: `L${24 + previousOverflow}`,
-      detailStartRow: 27 + previousOverflow,
-      detailEndRow: 40 + previousOverflow + currentOverflow,
-      totalRow: 41 + previousOverflow + currentOverflow
+      empIDCell: `D${21 + previousOverflow}`,
+      departmentCell: `H${21 + previousOverflow}`,
+      periodCell: `L${21 + previousOverflow}`,
+      nameCell: `D${22 + previousOverflow}`,
+      annualLeaveDaysCell: `H${22 + previousOverflow}`,
+      annualLeaveHoursCell: `L${22 + previousOverflow}`,
+      detailStartRow: CURRENT_YEAR_TEMPLATE_DETAIL_START + previousOverflow,
+      detailEndRow: CURRENT_YEAR_TEMPLATE_DETAIL_END + previousOverflow + currentOverflow,
+      totalRow: CURRENT_YEAR_TOTAL_ROW + previousOverflow + currentOverflow
     }
   };
 };
@@ -243,11 +244,11 @@ const restoreMergedCells = (
   currentOverflow: number
 ): void => {
   const moveRow = (row: number): number => {
-    if (row > CURRENT_YEAR_TEMPLATE_DETAIL_END + 1) {
-      return row + previousOverflow + currentOverflow - 2;
+    if (row >= CURRENT_YEAR_TOTAL_ROW) {
+      return row + previousOverflow + currentOverflow;
     }
-    if (row > PREVIOUS_YEAR_TEMPLATE_DETAIL_END) {
-      return row + previousOverflow - 1;
+    if (row >= PREVIOUS_YEAR_TOTAL_ROW) {
+      return row + previousOverflow;
     }
     return row;
   };

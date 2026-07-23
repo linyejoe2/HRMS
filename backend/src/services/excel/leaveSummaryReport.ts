@@ -10,6 +10,9 @@ import { dayjsNum, dayjsTz } from '../../util/utility';
 const TEMPLATE_PATH = path.resolve(__dirname, '../../../assets/report-templates/leave-summary-report.xlsx');
 const WORKSHEET_NAME = '請假總表';
 const FIRST_DATA_ROW = 4;
+const LAST_TEMPLATE_DATA_ROW = 18;
+const GENERIC_DATA_ROW = LAST_TEMPLATE_DATA_ROW - 1;
+const TEMPLATE_DATA_CAPACITY = LAST_TEMPLATE_DATA_ROW - FIRST_DATA_ROW + 1;
 
 const DATA_COLUMNS = [
   'empId',
@@ -34,6 +37,34 @@ const DATA_COLUMNS = [
 ] as const;
 
 type LeaveSummaryRow = Record<(typeof DATA_COLUMNS)[number], string | number>;
+
+const clearTemplateData = (worksheet: ExcelJS.Worksheet): void => {
+  for (let row = FIRST_DATA_ROW; row <= LAST_TEMPLATE_DATA_ROW; row += 1) {
+    for (let column = 1; column <= DATA_COLUMNS.length; column += 1) {
+      worksheet.getCell(row, column).value = null;
+    }
+  }
+};
+
+const insertDataRows = (worksheet: ExcelJS.Worksheet, count: number): void => {
+  if (count === 0) {
+    return;
+  }
+
+  const sourceRow = worksheet.getRow(GENERIC_DATA_ROW);
+  const sourceCells = Array.from({ length: DATA_COLUMNS.length }, (_, index) => worksheet.getCell(GENERIC_DATA_ROW, index + 1));
+  worksheet.spliceRows(LAST_TEMPLATE_DATA_ROW, 0, ...Array.from({ length: count }, () => []));
+
+  for (let row = LAST_TEMPLATE_DATA_ROW; row < LAST_TEMPLATE_DATA_ROW + count; row += 1) {
+    const targetRow = worksheet.getRow(row);
+    targetRow.height = sourceRow.height;
+    sourceCells.forEach((sourceCell, index) => {
+      const targetCell = worksheet.getCell(row, index + 1);
+      targetCell.style = { ...sourceCell.style };
+      targetCell.numFmt = sourceCell.numFmt;
+    });
+  }
+};
 
 export const generateLeaveSummaryReport = async (year: number, month: number): Promise<ExcelJS.Buffer> => {
   const monthStart = dayjsNum(year, month - 1, 24);
@@ -123,11 +154,8 @@ const formatOutput = async (reportData: LeaveSummaryRow[], year: number, month: 
   worksheet.getCell('G2').value = `${year}年到職日後可請休天數`;
   worksheet.getCell('K2').value = `${monthLabel}假況(時)`;
 
-  if (reportData.length === 0) {
-    worksheet.spliceRows(FIRST_DATA_ROW, 1);
-  } else if (reportData.length > 1) {
-    worksheet.duplicateRow(FIRST_DATA_ROW, reportData.length - 1, true);
-  }
+  clearTemplateData(worksheet);
+  insertDataRows(worksheet, Math.max(0, reportData.length - TEMPLATE_DATA_CAPACITY));
 
   reportData.forEach((row, rowIndex) => {
     const targetRow = worksheet.getRow(FIRST_DATA_ROW + rowIndex);
