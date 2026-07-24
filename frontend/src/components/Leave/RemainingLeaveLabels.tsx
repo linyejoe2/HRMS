@@ -16,6 +16,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
   const [personalLeave, setPersonalLeave] = useState<LeaveData | null>(null);
   const [sickLeave, setSickLeave] = useState<LeaveData | null>(null);
   const [specialLeave, setSpecialLeave] = useState<LeaveData | null>(null);
+  const [returnTaiwanLeave, setReturnTaiwanLeave] = useState<LeaveData | null>(null);
   const [reservationLeaves, setReservationLeaves] = useState<LeaveData[]>([]);
   const [hireDate, setHireDate] = useState<Date | null>(null);
   const [otherLeaveDialogOpen, setOtherLeaveDialogOpen] = useState(false);
@@ -46,6 +47,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
       setPersonalLeave(leaveData.personalLeave);
       setSickLeave(leaveData.sickLeave);
       setSpecialLeave(leaveData.specialLeave);
+      setReturnTaiwanLeave(leaveData.returnTaiwanLeave ?? null);
       setReservationLeaves(leaveData.reservationLeaves);
 
     } catch (error) {
@@ -177,8 +179,8 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
         />
       )}
 
-      {reservationLeaves.map(leave => {
-        if (leave.remainingHours == 0) return <></>
+      {[...reservationLeaves, ...(returnTaiwanLeave ? [returnTaiwanLeave] : [])].map(leave => {
+        if (leave.remainingHours === 0) return null;
         return (
           <Chip
             key={leave.type}
@@ -187,7 +189,7 @@ const RemainingLeaveLabels: React.FC<RemainingLeaveLabelProps> = ({ onLabelClick
             onClick={() => onLabelClick(leave)}
             sx={{ cursor: 'pointer', fontWeight: 'medium' }}
           />
-        )
+        );
       })}
 
       <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', height: 24 }} />

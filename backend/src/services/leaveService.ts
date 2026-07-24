@@ -3,6 +3,7 @@ import { APIError } from '../middleware/errorHandler';
 import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz } from '../util/utility';
 import { calcWorkingDuration } from './workingTimeCalcService';
 import { holidayService } from './holidayService';
+import { RETURN_TAIWAN_LEAVE_TYPE, ReturnTaiwanLeaveService } from './returnTaiwanLeaveService';
 import * as XLSX from 'xlsx';
 import { promises } from 'dns';
 import legacyLeaveJson from "../config/legacyLeave.json"
@@ -52,7 +53,7 @@ export const RESERVATION_LEAVE_TYPES: { type: LeaveType; displayName?: string }[
   { type: '育嬰留職停薪', displayName: '育嬰留職停薪' },
 ];
 
-export type LeaveType = "婚假" | "喪假" | '事假' | '普通傷病假' | '特別休假' | "生理假" | "公傷病假" | "公假" | "產假" | "產檢假" | "陪產檢及陪產假" | "安胎休養請假" | "育嬰留職停薪"
+export type LeaveType = "婚假" | "喪假" | '事假' | '普通傷病假' | '特別休假' | "生理假" | "公傷病假" | "公假" | "產假" | "產檢假" | "陪產檢及陪產假" | "安胎休養請假" | "育嬰留職停薪" | typeof RETURN_TAIWAN_LEAVE_TYPE
 
 export interface LeaveData {
   type: LeaveType; // 婚假 喪假
@@ -68,6 +69,7 @@ export interface UserLeaveData {
   personalLeave: LeaveData;
   sickLeave: LeaveData;
   specialLeave: LeaveData;
+  returnTaiwanLeave?: LeaveData;
   reservationLeaves: LeaveData[];
 }
 
@@ -173,6 +175,10 @@ export class LeaveService {
 
     const leaveStart = dayjsToTz(leaveData.leaveStart)
     const leaveEnd = dayjsToTz(leaveData.leaveEnd)
+
+    if (leaveData.leaveType === RETURN_TAIWAN_LEAVE_TYPE) {
+      await ReturnTaiwanLeaveService.assertRequestAllowed(employee, leaveStart, leaveEnd);
+    }
 
     const timeDiff = calcWorkingDuration(leaveStart, leaveEnd, { useStandard4HourBlocks: true });
 
@@ -730,7 +736,17 @@ export class LeaveService {
   }
 
   static async CheckLeaveBalance(empID: string, type: LeaveType, start: Dayjs, end: Dayjs): Promise<{ sufficient: boolean, msg: string }> {
-
+    if (type === RETURN_TAIWAN_LEAVE_TYPE) {
+      try {
+        await ReturnTaiwanLeaveService.assertRequestAllowedForEmpID(empID, start, end);
+        return { sufficient: true, msg: '' };
+      } catch (error) {
+        if (error instanceof APIError) {
+          return { sufficient: false, msg: error.message };
+        }
+        throw error;
+      }
+    }
 
     const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
     const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
@@ -832,6 +848,9 @@ export class LeaveService {
     const employee = await Employee.findOne({ empID });
     const hireDate = employee?.hireDate ? dayjsTz(employee.hireDate) : dayjsTz();
     const specialTotalDays = hireDate ? LeaveService.calcAnnualLeaveEntitlementDays(hireDate) : 0;
+    const returnTaiwanBalance = employee
+      ? await ReturnTaiwanLeaveService.getBalance(employee, start ? dayjsToTz(start) : nowDayJS)
+      : undefined;
 
     // 針對特休 假設今天在今年到職日前
     // 應該找出去年到職日後到現在請的假
@@ -882,6 +901,17 @@ export class LeaveService {
       personalLeave: buildStandardLeaveData('事假', '事假', 14 * 8 * 60, personalLeaves, personalAdj),
       sickLeave: buildStandardLeaveData('普通傷病假', '病假', 30 * 8 * 60, sickLeaves, sickAdj),
       specialLeave: buildStandardLeaveData('特別休假', '特休', specialTotalDays * 8 * 60, specialLeaves, specialAdj),
+      ...(returnTaiwanBalance?.eligible && {
+        returnTaiwanLeave: {
+          type: RETURN_TAIWAN_LEAVE_TYPE,
+          displayName: RETURN_TAIWAN_LEAVE_TYPE,
+          totalHours: returnTaiwanBalance.totalHours,
+          usedHours: returnTaiwanBalance.usedHours,
+          remainingHours: returnTaiwanBalance.remainingHours,
+          leaves: returnTaiwanBalance.leaves,
+          adjustments: returnTaiwanBalance.adjustments
+        }
+      }),
       reservationLeaves
     };
   }

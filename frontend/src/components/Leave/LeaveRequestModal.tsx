@@ -30,7 +30,14 @@ import FileUploadField from '../common/FileUploadField';
 import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { LeaveTypes, getLeaveBenefitSection, leaveDisplaynameConverter } from '@/services/leaveService';
+import {
+  LeaveTypes,
+  RETURN_TAIWAN_LEAVE_TYPE,
+  UserLeaveData,
+  fetchUserLeaveData,
+  getLeaveBenefitSection,
+  leaveDisplaynameConverter
+} from '@/services/leaveService';
 
 interface LeaveRequestModalProps {
   open: boolean;
@@ -63,12 +70,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<LeaveRequestForm | null>(null);
   const [warningMessage, setWarningMessage] = useState('');
+  const [leaveBalance, setLeaveBalance] = useState<UserLeaveData | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    setValue,
     setError,
     clearErrors,
     formState: { errors }
@@ -90,6 +99,37 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
   const leaveEndTime = watch('leaveEndTime');
 
   const leaveBenefitSection = leaveType ? getLeaveBenefitSection(leaveType) : undefined;
+  const targetEmpID = hrMode ? selectedEmployee?.empID : user?.empID;
+  const leaveTypes = leaveBalance?.returnTaiwanLeave
+    ? [...LeaveTypes, leaveBalance.returnTaiwanLeave.type]
+    : LeaveTypes;
+
+  React.useEffect(() => {
+    if (!open || !targetEmpID) {
+      setLeaveBalance(null);
+      return;
+    }
+
+    setLeaveBalance(null);
+    let active = true;
+    void fetchUserLeaveData(targetEmpID)
+      .then(balance => {
+        if (active) setLeaveBalance(balance);
+      })
+      .catch(() => {
+        if (active) setLeaveBalance(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, targetEmpID]);
+
+  React.useEffect(() => {
+    if (leaveType === RETURN_TAIWAN_LEAVE_TYPE && !leaveBalance?.returnTaiwanLeave) {
+      setValue('leaveType', '');
+    }
+  }, [leaveBalance, leaveType, setValue]);
 
   // Validate date/time combination
   React.useEffect(() => {
@@ -221,25 +261,28 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       leaveEnd
     };
 
-    // Check leave balance first (for the target employee when HR is creating on their behalf)
-    const targetEmpID = hrMode ? selectedEmployee!.empID : user!.empID;
-    const hasSufficientBalance = await leaveAPI.checkLeaveBalance({
-      leaveType: formData.leaveType,
-      timeStart: leaveStart,
-      timeEnd: leaveEnd
-    }, targetEmpID);
+    try {
+      const balanceCheck = await leaveAPI.checkLeaveBalance({
+        leaveType: formData.leaveType,
+        timeStart: leaveStart,
+        timeEnd: leaveEnd
+      }, targetEmpID!);
 
-
-
-    if (!hasSufficientBalance.data.data.sufficient) {
-      // Show warning dialog but allow submission
-      setWarningMessage(hasSufficientBalance.data.data.msg)
-      setPendingSubmitData(data);
-      setWarningDialogOpen(true);
+      if (!balanceCheck.data.data.sufficient) {
+        if (formData.leaveType === RETURN_TAIWAN_LEAVE_TYPE) {
+          toast.error(balanceCheck.data.data.msg);
+          return;
+        }
+        setWarningMessage(balanceCheck.data.data.msg);
+        setPendingSubmitData(data);
+        setWarningDialogOpen(true);
+        return;
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || '無法確認假別餘額');
       return;
     }
 
-    // Sufficient balance, proceed with submission
     await performSubmit(data);
   };
 
@@ -265,6 +308,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       });
       clearFiles();
       setSelectedEmployee(null);
+      setLeaveBalance(null);
       setPendingSubmitData(null);
       onClose();
     } catch (error: any) {
@@ -353,14 +397,11 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                       helperText={errors.leaveType?.message}
                       required
                     >
-                      {LeaveTypes.map((type) => {
-                        // patch07091508
-                        return (
-                          <MenuItem key={type} value={type}>
-                            {leaveDisplaynameConverter(type)}
-                          </MenuItem>
-                        )
-                      })}
+                      {leaveTypes.map(type => (
+                        <MenuItem key={type} value={type}>
+                          {leaveDisplaynameConverter(type)}
+                        </MenuItem>
+                      ))}
                     </TextField>
                   )}
                 />

@@ -50,9 +50,14 @@ export const updateProfileSchema = Joi.object({
   department: Joi.string().optional()
 }).min(1);
 
+const LEAVE_TYPES = [
+  '婚假', '喪假', '事假', '普通傷病假', '特別休假', '生理假', '公傷病假', '公假',
+  '產假', '產檢假', '陪產檢及陪產假', '安胎休養請假', '育嬰留職停薪', '返台假'
+];
+
 // 請假申請驗證
 export const leaveRequestSchema = Joi.object({
-  leaveType: Joi.string().required().messages({
+  leaveType: Joi.string().valid(...LEAVE_TYPES).required().messages({
     'string.empty': '請假類型為必填項目',
     'any.required': '請假類型為必填項目'
   }),

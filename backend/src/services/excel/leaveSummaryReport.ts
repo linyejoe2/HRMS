@@ -5,6 +5,7 @@ import legacyLeavejson from '../../config/legacyLeave.json';
 import { Employee, ILeave, Leave, LeaveAdjustment } from '../../models';
 import { APIError } from '../../middleware';
 import { LeaveService } from '../leaveService';
+import { ReturnTaiwanLeaveService } from '../returnTaiwanLeaveService';
 import { dayjsNum, dayjsTz } from '../../util/utility';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../../assets/report-templates/leave-summary-report.xlsx');
@@ -13,6 +14,7 @@ const FIRST_DATA_ROW = 4;
 const LAST_TEMPLATE_DATA_ROW = 18;
 const GENERIC_DATA_ROW = LAST_TEMPLATE_DATA_ROW - 1;
 const TEMPLATE_DATA_CAPACITY = LAST_TEMPLATE_DATA_ROW - FIRST_DATA_ROW + 1;
+const TEMPLATE_LAST_ROW = LAST_TEMPLATE_DATA_ROW;
 
 const DATA_COLUMNS = [
   'empId',
@@ -28,6 +30,9 @@ const DATA_COLUMNS = [
   'totalSpecialHours',
   'remainingHours',
   'annualLeave',
+  'returnTaiwanTotalHours',
+  'returnTaiwanRemainingHours',
+  'returnTaiwanUsedHours',
   'sickLeave',
   'personalLeave',
   'marriageLeave',
@@ -103,6 +108,7 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
 
     const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(employee, annualLeaveReferenceDate);
     const remainAnnualLeaveDays = await LeaveService.calcRemainAnnualLeaveDays(employee, monthEnd);
+    const returnTaiwanBalance = await ReturnTaiwanLeaveService.getBalance(employee, monthEnd);
 
     const monthH = (dbType: string) =>
       Math.round(sumMinutes(empMonthLeaves.filter(leave => leave.leaveType === dbType))) / 60;
@@ -121,6 +127,9 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
       totalSpecialHours: remainAnnualLeaveDays[2],
       remainingHours: remainAnnualLeaveDays[3],
       annualLeave: monthH('特別休假'),
+      returnTaiwanTotalHours: returnTaiwanBalance.eligible ? returnTaiwanBalance.totalHours : 0,
+      returnTaiwanRemainingHours: returnTaiwanBalance.eligible ? returnTaiwanBalance.remainingHours : 0,
+      returnTaiwanUsedHours: returnTaiwanBalance.eligible ? returnTaiwanBalance.usedHours : 0,
       sickLeave: monthH('普通傷病假'),
       personalLeave: monthH('事假'),
       marriageLeave: monthH('婚假'),
@@ -135,6 +144,7 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
 
 const formatOutput = async (reportData: LeaveSummaryRow[], year: number, month: number): Promise<ExcelJS.Buffer> => {
   const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet;
 
   try {
     const template = await readFile(TEMPLATE_PATH);
@@ -143,10 +153,13 @@ const formatOutput = async (reportData: LeaveSummaryRow[], year: number, month: 
     throw new APIError('請假總表範本不存在或無法讀取', 500);
   }
 
-  const worksheet = workbook.getWorksheet(WORKSHEET_NAME);
+  worksheet = workbook.getWorksheet(WORKSHEET_NAME)!;
   if (!worksheet) {
     throw new APIError(`請假總表範本缺少工作表：${WORKSHEET_NAME}`, 500);
   }
+
+  const rows = (worksheet as ExcelJS.Worksheet & { _rows: Array<ExcelJS.Row | undefined> })._rows;
+  rows.length = TEMPLATE_LAST_ROW;
 
   const monthLabel = String(month).padStart(2, '0');
   worksheet.name = `${year}年${monthLabel}月請假總表`;
@@ -163,6 +176,7 @@ const formatOutput = async (reportData: LeaveSummaryRow[], year: number, month: 
       targetRow.getCell(columnIndex + 1).value = row[column];
     });
   });
+  worksheet.pageSetup.printArea = `A1:V${Math.max(LAST_TEMPLATE_DATA_ROW, FIRST_DATA_ROW + reportData.length - 1)}`;
 
   return workbook.xlsx.writeBuffer();
 };

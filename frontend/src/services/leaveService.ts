@@ -40,6 +40,8 @@ export const ReservationLeaveTypes = [
   '育嬰留職停薪'
 ];
 
+export const RETURN_TAIWAN_LEAVE_TYPE = '返台假';
+
 export const LeaveTypes = [
   '普通傷病假',
   '事假',
@@ -129,6 +131,7 @@ export interface UserLeaveData {
   personalLeave: LeaveData;
   sickLeave: LeaveData;
   specialLeave: LeaveData;
+  returnTaiwanLeave?: LeaveData;
   reservationLeaves: LeaveData[];
 }
 

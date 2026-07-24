@@ -165,8 +165,14 @@ export const queryLeaveRequests = asyncHandler(async (req: AuthRequest, res: Res
   });
 });
 
+const canAccessLeaveBalance = (req: AuthRequest, empID: string): boolean =>
+  req.user!.empID === empID || ['hr', 'admin'].includes(req.user!.role);
+
 export const getLeaveBalance = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { empID } = req.params;
+  if (!canAccessLeaveBalance(req, empID)) {
+    return res.status(403).json({ error: true, message: '無權限查詢其他員工的假別餘額' });
+  }
   const balance = await LeaveService.getUserLeaveBalance(empID);
 
   res.json({
@@ -178,6 +184,9 @@ export const getLeaveBalance = asyncHandler(async (req: AuthRequest, res: Respon
 
 export const checkLeaveBalance = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { empID } = req.params;
+  if (!canAccessLeaveBalance(req, empID)) {
+    return res.status(403).json({ error: true, message: '無權限查詢其他員工的假別餘額' });
+  }
   const { leaveType, timeStart, timeEnd } = req.body
   try {
     const balance = await LeaveService.CheckLeaveBalance(empID, leaveType, dayjsToTz(timeStart), dayjsToTz(timeEnd));

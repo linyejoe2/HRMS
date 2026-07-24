@@ -42,7 +42,8 @@ const leaveAdjustmentSchema = new Schema<ILeaveAdjustment>({
       '陪產檢及陪產假',
       // '家庭照顧假',
       '安胎休養請假',
-      '育嬰留職停薪'],
+      '育嬰留職停薪',
+      '返台假'],
     index: true
   },
   minutes: {
