@@ -257,6 +257,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                     }
                   }}
                   format="YYYY/MM/DD HH:mm"
+                  timeSteps={{ minutes: 1 }}
                   ampm={false}
                   minTime={dayjs().hour(8).minute(29)}
                   maxTime={dayjs().hour(17).minute(30)}
@@ -289,6 +290,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
                   value={endTime}
                   onChange={(newValue) => setEndTime(newValue)}
                   format="YYYY/MM/DD HH:mm"
+                  timeSteps={{ minutes: 1 }}
                   ampm={false}
                   minDateTime={startTime || undefined}
                   // maxTime={dayjs().hour(17).minute(30)}

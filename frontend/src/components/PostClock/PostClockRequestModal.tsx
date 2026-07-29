@@ -174,7 +174,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   rules={{ required: '請選擇補單日期' }}
                   render={({ field: { onChange, value } }) => (
                     <DatePicker
-                      label={isInAndOut ? '補單日期(上班)' : '補單日期'}
+                      label={'補單日期'}
                       value={dayjs(value)}
                       onChange={(newValue) => {
                         onChange(newValue?.toISOString() || '');
@@ -205,6 +205,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                         onChange(newValue?.toISOString() || '');
                       }}
                       ampm={false}
+                      timeSteps={{ minutes: 1 }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -232,6 +233,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                           onChange(newValue?.toISOString() || '');
                         }}
                         ampm={false}
+                        timeSteps={{ minutes: 1 }}
                         slotProps={{
                           textField: {
                             fullWidth: true,

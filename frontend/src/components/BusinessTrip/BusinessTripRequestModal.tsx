@@ -193,6 +193,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                         onChange(newValue?.toISOString() || '');
                       }}
                       ampm={false}
+                      timeSteps={{ minutes: 1 }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -219,6 +220,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                         onChange(newValue?.toISOString() || '');
                       }}
                       minDateTime={tripStart ? dayjs(tripStart) : undefined}
+                      timeSteps={{ minutes: 1 }}
                       ampm={false}
                       slotProps={{
                         textField: {
