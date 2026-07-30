@@ -127,21 +127,12 @@ const PostClockTab: React.FC = () => {
       field: 'time',
       headerName: '補單時間',
       flex: 1.5,
-      valueGetter: (_, row) => dayjs(row.time).format('HH:mm'),
-      sortable: true
-    },
-    {
-      field: 'date2',
-      headerName: '補單日期(下班)',
-      flex: 1.5,
-      valueGetter: (_, row) => row.date2 ? dayjs(row.date2).format('YYYY/MM/DD') : '-',
-      sortable: true
-    },
-    {
-      field: 'time2',
-      headerName: '補單時間(下班)',
-      flex: 1.5,
-      valueGetter: (_, row) => row.time2 ? dayjs(row.time2).format('HH:mm') : '-',
+      valueGetter: (_, row) => {
+        const time = row.time ? dayjs(row.time).format('HH:mm') : null;
+        const time2 = row.time2 ? dayjs(row.time2).format('HH:mm') : null;
+        if (time && time2) return `${time} - ${time2}`;
+        return time || time2 || '-';
+      },
       sortable: true
     },
     {
