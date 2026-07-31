@@ -411,6 +411,7 @@ const OfficialBusinessTab: React.FC = () => {
               value={editEndTime}
               onChange={(newValue) => setEditEndTime(newValue)}
               format="YYYY/MM/DD HH:mm"
+              timeSteps={{ minutes: 1 }}
               ampm={false}
               minDateTime={editingRequest ? dayjs(editingRequest.startTime) : undefined}
               shouldDisableDate={(date) =>

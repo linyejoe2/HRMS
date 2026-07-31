@@ -1,7 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
 import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz } from '../util/utility';
-import { calcWorkingDuration } from './workingTimeCalcService';
 import { holidayService } from './holidayService';
 import { RETURN_TAIWAN_LEAVE_TYPE, ReturnTaiwanLeaveService } from './returnTaiwanLeaveService';
 import * as XLSX from 'xlsx';
@@ -10,6 +9,7 @@ import legacyLeaveJson from "../config/legacyLeave.json"
 import dayjs, { Dayjs } from 'dayjs';
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { calcWorkingDuration, calcWorkingDurationHelper } from './workingTimeCalcService';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -27,6 +27,12 @@ export interface FixLeaveEndDatesResult {
   skipped: { leaveId: string; sequenceNumber?: number; reason: string }[];
 }
 
+export interface CheckLeaveBalanceRes {
+  sufficient: boolean,
+  msg: string,
+  remainingHours: number,
+  requestedHours: number
+}
 
 export const leaveDisplaynameConverter = (type: string): string => {
   switch (type) {
@@ -180,9 +186,9 @@ export class LeaveService {
       await ReturnTaiwanLeaveService.assertRequestAllowed(employee, leaveStart, leaveEnd);
     }
 
-    const timeDiff = calcWorkingDuration(leaveStart, leaveEnd, { useStandard4HourBlocks: true });
+    const workingDurationRes = await calcWorkingDurationHelper(leaveStart, leaveEnd);
 
-    const totalMinutes = Math.floor(timeDiff.minuteFormat);
+    const totalMinutes = Math.floor(workingDurationRes.workingMinutes);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
@@ -735,14 +741,16 @@ export class LeaveService {
     return { imported, errors };
   }
 
-  static async CheckLeaveBalance(empID: string, type: LeaveType, start: Dayjs, end: Dayjs): Promise<{ sufficient: boolean, msg: string }> {
+
+  static async CheckLeaveBalance(empID: string, type: LeaveType, start: Dayjs, end: Dayjs): Promise<CheckLeaveBalanceRes> {
+    //// 返台假相關 ////
     if (type === RETURN_TAIWAN_LEAVE_TYPE) {
       try {
         await ReturnTaiwanLeaveService.assertRequestAllowedForEmpID(empID, start, end);
-        return { sufficient: true, msg: '' };
+        return { sufficient: true, msg: '', remainingHours: 0, requestedHours: 0 };
       } catch (error) {
         if (error instanceof APIError) {
-          return { sufficient: false, msg: error.message };
+          return { sufficient: false, msg: error.message, remainingHours: 0, requestedHours: 0 };
         }
         throw error;
       }
@@ -751,12 +759,12 @@ export class LeaveService {
     const reservationTypes = RESERVATION_LEAVE_TYPES.map(t => t.type);
     const leaveTypesToCheck = ['事假', '普通傷病假', '特別休假', ...reservationTypes];
     if (!leaveTypesToCheck.includes(type)) {
-      return { sufficient: true, msg: "" }; // Skip validation for other leave types
+      return { sufficient: true, msg: "", remainingHours: 0, requestedHours: 0 }; // Skip validation for other leave types
     }
 
     const balance = await this.getUserLeaveBalance(empID, start, end)
-    const workingDurentObj = calcWorkingDuration(start, end, { useStandard4HourBlocks: true });
-    const requestedHours = workingDurentObj.hourFormat
+    const workingDurentRes =await calcWorkingDurationHelper(start, end);
+    const requestedHours = Math.round(workingDurentRes.workingMinutes / 60)
 
     let remainingHours = 0;
     let leaveTypeName = '';
@@ -783,15 +791,16 @@ export class LeaveService {
       }
     }
 
-    if (workingDurentObj.hourFormat > remainingHours) {
+    if (requestedHours > remainingHours) {
       return {
         sufficient: false, msg:
           `${leaveTypeName}剩餘時數為 ${remainingHours.toFixed(0)} 小時，` +
           `但此次申請需要 ${requestedHours.toFixed(0)} 小時。\n` +
-          `超出額度 ${(requestedHours - remainingHours).toFixed(0)} 小時。\n`
+          `超出額度 ${(requestedHours - remainingHours).toFixed(0)} 小時。\n`,
+        remainingHours, requestedHours
       };
     }
-    return { sufficient: true, msg: "" };
+    return { sufficient: true, msg: "", remainingHours, requestedHours };
   }
 
   //  import { Dayjs } from 'dayjs';
@@ -811,7 +820,7 @@ export class LeaveService {
     // 1. 決定 Leave 的時間篩選範圍（若無帶入則維持原本的前後一年預設值）
     // const oneYearBefore = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     // const oneYearAfter = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-    const leaveBeforeBound = nowDayJS.subtract(1,"year").month(12).day(24).startOf('day');
+    const leaveBeforeBound = nowDayJS.subtract(1, "year").month(12).day(24).startOf('day');
     const leaveAfterBound = nowDayJS.month(12).day(23).endOf('day');
     const queryStart = start ? start.toDate() : leaveBeforeBound;
     const queryEnd = end ? end.toDate() : leaveAfterBound;

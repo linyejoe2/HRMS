@@ -68,7 +68,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ open, onClose, task, onSav
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await api.get('/employees');
+        const response = await api.get('/employees?limit=200');
         const employeeList = response.data.data.employees || [];
         setEmployees(employeeList);
 

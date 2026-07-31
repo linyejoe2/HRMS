@@ -1,6 +1,7 @@
 import { Holiday, IHoliday } from '../models';
 import { APIError } from '../middleware/errorHandler';
 import { dayjsTz, toTaipeiDate } from '../util/utility';
+import dayjs, { Dayjs } from 'dayjs';
 
 export class HolidayService {
   /**
@@ -8,6 +9,26 @@ export class HolidayService {
    */
   async getAllHolidays(): Promise<IHoliday[]> {
     return Holiday.find().sort({ date: 1 });
+  }
+
+  /**
+ * Get an array of holiday date strings (YYYY-MM-DD) within a date range
+ * @param start Start date (Dayjs)
+ * @param end End date (Dayjs)
+ * @returns Array of formatted date strings, e.g., ['2026-01-01', '2026-01-02']
+ */
+  async getHolidaysStringByDateRange(start: Dayjs, end: Dayjs): Promise<string[]> {
+    const startDate = start.startOf('day').toDate();
+    const endDate = end.endOf('day').toDate();
+
+    const holidays = await Holiday.find({
+      date: {
+        $gte: startDate,
+        $lte: endDate,
+      },
+    }).sort({ date: 1 });
+
+    return holidays.map((holiday) => dayjs(holiday.date).format('YYYY-MM-DD'));
   }
 
   /**
@@ -57,7 +78,7 @@ export class HolidayService {
   }): Promise<IHoliday | null> {
     // Convert string date to Date object
     const holidayDate = new Date(toTaipeiDate(data.date));
-console.log(`1 ${holidayDate}`)
+    console.log(`1 ${holidayDate}`)
     if (isNaN(holidayDate.getTime())) {
       throw new APIError('無效的日期格式', 400);
     }
@@ -65,9 +86,9 @@ console.log(`1 ${holidayDate}`)
     // Check for duplicate date
     const existing = await Holiday.findOne({ date: holidayDate });
     if (existing) {
-      return this.updateHoliday(existing.id, {...data, date: undefined})
+      return this.updateHoliday(existing.id, { ...data, date: undefined })
     }
-console.log(`2 ${holidayDate}`)
+    console.log(`2 ${holidayDate}`)
 
     // Validate pay_rate
     if (data.pay_rate < 0) {
@@ -100,7 +121,7 @@ console.log(`2 ${holidayDate}`)
       memo: string;
     }>
   ): Promise<IHoliday | null> {
-console.log(`3 ${data.date}`)
+    console.log(`3 ${data.date}`)
     const holiday = await Holiday.findById(id);
     if (!holiday) {
       throw new APIError('找不到假日', 404);
@@ -108,7 +129,7 @@ console.log(`3 ${data.date}`)
 
     // If updating date, check for duplicates
     if (data.date) {
-console.log(`4 ${data.date}`)
+      console.log(`4 ${data.date}`)
       const newDate = new Date(toTaipeiDate(data.date));
 
       if (isNaN(newDate.getTime())) {
@@ -127,7 +148,7 @@ console.log(`4 ${data.date}`)
 
       holiday.date = newDate;
     }
-console.log(`5`)
+    console.log(`5`)
 
     // Update other fields
     if (data.type !== undefined) holiday.type = data.type as any;
