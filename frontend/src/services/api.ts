@@ -2,8 +2,8 @@ import axios, { AxiosResponse } from 'axios';
 import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes } from '../types';
 import { toast } from 'react-toastify';
 
-// const API_BASE_URL = ""
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = ""
+// const API_BASE_URL = "http://localhost:3000";
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
 
 export const api = axios.create({
