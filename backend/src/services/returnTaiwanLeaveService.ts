@@ -1,8 +1,10 @@
 import { Employee, IEmployee, ILeave, ILeaveAdjustment, Leave, LeaveAdjustment, Variable } from '../models';
 import { APIError } from '../middleware/errorHandler';
 import { dayjsTz, dayjsToTz } from '../util/utility';
-import { calcWorkingDuration } from './workingTimeCalcService';
+import { calcWorkingDuration, calcWorkingDurationHelper } from './workingTimeCalcService';
 import { Dayjs } from 'dayjs';
+import { WorkingTimeMode } from '../types';
+import { holidayService } from './holidayService';
 
 export const RETURN_TAIWAN_LEAVE_TYPE = '返台假';
 const RETURN_TAIWAN_JOB_TITLE = '台幹';
@@ -18,7 +20,7 @@ export type ReturnTaiwanLeaveBalance = {
   adjustments: ILeaveAdjustment[];
 };
 
-const sumLeaveMinutes = (leaves: ILeave[], start: Dayjs, end: Dayjs): number =>
+const sumLeaveMinutes = (leaves: ILeave[], start: Dayjs, end: Dayjs, holidays: string[]): number =>
   leaves.reduce((total, leave) => {
     const leaveStart = dayjsTz(leave.leaveStart);
     const leaveEnd = dayjsTz(leave.leaveEnd);
@@ -29,7 +31,7 @@ const sumLeaveMinutes = (leaves: ILeave[], start: Dayjs, end: Dayjs): number =>
       return total;
     }
 
-    return total + calcWorkingDuration(clippedStart, clippedEnd, { useStandard4HourBlocks: true }).minuteFormat;
+    return total + calcWorkingDuration(clippedStart, clippedEnd, {holidays, mode: WorkingTimeMode.Standardized}).workingMinutes;
   }, 0);
 
 const sumAdjustmentMinutes = (adjustments: ILeaveAdjustment[]): number =>
@@ -109,7 +111,8 @@ export class ReturnTaiwanLeaveService {
       LeaveAdjustment.find({ empID: employee.empID, leaveType: RETURN_TAIWAN_LEAVE_TYPE, ...adjustmentFilter })
     ]);
     const totalHours = entitlementDays * HOURS_PER_DAY + sumAdjustmentMinutes(adjustments) / 60;
-    const usedHours = sumLeaveMinutes(leaves, period.start, period.end) / 60;
+    const holidays = await holidayService.getHolidaysStringByDateRange(period.start, period.end)
+    const usedHours = sumLeaveMinutes(leaves, period.start, period.end, holidays) / 60;
 
     return {
       eligible: true,
@@ -131,7 +134,7 @@ export class ReturnTaiwanLeaveService {
     while (segmentStart.isBefore(leaveEnd)) {
       const period = this.getPeriod(employee.hireDate, segmentStart);
       const segmentEnd = leaveEnd.isBefore(period.end) ? leaveEnd : period.end;
-      const requestedHours = calcWorkingDuration(segmentStart, segmentEnd, { useStandard4HourBlocks: true }).hourFormat;
+      const requestedHours = Math.round((await calcWorkingDurationHelper(segmentStart, segmentEnd)).workingMinutes / 60);
 
       if (requestedHours > 0) {
         const balance = await this.getBalance(employee, segmentStart);

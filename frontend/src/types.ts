@@ -120,7 +120,9 @@ export interface LeaveRequest {
 
 export interface CheckLeaveBalanceRes {
   sufficient: boolean,
-  msg: string
+  msg: string,
+  remainingHours: number,
+  requestedHours: number
 }
 
 export enum UserLevel {
