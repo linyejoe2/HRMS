@@ -240,7 +240,7 @@ const expandDetailRows = (
   restoreMergedCells(worksheet, mergeRanges, previousOverflow, currentOverflow);
 
   const hasReturnTaiwanLeave = Boolean(columns.returnTaiwanLeave);
-  const currentYearMetadataRow = (hasReturnTaiwanLeave ? 22 : 21) + previousOverflow;
+  const currentYearMetadataRow = 22 + previousOverflow;
   const currentYearNameRow = currentYearMetadataRow + 1;
 
   return {
