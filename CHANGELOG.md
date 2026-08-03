@@ -3,6 +3,21 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.1] - 2026-08-03 - Rebuild Employee Attendance Records
+
+**Author**: Randy Lin
+
+### Added
+
+- 「重建出勤紀錄」 button in the employee edit dialog: rebuilds attendance from hire date (bounded by `SYSTEM_START_DATE`) to today — creates missing working-day records (skipping weekends/national holidays) and re-imports the employee's swipe records from the saveData files.
+- `POST /api/attendance/employee/:empID/recreate` endpoint (admin/HR only) backed by `attendanceService.recreateEmployeeAttendance()`.
+- `SYSTEM_START_DATE` environment variable (`config.systemStartTime`), wired into `.env.example` and `docker-compose.yml`.
+
+### Changed
+
+- Extracted shared swipe-record apply logic (`applyParsedRecord()`) out of `importSaveDataFile()` in `attendanceService`, reused by the rebuild flow.
+- Renamed `constants.ts` export `CONFIG` to `CONST`.
+
 ## [1.0.0] - 2026-07-31 - HRMS INIT with basic functionality
 
 **Author**: Randy Lin

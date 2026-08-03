@@ -52,6 +52,7 @@ services:
       - PORT=3000
       - NODE_ENV=${NODE_ENV}
       - TZ=Asia/Taipei
+      - SYSTEM_START_DATE=${SYSTEM_START_DATE}
     ports:
       - "${BACKEND_PORT}:3000"
     depends_on:

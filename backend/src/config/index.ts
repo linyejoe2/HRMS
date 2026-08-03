@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { dayjsToTz, dayjsTz } from '../util/utility';
 
 dotenv.config();
 
@@ -24,6 +25,8 @@ export const config = {
   // File upload
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '5') * 1024 * 1024, // 5MB
   uploadPath: process.env.UPLOAD_PATH || './uploads',
+
+  systemStartTime: dayjsTz(process.env.SYSTEM_START_DATE)
 };
 
 export default config;

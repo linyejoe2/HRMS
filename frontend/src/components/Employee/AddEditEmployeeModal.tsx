@@ -21,10 +21,12 @@ import {
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
-  Lock as LockIcon
+  Lock as LockIcon,
+  Restore as RestoreIcon
 } from '@mui/icons-material';
 import { Employee, UserLevel, Variable } from '../../types';
-import { employeeAPI, authAPI, variableAPI } from '../../services/api';
+import { employeeAPI, authAPI, variableAPI, attendanceAPI } from '../../services/api';
+import ConfirmationModal from '../common/ConfirmationModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { getLeaveColorByHours } from '../../utils/leaveCalculations';
@@ -97,6 +99,8 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
   });
 
   const [loading, setLoading] = useState(false);
+  const [rebuildingAttendance, setRebuildingAttendance] = useState(false);
+  const [rebuildConfirmOpen, setRebuildConfirmOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSensitive, setShowSensitive] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -540,6 +544,22 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Recreate the employee's whole attendance history (hireDate ~ today)
+  const handleRebuildAttendance = async () => {
+    if (!employee?.empID) return;
+
+    setRebuildingAttendance(true);
+    try {
+      const response = await attendanceAPI.recreateEmployeeAttendance(employee.empID);
+      const { createdCount, checkedDays, importedRecords } = response.data.data;
+      toast.success(`出勤紀錄重建完成，共檢查 ${checkedDays} 個工作日，建立 ${createdCount} 筆紀錄，匯入 ${importedRecords} 筆打卡資料`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || '重建出勤紀錄失敗');
+    } finally {
+      setRebuildingAttendance(false);
     }
   };
 
@@ -1345,6 +1365,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
+        {isEditing && (
+          <Button
+            sx={{ mr: 'auto' }}
+            variant="outlined"
+            color="warning"
+            startIcon={rebuildingAttendance ? <CircularProgress size={16} color="inherit" /> : <RestoreIcon />}
+            onClick={() => setRebuildConfirmOpen(true)}
+            disabled={loading || rebuildingAttendance || !employee?.hireDate}
+          >
+            {rebuildingAttendance ? '重建中...' : '重建出勤紀錄'}
+          </Button>
+        )}
         <Button onClick={onClose} disabled={loading}>
           取消
         </Button>
@@ -1398,6 +1430,18 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Rebuild Attendance Confirmation Dialog */}
+      <ConfirmationModal
+        open={rebuildConfirmOpen}
+        onClose={() => setRebuildConfirmOpen(false)}
+        onConfirm={handleRebuildAttendance}
+        title="確認重建出勤紀錄"
+        message={`將為 ${employee?.name || ''} 重建從入職日期至今日的所有出勤紀錄（補建缺少的工作日紀錄，並從打卡檔重新匯入該員工的打卡資料）。確定要繼續嗎？`}
+        confirmText="確認重建"
+        cancelText="取消"
+        confirmColor="warning"
+      />
 
       {/* Leave Details Dialog */}
       {employee && leaveDetailsDialog.open && (

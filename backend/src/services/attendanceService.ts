@@ -1,4 +1,5 @@
 import fs from 'fs';
+import readline from 'readline';
 import path from 'path';
 import { Attendance, IAttendance, Employee } from '../models';
 import { APIError } from '../middleware';
@@ -6,6 +7,9 @@ import { cardAssignmentService } from './cardAssignmentService';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { holidayService } from './holidayService';
+import { dayjsToTz, dayjsTz, isWorkingDay } from '../util/utility';
+import config from '../config';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -63,6 +67,201 @@ export class AttendanceService {
   }
 
   /**
+   * Apply a parsed swipe record to its attendance document:
+   * find or create by cardID + date, denormalize employee identity,
+   * then keep the earliest clock-in / latest clock-out.
+   */
+  private async applyParsedRecord(parsed: ParsedRecord): Promise<void> {
+    // Find or create attendance record for this cardID and date
+    let attendance = await Attendance.findOne({
+      cardID: parsed.cardID,
+      date: parsed.date
+    });
+
+    if (!attendance) {
+      attendance = new Attendance({
+        cardID: parsed.cardID,
+        date: parsed.date
+      });
+    }
+
+    // Denormalize employee identity from CardAssignment (snapshot at swipe time)
+    if (!attendance.empID || !attendance.employeeName) {
+      const assignment = await cardAssignmentService.getActiveAssignment(parsed.cardID);
+      if (assignment) {
+        const emp = await Employee.findById(assignment.employeeId);
+        if (emp) {
+          attendance.empID = emp.empID;
+          attendance.employeeName = emp.name;
+        }
+      } else {
+        // Fallback: lookup employee directly by cardID
+        const emp = await Employee.findOne({ cardID: parsed.cardID });
+        if (emp) {
+          attendance.empID = emp.empID;
+          attendance.employeeName = emp.name;
+        }
+      }
+    }
+
+    const now = new Date();
+
+    // Update attendance based on status
+    if (parsed.status === 'D900') {
+      // Clock out - only update if this is later than existing clock-out time
+      // This ensures we keep the last exit when someone leaves multiple times
+      if (!attendance.clockOutTime || parsed.time > attendance.clockOutTime) {
+        attendance.clockOutRawRecord = parsed.rawRecord;
+        attendance.clockOutTime = parsed.time;
+        attendance.clockOutStatus = parsed.status;
+        attendance.clockOutUpdateTime = now;
+      }
+    } else {
+      // Clock in - only update if this is earlier than existing clock-in time
+      // This ensures we keep the first entry when someone goes into office multiple times
+      if (!attendance.clockInTime || parsed.time < attendance.clockInTime) {
+        attendance.clockInRawRecord = parsed.rawRecord;
+        attendance.clockInTime = parsed.time;
+        attendance.clockInStatus = parsed.status;
+        attendance.clockInUpdateTime = now;
+      }
+    }
+
+    await attendance.save();
+  }
+
+  /**
+   * List saveData files in the data folder
+   * (same filter as fileScanService.scanDataFolder; duplicated here
+   * because fileScanService imports this service)
+   */
+  private getSaveDataFileNames(dataFolderPath: string): string[] {
+    if (!fs.existsSync(dataFolderPath)) return [];
+
+    return fs.readdirSync(dataFolderPath).filter(file => {
+      if (!file.endsWith('saveData.txt')) return false;
+      const match = file.match(/\d{4}/);
+      return match ? parseInt(match[0], 10) > 2024 : false;
+    });
+  }
+
+  /**
+   * Recreate the whole attendance history of one employee,
+   * from their hireDate to today:
+   * 1. Create missing records on working days (weekends and
+   *    national holidays are skipped); existing records are kept untouched.
+   * 2. Re-apply the employee's swipe records found in the saveData files,
+   *    so clock-in/out data is rebuilt instead of left empty.
+   */
+  async recreateEmployeeAttendance(empID: string): Promise<{
+    empID: string;
+    startDate: Date;
+    endDate: Date;
+    checkedDays: number;
+    createdCount: number;
+    scannedFiles: number;
+    importedRecords: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let createdCount = 0;
+    let checkedDays = 0;
+    let importedRecords = 0;
+
+    const employee = await Employee.findOne({ empID });
+    if (!employee) {
+      throw new APIError('找不到員工', 404);
+    }
+    if (!employee.hireDate) {
+      throw new APIError('該員工沒有入職日期，無法重建出勤紀錄', 400);
+    }
+    if (!employee.cardID) {
+      throw new APIError('該員工沒有門禁卡號，無法重建出勤紀錄', 400);
+    }
+
+    const start = dayjs.max(dayjsTz(employee.hireDate).startOf('day'), config.systemStartTime);
+    const end = dayjsToTz().startOf('day');
+    console.log("start", start.toISOString())
+    console.log("end", end.toISOString())
+    if (end.isBefore(start)) {
+      throw new APIError('入職日期在未來，無法重建出勤紀錄', 400);
+    }
+
+    const holidays = new Set(
+      await holidayService.getHolidaysStringByDateRange(start, end)
+    );
+
+    for (let day = start; !day.isAfter(end); day = day.add(1, 'day')) {
+      if (!isWorkingDay(day, holidays)) continue;
+      checkedDays++;
+
+      const date = dayjs.tz(day.format('YYYY-MM-DD'), 'Asia/Taipei').toDate();
+
+      try {
+        const existing = await Attendance.findOne({
+          date,
+          $or: [{ empID: employee.empID }, { cardID: employee.cardID }]
+        });
+        if (existing) continue;
+
+        const attendance = new Attendance({
+          empID: employee.empID,
+          cardID: employee.cardID,
+          employeeName: employee.name,
+          department: employee.department,
+          date,
+          isAbsent: true // Default to absent until clock-in data is processed
+        });
+        await attendance.save();
+        createdCount++;
+      } catch (error) {
+        errors.push(`Error creating attendance for ${empID} on ${day.format('YYYY-MM-DD')}: ${error}`);
+      }
+    }
+
+    // Re-apply this employee's swipe records from the saveData files
+    const dataFolderPath = './data';
+    const files = this.getSaveDataFileNames(dataFolderPath);
+    const rangeStart = start.toDate();
+    const rangeEnd = end.endOf('day').toDate();
+
+    for (const fileName of files) {
+      try {
+        const fileContent = fs.readFileSync(path.join(dataFolderPath, fileName), 'utf-8');
+
+        for (const line of fileContent.split('\n')) {
+          const parsed = this.parseSaveDataLine(line);
+          if (!parsed) continue;
+          if (parsed.cardID !== employee.cardID) continue;
+          if (parsed.date < rangeStart || parsed.date > rangeEnd) continue;
+
+          try {
+            await this.applyParsedRecord(parsed);
+            importedRecords++;
+          } catch (error) {
+            errors.push(`Error applying record ${parsed.rawRecord}: ${error}`);
+          }
+        }
+      } catch (error) {
+        errors.push(`Error reading file ${fileName}: ${error}`);
+      }
+    }
+
+    console.log(`✅ Recreated attendance for ${empID}: ${createdCount}/${checkedDays} working days created, ${importedRecords} swipe records applied from ${files.length} files`);
+
+    return {
+      empID,
+      startDate: start.toDate(),
+      endDate: end.toDate(),
+      checkedDays,
+      createdCount,
+      scannedFiles: files.length,
+      importedRecords,
+      errors
+    };
+  }
+
+  /**
    * Import attendance records from a saveData file
    */
   async importSaveDataFile(filePath: string): Promise<{ imported: number; errors: string[] }> {
@@ -74,84 +273,49 @@ export class AttendanceService {
         throw new APIError(`File not found: ${filePath}`, 404);
       }
 
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const lines = fileContent.split('\n');
+      const fileStream = fs.createReadStream(filePath, 'utf-8');
 
-      console.log(`Processing ${lines.length} lines from ${filePath}`);
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity // 自動統一處理 \r\n 與 \n
+      });
 
-      for (const l of lines) {
-        console.log("line: ", l)
-      }
-
-      for (const line of lines) {
+      for await (const line of rl) {
+        if (!line) continue;
+        console.log("line: ", line);
         const parsed = this.parseSaveDataLine(line);
         if (!parsed) continue;
         // console.log(parsed)
 
         try {
-          // Find or create attendance record for this cardID and date
-          let attendance = await Attendance.findOne({
-            cardID: parsed.cardID,
-            date: parsed.date
-          });
-
-          if (!attendance) {
-            attendance = new Attendance({
-              cardID: parsed.cardID,
-              date: parsed.date
-            });
-          }
-
-          // Denormalize employee identity from CardAssignment (snapshot at swipe time)
-          if (!attendance.empID || !attendance.employeeName) {
-            const assignment = await cardAssignmentService.getActiveAssignment(parsed.cardID);
-            if (assignment) {
-              const emp = await Employee.findById(assignment.employeeId);
-              if (emp) {
-                attendance.empID = emp.empID;
-                attendance.employeeName = emp.name;
-              }
-            } else {
-              // Fallback: lookup employee directly by cardID
-              const emp = await Employee.findOne({ cardID: parsed.cardID });
-              if (emp) {
-                attendance.empID = emp.empID;
-                attendance.employeeName = emp.name;
-              }
-            }
-          }
-
-          const now = new Date();
-
-          // Update attendance based on status
-          if (parsed.status === 'D900') {
-            // Clock out - only update if this is later than existing clock-out time
-            // This ensures we keep the last exit when someone leaves multiple times
-            if (!attendance.clockOutTime || parsed.time > attendance.clockOutTime) {
-              attendance.clockOutRawRecord = parsed.rawRecord;
-              attendance.clockOutTime = parsed.time;
-              attendance.clockOutStatus = parsed.status;
-              attendance.clockOutUpdateTime = now;
-            }
-          } else {
-            // Clock in - only update if this is earlier than existing clock-in time
-            // This ensures we keep the first entry when someone goes into office multiple times
-            if (!attendance.clockInTime || parsed.time < attendance.clockInTime) {
-              attendance.clockInRawRecord = parsed.rawRecord;
-              attendance.clockInTime = parsed.time;
-              attendance.clockInStatus = parsed.status;
-              attendance.clockInUpdateTime = now;
-            }
-          }
-
-          await attendance.save();
+          await this.applyParsedRecord(parsed);
           imported++;
-
         } catch (error) {
           errors.push(`Error processing record ${parsed.cardID}: ${error}`);
           console.error(`Error processing record:`, error);
         }
       }
+
+
+      // const fileContent = fs.readFileSync(filePath, 'utf-8');
+      // const lines = fileContent.split('\r');
+
+      // console.log(`Processing ${lines.length} lines from ${filePath}`);
+
+      // for (const line of lines) {
+      //   if (!line) continue;
+      //   const parsed = this.parseSaveDataLine(line);
+      //   if (!parsed) continue;
+      //   console.log(parsed)
+
+      //   try {
+      //     await this.applyParsedRecord(parsed);
+      //     imported++;
+      //   } catch (error) {
+      //     errors.push(`Error processing record ${parsed.cardID}: ${error}`);
+      //     console.error(`Error processing record:`, error);
+      //   }
+      // }
 
       return { imported, errors };
 

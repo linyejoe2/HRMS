@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { errorHandler, notFound } from './middleware';
 import routes from './routes';
+import { attendanceService } from './services';
 
 const app = express();
 
