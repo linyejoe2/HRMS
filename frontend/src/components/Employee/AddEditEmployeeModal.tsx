@@ -1367,7 +1367,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       <DialogActions sx={{ p: 3 }}>
         {isEditing && (
           <Button
-            sx={{ mr: 'auto' }}
+            sx={{ mr: 'auto', display: "none" }}
             variant="outlined"
             color="warning"
             startIcon={rebuildingAttendance ? <CircularProgress size={16} color="inherit" /> : <RestoreIcon />}
