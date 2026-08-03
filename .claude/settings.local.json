@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(git submodule *)",
+      "Bash(git ls-tree *)",
+      "Bash(git -C backend/src/util log --oneline --decorate 61e7e87..bb244a2)",
+      "Bash(git -C frontend/src/utils/util log --oneline --decorate 61e7e87..bb244a2)",
+      "Bash(git -C backend/src/util log --oneline 61e7e87..bb244a2)",
+      "Bash(git -C frontend/src/utils/util log --oneline 61e7e87..bb244a2)",
+      "Bash(git -C norm log --oneline 7d39822..2e956a9)",
+      "Bash(git -C norm log --oneline -10)",
+      "Bash(git show *)"
     ],
     "deny": [],
     "ask": []
