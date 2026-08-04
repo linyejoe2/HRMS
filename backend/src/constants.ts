@@ -1,4 +1,4 @@
-export const CONFIG = {
+export const CONST = {
   workingTime: {
     timezone: "Asia/Taipei",
     workStart: { hour: 8, minute: 30, },

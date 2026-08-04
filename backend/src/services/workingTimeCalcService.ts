@@ -4,7 +4,7 @@ import timezone from "dayjs/plugin/timezone";
 import isBetween from "dayjs/plugin/isBetween";
 import { getOverlapMinutes, isWorkingDay } from "../util/utility";
 import { CalcOptions, DailyResult, WorkingDurationResult, WorkingSchedule, WorkingTimeMode } from "../types";
-import { CONFIG } from "../constants";
+import { CONST } from "../constants";
 import { holidayService } from "./holidayService";
 
 dayjs.extend(utc);
@@ -14,10 +14,10 @@ dayjs.extend(isBetween);
 function createSchedule(day: Dayjs): WorkingSchedule {
   const p = (h: number, m: number) => day.hour(h).minute(m).second(0).millisecond(0);
   return {
-    workStart: p(CONFIG.workingTime.workStart.hour, CONFIG.workingTime.workStart.minute),
-    lunchStart: p(CONFIG.workingTime.lunchStart.hour, CONFIG.workingTime.lunchStart.minute),
-    lunchEnd: p(CONFIG.workingTime.lunchEnd.hour, CONFIG.workingTime.lunchEnd.minute),
-    workEnd: p(CONFIG.workingTime.workEnd.hour, CONFIG.workingTime.workEnd.minute)
+    workStart: p(CONST.workingTime.workStart.hour, CONST.workingTime.workStart.minute),
+    lunchStart: p(CONST.workingTime.lunchStart.hour, CONST.workingTime.lunchStart.minute),
+    lunchEnd: p(CONST.workingTime.lunchEnd.hour, CONST.workingTime.lunchEnd.minute),
+    workEnd: p(CONST.workingTime.workEnd.hour, CONST.workingTime.workEnd.minute)
   };
 }
 
@@ -44,9 +44,9 @@ function calculatePhysicalTime(
 // 3. 標準化折算邏輯 (將物理工時依上下午比例換算)
 function standardizeWorkingMinutes(morningMins: number, afternoonMins: number): number {
   // 上午按 210 -> 240 折算
-  const stdMorning = (morningMins / CONFIG.workingTime.morningMinutes) * CONFIG.workingTime.standardHalfDayMinutes;
+  const stdMorning = (morningMins / CONST.workingTime.morningMinutes) * CONST.workingTime.standardHalfDayMinutes;
   // 下午按 270 -> 240 折算
-  const stdAfternoon = (afternoonMins / CONFIG.workingTime.afternoonMinutes) * CONFIG.workingTime.standardHalfDayMinutes;
+  const stdAfternoon = (afternoonMins / CONST.workingTime.afternoonMinutes) * CONST.workingTime.standardHalfDayMinutes;
 
   return Math.round(stdMorning + stdAfternoon);
 }

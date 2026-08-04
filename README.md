@@ -252,6 +252,7 @@ npm run test:e2e
 
 ```
 NODE_ENV=development|production
+SYSTEM_START_DATE=2025-01-01
 PORT=3000
 MONGODB_URI=mongodb://user:pass@host:port/db?authSource=admin
 JWT_SECRET=your-secret

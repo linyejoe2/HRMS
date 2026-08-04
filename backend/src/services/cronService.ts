@@ -4,6 +4,11 @@ import { Employee } from '../models/Employee';
 import { Attendance } from '../models/Attendance';
 import { cardAssignmentService } from './cardAssignmentService';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export class CronService {
   private attendanceFileScanJob: cron.ScheduledTask | null = null;
@@ -228,7 +233,6 @@ export class CronService {
       };
     }
   }
-
 
   /**
    * Run attendance creation immediately (manual trigger)

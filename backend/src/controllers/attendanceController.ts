@@ -250,6 +250,18 @@ export class AttendanceController {
     });
   });
 
+  // Recreate an employee's whole attendance history (hireDate ~ today)
+  recreateEmployeeAttendance = asyncHandler(async (req: Request, res: Response) => {
+    const { empID } = req.params;
+    const result = await attendanceService.recreateEmployeeAttendance(empID);
+
+    res.status(200).json({
+      error: false,
+      message: `出勤紀錄重建完成，共建立 ${result.createdCount} 筆紀錄，匯入 ${result.importedRecords} 筆打卡資料`,
+      data: result
+    });
+  });
+
   // Clean up holiday (weekend) attendance records
   cleanHolidayRecords = asyncHandler(async (req: Request, res: Response) => {
     const result = await attendanceService.cleanHolidayRecords();

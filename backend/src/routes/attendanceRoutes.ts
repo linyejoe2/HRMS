@@ -24,6 +24,7 @@ router.post('/scan/now', requireRole(['admin', 'hr']), attendanceController.runS
 router.get('/files', requireRole(['admin', 'hr']), attendanceController.getTrackedFiles);
 router.get('/files/stats', requireRole(['admin', 'hr']), attendanceController.getFileStats);
 router.get('/employee/:empID', requireRole(['admin', 'hr', 'manager']), attendanceController.getEmployeeAttendance);
+router.post('/employee/:empID/recreate', requireRole(['admin', 'hr']), attendanceController.recreateEmployeeAttendance);
 
 // All authenticated users can access these
 router.get('/date/:date', attendanceController.getByDate);

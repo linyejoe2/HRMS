@@ -236,7 +236,11 @@ export const attendanceAPI = {
 
   // Get attendance records for an employee (admin/hr only)
   getEmployeeAttendance: (empID: string, startDate: string, endDate: string): Promise<AxiosResponse<AttendanceResponse>> =>
-    api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`)
+    api.get(`/attendance/employee/${empID}?startDate=${startDate}&endDate=${endDate}`),
+
+  // Recreate an employee's whole attendance history from hireDate to today (admin/hr only)
+  recreateEmployeeAttendance: (empID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: { empID: string, startDate: string, endDate: string, checkedDays: number, createdCount: number, scannedFiles: number, importedRecords: number, errors: string[] } }>> =>
+    api.post(`/attendance/employee/${empID}/recreate`)
 };
 
 export const employeeAPI = {
