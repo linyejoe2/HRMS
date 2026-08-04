@@ -243,7 +243,8 @@ export const downloadAnnualLeaveReport = asyncHandler(async (req: AuthRequest, r
   const buffer = await generateAnnualLeaveTable(yearNum, monthNum);
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="leave_summary_${year}_${String(monthNum).padStart(2, '0')}.xlsx"`);
+  const filename = `特休表_${yearNum}_${String(monthNum).padStart(2, '0')}.xlsx`;
+  res.setHeader('Content-Disposition', `attachment; filename="annual_leave_template_${yearNum}_${String(monthNum).padStart(2, '0')}.xlsx"; filename*=UTF-8''${encodeURIComponent(filename)}`);
   res.send(buffer);
 });
 

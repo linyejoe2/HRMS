@@ -1,23 +1,61 @@
 import ExcelJS from 'exceljs';
-import { Employee, Leave } from '../../models';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import { Employee } from '../../models';
+import { APIError } from '../../middleware';
 import { LeaveService } from '../leaveService';
 import { dayjsNum, dayjsTz, dayjsToTz } from '../../util/utility';
 
-export const generateAnnualLeaveTable = async (year: number, month?: number): Promise<ExcelJS.Buffer> => {
-  const title = month ? `${year}年${month}月特休表` : `${year}年特休表`
+const TEMPLATE_PATH = path.resolve(__dirname, '../../../assets/report-templates/annual-leave-table.xlsx');
+const FIRST_DATA_ROW = 4;
+const LAST_TEMPLATE_DATA_ROW = 25;
+const GENERIC_DATA_ROW = LAST_TEMPLATE_DATA_ROW;
+const TEMPLATE_DATA_CAPACITY = LAST_TEMPLATE_DATA_ROW - FIRST_DATA_ROW + 1;
+const DATA_COLUMN_COUNT = 11;
 
-  // 特休表統計的是今年以及去年的特休
-  month = 12
-  // 去年 12 月 24 號 00:00 開始算今年
-  // 實際計算特休應該從今年 12 月 24 號算才准
-  const referenceDate = dayjsNum(year, month, 24)
+type AnnualLeaveRow = [string, string, number, number, string, string, number, number, string, string, string];
+
+const clearTemplateData = (worksheet: ExcelJS.Worksheet): void => {
+  for (let row = FIRST_DATA_ROW; row <= LAST_TEMPLATE_DATA_ROW; row += 1) {
+    for (let column = 1; column <= DATA_COLUMN_COUNT; column += 1) {
+      worksheet.getCell(row, column).value = null;
+    }
+  }
+};
+
+const insertDataRows = (worksheet: ExcelJS.Worksheet, count: number): void => {
+  if (count === 0) {
+    return;
+  }
+
+  const sourceRow = worksheet.getRow(GENERIC_DATA_ROW);
+  const sourceCells = Array.from(
+    { length: DATA_COLUMN_COUNT },
+    (_, index) => worksheet.getCell(GENERIC_DATA_ROW, index + 1)
+  );
+  const firstInsertedRow = LAST_TEMPLATE_DATA_ROW + 1;
+
+  worksheet.spliceRows(firstInsertedRow, 0, ...Array.from({ length: count }, () => []));
+
+  for (let row = firstInsertedRow; row < firstInsertedRow + count; row += 1) {
+    const targetRow = worksheet.getRow(row);
+    targetRow.height = sourceRow.height;
+
+    sourceCells.forEach((sourceCell, index) => {
+      const targetCell = worksheet.getCell(row, index + 1);
+      targetCell.style = { ...sourceCell.style };
+      targetCell.numFmt = sourceCell.numFmt;
+    });
+  }
+};
+
+export const generateAnnualLeaveTable = async (year: number, month?: number): Promise<ExcelJS.Buffer> => {
+  const title = month ? `${year}年${month}月特休表` : `${year}年特休表`;
+  const referenceDate = dayjsNum(year, 12, 24);
 
   const employees = await Employee.find({
     isActive: true,
-    // 確保 hireDate 存在、不為 null，且小於基準日
     hireDate: { $exists: true, $ne: null, $lt: referenceDate.toDate() },
-
-    // 離職日條件：沒有離職日，或者離職日大於基準日
     $or: [
       { endDate: { $exists: false } },
       { endDate: null },
@@ -25,50 +63,59 @@ export const generateAnnualLeaveTable = async (year: number, month?: number): Pr
     ]
   }).sort({ empID: 1 });
 
-  const reportData: any[] = [];
+  const reportData: AnnualLeaveRow[] = [];
 
   for (const emp of employees) {
-    const annualLeaveDays =await LeaveService.calcAnnualLeaveDaysByEmployee(emp, referenceDate);
+    const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(emp, referenceDate);
     const yearRange = LeaveService.getYearRanges(dayjsToTz(emp.hireDate), referenceDate);
 
-    reportData.push({
-      '員工編號': emp.empID,
-      '姓名': emp.name,
-      "到職日前應休天數": annualLeaveDays[0],
-      "應休時數": annualLeaveDays[1],
-      "起": yearRange.lastYearStart.format('YYYY/MM/DD'),
-      "迄": yearRange.lastYearEnd.format('YYYY/MM/DD'),
-      "到職日後應休天數": annualLeaveDays[2],
-      "應休時數2": annualLeaveDays[3],
-      "起2": yearRange.thisYearStart.format('YYYY/MM/DD'),
-      "迄2": yearRange.thisYearEnd.format('YYYY/MM/DD'),
-      "到職日": dayjsTz(emp.hireDate).format('YYYY/MM/DD')
-    });
+    reportData.push([
+      emp.empID,
+      emp.name,
+      annualLeaveDays[0],
+      annualLeaveDays[1],
+      yearRange.lastYearStart.format('YYYY/MM/DD'),
+      yearRange.lastYearEnd.format('YYYY/MM/DD'),
+      annualLeaveDays[2],
+      annualLeaveDays[3],
+      yearRange.thisYearStart.format('YYYY/MM/DD'),
+      yearRange.thisYearEnd.format('YYYY/MM/DD'),
+      dayjsTz(emp.hireDate).format('YYYY/MM/DD')
+    ]);
   }
 
-  return _formatOutput(reportData, title);
-}
+  return formatOutput(reportData, title);
+};
 
-const _formatOutput = async (reportData: any[], title: string): Promise<ExcelJS.Buffer> => {
+const formatOutput = async (reportData: AnnualLeaveRow[], title: string): Promise<ExcelJS.Buffer> => {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet(title);
+  let worksheet: ExcelJS.Worksheet | undefined;
 
-  worksheet.columns = [
-    { header: '員工編號', key: '員工編號', width: 12 },
-    { header: '姓名', key: '姓名', width: 12 },
-    { header: `到職日前應休天數`, key: '到職日前應休天數', width: 20 },
-    { header: `應修時數`, key: '應休時數', width: 16 },
-    { header: `起`, key: '起', width: 12 },
-    { header: `迄`, key: '迄', width: 12 },
-    { header: `到職日後應休天數`, key: '到職日後應休天數', width: 20 },
-    { header: `應修時數`, key: '應休時數2', width: 16 },
-    { header: `起`, key: '起2', width: 12 },
-    { header: `迄`, key: '迄2', width: 12 },
-    { header: '到職日', key: '到職日', width: 12 },
-  ];
+  try {
+    const template = await readFile(TEMPLATE_PATH);
+    await workbook.xlsx.load(template.buffer.slice(template.byteOffset, template.byteOffset + template.byteLength) as ArrayBuffer);
+    worksheet = workbook.worksheets[0];
+  } catch (error) {
+    throw new APIError('特休表範本不存在或無法讀取', 500);
+  }
 
-  worksheet.addRows(reportData);
+  if (!worksheet) {
+    throw new APIError('特休表範本缺少工作表', 500);
+  }
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  return buffer;
-}
+  worksheet.name = title;
+  worksheet.getCell('A1').value = `臺龍電子股份有限公司 ${title}`;
+  clearTemplateData(worksheet);
+  insertDataRows(worksheet, Math.max(0, reportData.length - TEMPLATE_DATA_CAPACITY));
+
+  reportData.forEach((rowData, index) => {
+    const row = worksheet!.getRow(FIRST_DATA_ROW + index);
+    rowData.forEach((value, columnIndex) => {
+      row.getCell(columnIndex + 1).value = value;
+    });
+  });
+
+  worksheet.pageSetup.printArea = `A1:K${Math.max(LAST_TEMPLATE_DATA_ROW, FIRST_DATA_ROW - 1 + reportData.length)}`;
+
+  return workbook.xlsx.writeBuffer();
+};
