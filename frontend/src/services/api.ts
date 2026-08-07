@@ -345,6 +345,17 @@ export const leaveAPI = {
     return api.put(`/leave/${id}/reject`, { reason });
   },
 
+  uploadAttachments: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.post(`/leave/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  deleteAttachment: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.delete(`/leave/${id}/attachments`, { data: { filePath } }),
+
   // Cancel leave request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
     api.put(`/leave/${id}/cancel`, reason ? { reason } : {}),
@@ -472,6 +483,17 @@ export const postClockAPI = {
     return api.put(`/postclock/${id}/reject`, { reason });
   },
 
+  uploadAttachments: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.post(`/postclock/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  deleteAttachment: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.delete(`/postclock/${id}/attachments`, { data: { filePath } }),
+
   // Cancel postclock request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
     api.put(`/postclock/${id}/cancel`, reason ? { reason } : {}),
@@ -564,6 +586,17 @@ export const businessTripAPI = {
     }
     return api.put(`/businesstrip/${id}/reject`, { reason });
   },
+
+  uploadAttachments: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.post(`/businesstrip/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  deleteAttachment: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.delete(`/businesstrip/${id}/attachments`, { data: { filePath } }),
 
   // Cancel business trip request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>

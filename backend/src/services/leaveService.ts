@@ -284,6 +284,26 @@ export class LeaveService {
     return await leave.save();
   }
 
+  static async appendSupportingInfo(leaveId: string, filePaths: string[]): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) throw new APIError('Leave request not found', 404);
+    if (!['created', 'approved'].includes(leave.status)) throw new APIError('此狀態不可異動附件', 409);
+    if ((leave.supportingInfo?.length || 0) + filePaths.length > 10) throw new APIError('每筆申請最多 10 個附件', 400);
+
+    leave.supportingInfo = [...(leave.supportingInfo || []), ...filePaths];
+    return leave.save();
+  }
+
+  static async deleteSupportingInfo(leaveId: string, filePath: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) throw new APIError('Leave request not found', 404);
+    if (!['created', 'approved'].includes(leave.status)) throw new APIError('此狀態不可異動附件', 409);
+    if (!leave.supportingInfo?.includes(filePath)) throw new APIError('找不到此附件', 404);
+
+    leave.supportingInfo = leave.supportingInfo.filter(path => path !== filePath);
+    return leave.save();
+  }
+
   static async getLeaveRequestById(leaveId: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {

@@ -105,6 +105,26 @@ export class PostClockService {
     return await postClock.save();
   }
 
+  static async appendSupportingInfo(postClockId: string, filePaths: string[]): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) throw new APIError('PostClock request not found', 404);
+    if (!['created', 'approved'].includes(postClock.status)) throw new APIError('此狀態不可異動附件', 409);
+    if ((postClock.supportingInfo?.length || 0) + filePaths.length > 10) throw new APIError('每筆申請最多 10 個附件', 400);
+
+    postClock.supportingInfo = [...(postClock.supportingInfo || []), ...filePaths];
+    return postClock.save();
+  }
+
+  static async deleteSupportingInfo(postClockId: string, filePath: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) throw new APIError('PostClock request not found', 404);
+    if (!['created', 'approved'].includes(postClock.status)) throw new APIError('此狀態不可異動附件', 409);
+    if (!postClock.supportingInfo?.includes(filePath)) throw new APIError('找不到此附件', 404);
+
+    postClock.supportingInfo = postClock.supportingInfo.filter(path => path !== filePath);
+    return postClock.save();
+  }
+
   static async getPostClockRequestById(postClockId: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {

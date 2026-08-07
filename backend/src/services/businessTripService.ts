@@ -99,6 +99,26 @@ export class BusinessTripService {
     return await businessTrip.save();
   }
 
+  static async appendSupportingInfo(businessTripId: string, filePaths: string[]): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) throw new APIError('Business trip request not found', 404);
+    if (!['created', 'approved'].includes(businessTrip.status)) throw new APIError('此狀態不可異動附件', 409);
+    if ((businessTrip.supportingInfo?.length || 0) + filePaths.length > 10) throw new APIError('每筆申請最多 10 個附件', 400);
+
+    businessTrip.supportingInfo = [...(businessTrip.supportingInfo || []), ...filePaths];
+    return businessTrip.save();
+  }
+
+  static async deleteSupportingInfo(businessTripId: string, filePath: string): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) throw new APIError('Business trip request not found', 404);
+    if (!['created', 'approved'].includes(businessTrip.status)) throw new APIError('此狀態不可異動附件', 409);
+    if (!businessTrip.supportingInfo?.includes(filePath)) throw new APIError('找不到此附件', 404);
+
+    businessTrip.supportingInfo = businessTrip.supportingInfo.filter(path => path !== filePath);
+    return businessTrip.save();
+  }
+
   static async getBusinessTripRequestById(businessTripId: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {

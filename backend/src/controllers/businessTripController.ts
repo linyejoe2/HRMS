@@ -1,4 +1,7 @@
 import { Response } from 'express';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { config } from '../config';
 import { AuthRequest } from '../middleware/auth';
 import { BusinessTripService } from '../services/businessTripService';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -81,6 +84,53 @@ export const rejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
     message: '因公免刷卡申請已拒絕',
     data: businessTrip
   });
+});
+
+const businessTripUploadDir = path.resolve(process.cwd(), config.uploadPath, 'businesstrip');
+
+const removeUploadedFiles = async (files: Express.Multer.File[] = []) => {
+  await Promise.all(files.map(file => fs.unlink(file.path).catch(() => undefined)));
+};
+
+const getSafeBusinessTripFilePath = (filePath: string) => {
+  const prefix = '/uploads/businesstrip/';
+  if (!filePath.startsWith(prefix)) throw new Error('不合法的附件路徑');
+
+  const filename = filePath.slice(prefix.length);
+  if (!filename || filename !== path.basename(filename)) throw new Error('不合法的附件路徑');
+
+  const resolvedPath = path.resolve(businessTripUploadDir, filename);
+  if (!resolvedPath.startsWith(`${businessTripUploadDir}${path.sep}`)) throw new Error('不合法的附件路徑');
+  return resolvedPath;
+};
+
+export const uploadBusinessTripAttachments = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const files = (req.files as Express.Multer.File[]) || [];
+  if (files.length === 0) return res.status(400).json({ error: true, message: '請選擇至少一個附件' });
+
+  try {
+    const businessTrip = await BusinessTripService.appendSupportingInfo(req.params.id, files.map(file => `/uploads/businesstrip/${file.filename}`));
+    res.json({ error: false, message: '附件已新增', data: businessTrip });
+  } catch (error) {
+    await removeUploadedFiles(files);
+    throw error;
+  }
+});
+
+export const deleteBusinessTripAttachment = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { filePath } = req.body;
+  if (typeof filePath !== 'string') return res.status(400).json({ error: true, message: 'filePath 為必填欄位' });
+
+  let diskPath: string;
+  try {
+    diskPath = getSafeBusinessTripFilePath(filePath);
+  } catch {
+    return res.status(400).json({ error: true, message: '不合法的附件路徑' });
+  }
+
+  const businessTrip = await BusinessTripService.deleteSupportingInfo(req.params.id, filePath);
+  await fs.unlink(diskPath).catch(() => undefined);
+  res.json({ error: false, message: '附件已刪除', data: businessTrip });
 });
 
 export const getBusinessTripRequestById = asyncHandler(async (req: AuthRequest, res: Response) => {

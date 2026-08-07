@@ -1,4 +1,7 @@
 import { Response } from 'express';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { config } from '../config';
 import { AuthRequest } from '../middleware/auth';
 import { PostClockService } from '../services/postClockService';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -81,6 +84,53 @@ export const rejectPostClockRequest = asyncHandler(async (req: AuthRequest, res:
     message: '補單申請已拒絕',
     data: postClock
   });
+});
+
+const postClockUploadDir = path.resolve(process.cwd(), config.uploadPath, 'postclock');
+
+const removeUploadedFiles = async (files: Express.Multer.File[] = []) => {
+  await Promise.all(files.map(file => fs.unlink(file.path).catch(() => undefined)));
+};
+
+const getSafePostClockFilePath = (filePath: string) => {
+  const prefix = '/uploads/postclock/';
+  if (!filePath.startsWith(prefix)) throw new Error('不合法的附件路徑');
+
+  const filename = filePath.slice(prefix.length);
+  if (!filename || filename !== path.basename(filename)) throw new Error('不合法的附件路徑');
+
+  const resolvedPath = path.resolve(postClockUploadDir, filename);
+  if (!resolvedPath.startsWith(`${postClockUploadDir}${path.sep}`)) throw new Error('不合法的附件路徑');
+  return resolvedPath;
+};
+
+export const uploadPostClockAttachments = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const files = (req.files as Express.Multer.File[]) || [];
+  if (files.length === 0) return res.status(400).json({ error: true, message: '請選擇至少一個附件' });
+
+  try {
+    const postClock = await PostClockService.appendSupportingInfo(req.params.id, files.map(file => `/uploads/postclock/${file.filename}`));
+    res.json({ error: false, message: '附件已新增', data: postClock });
+  } catch (error) {
+    await removeUploadedFiles(files);
+    throw error;
+  }
+});
+
+export const deletePostClockAttachment = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { filePath } = req.body;
+  if (typeof filePath !== 'string') return res.status(400).json({ error: true, message: 'filePath 為必填欄位' });
+
+  let diskPath: string;
+  try {
+    diskPath = getSafePostClockFilePath(filePath);
+  } catch {
+    return res.status(400).json({ error: true, message: '不合法的附件路徑' });
+  }
+
+  const postClock = await PostClockService.deleteSupportingInfo(req.params.id, filePath);
+  await fs.unlink(diskPath).catch(() => undefined);
+  res.json({ error: false, message: '附件已刪除', data: postClock });
 });
 
 export const getPostClockRequestById = asyncHandler(async (req: AuthRequest, res: Response) => {

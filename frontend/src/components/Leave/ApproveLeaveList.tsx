@@ -33,8 +33,6 @@ import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import LeaveRequestModal from './LeaveRequestModal';
-import IconButton from '@mui/material/IconButton';
-import Badge from '@mui/material/Badge';
 import { errorToString } from '@/utils/util/utility';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription } from '@/services/variableService';
@@ -135,7 +133,7 @@ const ApproveLeaveList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>('created');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [attachmentRequest, setAttachmentRequest] = useState<LeaveRequest | null>(null);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [warningAdjustment, setWarningAdjustment] = useState({
@@ -182,6 +180,35 @@ const ApproveLeaveList: React.FC = () => {
 
   // Check leave balance before approval
 
+
+  const updateLeaveRequest = (updatedRequest: LeaveRequest) => {
+    setLeaveRequests(requests => requests.map(request => request._id === updatedRequest._id ? updatedRequest : request));
+    setAttachmentRequest(updatedRequest);
+  };
+
+  const handleAttachmentUpload = async (files: File[]) => {
+    if (!attachmentRequest?._id) return;
+    try {
+      const response = await leaveAPI.uploadAttachments(attachmentRequest._id, files);
+      updateLeaveRequest(response.data.data);
+      toast.success('附件已新增');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || '附件上傳失敗');
+      throw error;
+    }
+  };
+
+  const handleAttachmentDelete = async (filePath: string) => {
+    if (!attachmentRequest?._id) return;
+    try {
+      const response = await leaveAPI.deleteAttachment(attachmentRequest._id, filePath);
+      updateLeaveRequest(response.data.data);
+      toast.success('附件已刪除');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || '附件刪除失敗');
+      throw error;
+    }
+  };
 
   const handleApproveClick = async (request: LeaveRequest) => {
     setSelectedRequest(request);
@@ -424,23 +451,20 @@ const ApproveLeaveList: React.FC = () => {
       headerName: '佐證資料',
       flex: 1,
       renderCell: (params) => {
-        const files = params.value as string[] | undefined;
-        if (!files || files.length === 0) return '-';
-
+        const files = (params.value as string[] | undefined) || [];
+        const canManage = ['created', 'approved'].includes(params.row.status);
         return (
-          <Tooltip title="點擊查看檔案">
-            <IconButton
+          <Tooltip title={files.length > 0 ? '檢視及管理檔案' : '上傳佐證資料'}>
+            <Button
               size="small"
+              startIcon={files.length > 0 ? <AttachmentIcon /> : <AddIcon />}
               onClick={() => {
-                setSelectedFiles(files);
+                setAttachmentRequest(params.row);
                 setFileDialogOpen(true);
               }}
-              sx={{ color: 'primary.main' }}
             >
-              <Badge badgeContent={files.length} color="primary">
-                <AttachmentIcon />
-              </Badge>
-            </IconButton>
+              {files.length > 0 ? `附件 ${files.length}` : canManage ? '上傳' : '無附件'}
+            </Button>
           </Tooltip>
         );
       },
@@ -729,8 +753,12 @@ const ApproveLeaveList: React.FC = () => {
       <FilePreviewDialog
         open={fileDialogOpen}
         onClose={() => setFileDialogOpen(false)}
-        files={selectedFiles}
+        files={attachmentRequest?.supportingInfo || []}
         title="請假佐證資料"
+        canManage={!!attachmentRequest && ['created', 'approved'].includes(attachmentRequest.status)}
+        onUpload={handleAttachmentUpload}
+        onDelete={handleAttachmentDelete}
+        uploadLabel="上傳佐證資料"
       />
 
       {/* Warning Dialog for insufficient leave balance */}

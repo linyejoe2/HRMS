@@ -15,7 +15,9 @@ import {
   downloadLeaveSummaryReport,
   downloadEmployeeLeaveReport,
   downloadAnnualLeaveReport,
-  checkLeaveBalance
+  checkLeaveBalance,
+  uploadLeaveAttachments,
+  deleteLeaveAttachment
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -46,6 +48,9 @@ router.get('/:id', authenticateToken, getLeaveRequestById);
 router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), approveLeaveRequest);
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), rejectLeaveRequest);
+
+router.post('/:id/attachments', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), uploadLeaveAttachments);
+router.delete('/:id/attachments', authenticateToken, requireRole(['hr', 'admin']), deleteLeaveAttachment);
 
 router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 
