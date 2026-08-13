@@ -10,7 +10,20 @@
       "Bash(git -C frontend/src/utils/util log --oneline 61e7e87..bb244a2)",
       "Bash(git -C norm log --oneline 7d39822..2e956a9)",
       "Bash(git -C norm log --oneline -10)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "Bash(docker compose *)",
+      "Bash(docker network *)",
+      "Bash(getcap \"./start.sh\")",
+      "Bash(getfattr -d -m - \"./start.sh\")",
+      "Bash(bash \"./start.sh\")",
+      "Skill(update-config)",
+      "Bash(chmod u+x \"start.sh\")",
+      "Bash(bash -n \"start.sh\")",
+      "Bash(chmod u+x \"stop.sh\")",
+      "Bash(bash -n \"stop.sh\")",
+      "Bash(docker exec HRMS-db *)",
+      "Skill(claude-api)",
+      "Bash(docker exec HRMS-backend *)"
     ],
     "deny": [],
     "ask": []

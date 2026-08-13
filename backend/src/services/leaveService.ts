@@ -382,19 +382,11 @@ export class LeaveService {
     hireDate: Date | dayjs.Dayjs,
     referenceDate?: Date | dayjs.Dayjs
   ): number {
-    // 1. 統一轉換為 Day.js 物件（不論傳入的是原生 Date 還是 Dayjs 都能相容）
-    const ref = dayjs.tz(referenceDate ?? new Date(), "Asia/Taipei");
-    const hire = dayjs.tz(hireDate, "Asia/Taipei");
+    const ref = dayjs.tz(referenceDate ?? new Date(), "Asia/Taipei").startOf('day');
+    const hire = dayjs.tz(hireDate, "Asia/Taipei").startOf('day');
+    const monthsDiff = ref.diff(hire, 'month');
+    const yearsDiff = ref.diff(hire, 'year');
 
-    // 2. 直接使用 .diff() 計算相差的「月數」（浮點數），這會比純減月份更精準
-    // 為了完全符合你原本「只看年月、不看日期」的月數計算邏輯，我們可以先把兩者的日期都歸化到當月 1 號
-    const refMonthStart = ref.startOf('month');
-    const hireMonthStart = hire.startOf('month');
-
-    const monthsDiff = refMonthStart.diff(hireMonthStart, 'month');
-    const yearsDiff = monthsDiff / 12;
-
-    // 3. 特休天數級距判斷（保持原本的勞基法邏輯）
     if (monthsDiff < 6) {
       return 0;
     } else if (yearsDiff < 1) {
@@ -408,8 +400,7 @@ export class LeaveService {
     } else if (yearsDiff < 10) {
       return 15;
     } else {
-      const additionalYears = Math.floor(yearsDiff) - 10;
-      return Math.min(16 + additionalYears, 30);
+      return Math.min(16 + yearsDiff - 10, 30);
     }
   }
 
@@ -558,26 +549,13 @@ export class LeaveService {
    * 4. this year Hours
    */
   static async calcAnnualLeaveDaysByEmployee(employee: IEmployee, referenceDate: dayjs.Dayjs): Promise<[number, number, number, number]> {
-    const res: [number, number, number, number] = [0, 0, 0, 0]
+    const hireDate = dayjsTz(employee.hireDate);
+    const { lastYearEnd, thisYearEnd } = this.getYearRanges(hireDate, referenceDate);
+    const adjusts = await this.getAdjustedAnnualLeaveHours(employee, referenceDate);
+    const lastYearDays = this.calcAnnualLeaveEntitlementDays(hireDate, lastYearEnd) + adjusts.lastYearDays;
+    const thisYearDays = this.calcAnnualLeaveEntitlementDays(hireDate, thisYearEnd) + adjusts.thisYearDays;
 
-    const lastYear = dayjsTz(referenceDate).subtract(1, "year")
-    const hireDate = dayjsTz(employee.hireDate)
-
-    console.log("employee: ", employee.name)
-    console.log("hireDate: ", employee.hireDate)
-    // console.log("hireDate2: ", hireDate)
-    console.log("referenceDate: ", referenceDate.toISOString())
-    console.log("lastYear: ", lastYear.toISOString())
-
-    const adjusts = await this.getAdjustedAnnualLeaveHours(employee, referenceDate)
-
-    res[0] = this.calcAnnualLeaveEntitlementDays(hireDate, lastYear) + adjusts.lastYearDays
-    res[1] = res[0] * 8
-    res[2] = this.calcAnnualLeaveEntitlementDays(hireDate, referenceDate) + adjusts.thisYearDays
-    res[3] = res[2] * 8
-
-    console.log("calcAnnualLeaveDaysByEmployee res: ", res)
-    return res
+    return [lastYearDays, lastYearDays * 8, thisYearDays, thisYearDays * 8];
   }
 
   /**
@@ -620,9 +598,6 @@ export class LeaveService {
       lastYearHours: lastYearAdjMinutes / 60,
       thisYearHours: thisYearAdjMinutes / 60
     };
-
-
-    console.log("getAdjustedAnnualLeaveHours res: ", res)
 
     return res
     // return {

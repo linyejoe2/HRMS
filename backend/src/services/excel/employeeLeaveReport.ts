@@ -142,7 +142,7 @@ export const generateEmployeeLeaveReport = async (empID: string, startDate: stri
   }).sort({ sequenceNumber: 1 });
 
   const remain = legacyLeave.find(leave => leave.id === employee.empID)?.remain || 0;
-  const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(employee, end.month(11).date(23).endOf('day'));
+  const annualLeaveDays = await LeaveService.calcAnnualLeaveDaysByEmployee(employee, end.month(11).date(24).endOf('day'));
   const yearRange = LeaveService.getYearRanges(dayjsTz(employee.hireDate), end);
   const annualLeaveUsed = annualLeaveDays[1] - remain;
   const returnTaiwanBalances = hasReturnTaiwanLeave

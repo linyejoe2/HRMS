@@ -38,7 +38,8 @@ const DATA_COLUMNS = [
   'marriageLeave',
   'funeralLeave',
   'officialLeave',
-  'injuryLeave'
+  'injuryLeave',
+  'remark'
 ] as const;
 
 type LeaveSummaryRow = Record<(typeof DATA_COLUMNS)[number], string | number>;
@@ -74,7 +75,7 @@ const insertDataRows = (worksheet: ExcelJS.Worksheet, count: number): void => {
 export const generateLeaveSummaryReport = async (year: number, month: number): Promise<ExcelJS.Buffer> => {
   const monthStart = dayjsNum(year, month - 1, 24);
   const monthEnd = dayjsNum(year, month, 23, 23, 59, 59, 999);
-  const annualLeaveReferenceDate = dayjsNum(year, 12, 23);
+  const annualLeaveReferenceDate = dayjsNum(year, 12, 24);
 
   const employees = await Employee.find({
     isActive: true,
@@ -135,7 +136,8 @@ export const generateLeaveSummaryReport = async (year: number, month: number): P
       marriageLeave: monthH('婚假'),
       funeralLeave: monthH('喪假'),
       officialLeave: monthH('公假'),
-      injuryLeave: monthH('公傷病假')
+      injuryLeave: monthH('公傷病假'),
+      remark: ''
     });
   }
 
@@ -176,7 +178,7 @@ const formatOutput = async (reportData: LeaveSummaryRow[], year: number, month: 
       targetRow.getCell(columnIndex + 1).value = row[column];
     });
   });
-  worksheet.pageSetup.printArea = `A1:V${Math.max(LAST_TEMPLATE_DATA_ROW, FIRST_DATA_ROW + reportData.length - 1)}`;
+  worksheet.pageSetup.printArea = `A1:W${Math.max(LAST_TEMPLATE_DATA_ROW, FIRST_DATA_ROW + reportData.length - 1)}`;
 
   return workbook.xlsx.writeBuffer();
 };
