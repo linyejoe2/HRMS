@@ -200,7 +200,7 @@ const LeaveDownloadTab: React.FC = () => {
                     特休表
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    匯出所有員工在指定年份(月份)的特休天數
+                    匯出所有員工在指定年份的特休天數
                   </Typography>
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
