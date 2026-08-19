@@ -150,7 +150,8 @@ const OfficialBusinessTab: React.FC = () => {
     {
       field: 'sequenceNumber',
       headerName: '編號',
-      valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
+      valueFormatter: (value) => (value ? `#${value}` : '#N/A'),
+      // valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       flex: 0.8,
       minWidth: 80
     },
@@ -358,7 +359,7 @@ const OfficialBusinessTab: React.FC = () => {
                   paginationModel: { page: 0, pageSize: 25 }
                 },
                 sorting: {
-                  sortModel: [{ field: 'startTime', sort: 'desc' }]
+                  sortModel: [{ field: 'sequenceNumber', sort: 'desc' }]
                 }
               }}
               pageSizeOptions={[10, 25, 50, 100]}
