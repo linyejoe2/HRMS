@@ -13,7 +13,7 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { attendanceAPI, employeeAPI } from '../../services/api';
+import { attendanceAPI, employeeAPI, constantsAPI } from '../../services/api';
 import * as XLSX from 'xlsx';
 import { AttendanceRecord, UserLevel } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,7 +21,7 @@ import { toast } from 'react-toastify';
 import StatusChip from './StatusChip';
 import { fuzzySearchAttendance } from '@/utils/fuzzySearch';
 import { getDepartmentDescription, getDepartments } from '@/services/variableService';
-import { toTaipeiDate } from '../../utils/util/utility';
+import { toTaipeiDate, dayjsToTz } from '../../utils/util/utility';
 import { AttendanceLog, calcAttendanceStatuses } from '../../utils/attendanceUtils';
 import dayjs from 'dayjs';
 
@@ -84,6 +84,10 @@ const AttendanceTab: React.FC = () => {
       const businessTrips = data.businesstrip.records || [];
       const postClocks = data.postclock.records || [];
       const holidays = data.holiday.records || [];
+
+      // Fetch working-time constants (workStart/workEnd) for bounding business-trip days
+      const constantsResponse = await constantsAPI.getAll();
+      const { workStart, workEnd } = constantsResponse.data.data.workingTime;
 
       // Fetch all employees to map cardID to employee info
       const employeesResponse = await employeeAPI.getAll(1, 10000); // High limit to get all employees
@@ -188,20 +192,33 @@ const AttendanceTab: React.FC = () => {
       businessTrips.forEach((bt: any) => {
 
         if (hiddenFromAttendanceEmpIDs.has(bt.empID)) return;
-        const tripStart = new Date(bt.tripStart);
-        const tripEnd = new Date(bt.tripEnd);
+        const tripStart = dayjsToTz(bt.tripStart);
+        const tripEnd = dayjsToTz(bt.tripEnd);
+        const firstDay = tripStart.startOf('day');
+        const lastDay = tripEnd.startOf('day');
 
-        // Generate all dates in the trip range
-        for (let d = new Date(tripStart); d <= tripEnd; d.setDate(d.getDate() + 1)) {
-          const dateStr = toTaipeiDate(d);
+        // Generate all dates in the trip range, bounding each day's clock-in/out
+        // to that day's own portion of the trip: the actual trip start/end time on
+        // the first/last day, otherwise the standard work-start/work-end time.
+        for (let cursor = firstDay; !cursor.isAfter(lastDay); cursor = cursor.add(1, 'day')) {
+          const isFirstDay = cursor.isSame(firstDay, 'day');
+          const isLastDay = cursor.isSame(lastDay, 'day');
+          const segmentStart = isFirstDay
+            ? tripStart
+            : cursor.hour(workStart.hour).minute(workStart.minute).second(0).millisecond(0);
+          const segmentEnd = isLastDay
+            ? tripEnd
+            : cursor.hour(workEnd.hour).minute(workEnd.minute).second(0).millisecond(0);
+
+          const dateStr = toTaipeiDate(cursor.toISOString());
           const record = getOrCreateRecord(bt.empID, dateStr);
 
-          if (!record.clockInTime || dayjs(record.clockInTime).isAfter(dayjs(bt.tripStart))) {
-            record.clockInTime = bt.tripStart;
+          if (!record.clockInTime || dayjs(record.clockInTime).isAfter(segmentStart)) {
+            record.clockInTime = segmentStart.toISOString();
             record.clockInSource = '因公免刷卡';
           }
-          if (!record.clockOutTime || dayjs(record.clockOutTime).isBefore(dayjs(bt.tripEnd))) {
-            record.clockOutTime = bt.tripEnd;
+          if (!record.clockOutTime || dayjs(record.clockOutTime).isBefore(segmentEnd)) {
+            record.clockOutTime = segmentEnd.toISOString();
             record.clockOutSource = '因公免刷卡';
           }
         }

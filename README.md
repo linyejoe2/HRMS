@@ -175,6 +175,10 @@ Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official
 - POST `/migrate`
 - GET `/access/count`, `/access/test`  
 
+**Constants (`/api/constants`)**
+
+- GET `/` - System-wide constants (working-time schedule: `workStart`, `workEnd`, etc.)
+
 ---
 
 ## 🔒 Security

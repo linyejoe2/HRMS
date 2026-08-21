@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem, AppConstants } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = ""
@@ -722,6 +722,12 @@ export const officialBusinessAPI = {
   // Manager rejects the official business request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
     api.put(`/officialbusiness/${id}/manager-reject`, { reason })
+};
+
+export const constantsAPI = {
+  // Get system-wide constants (working time schedule, etc.)
+  getAll: (): Promise<AxiosResponse<{ error: boolean, message: string, data: AppConstants }>> =>
+    api.get('/constants')
 };
 
 export const approvalAPI = {

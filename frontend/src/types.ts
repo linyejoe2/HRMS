@@ -144,6 +144,21 @@ export interface CheckLeaveBalanceRes {
   requestedHours: number
 }
 
+export interface WorkingTimeConstants {
+  timezone: string;
+  workStart: { hour: number; minute: number };
+  lunchStart: { hour: number; minute: number };
+  lunchEnd: { hour: number; minute: number };
+  workEnd: { hour: number; minute: number };
+  standardHalfDayMinutes: number;
+  morningMinutes: number;
+  afternoonMinutes: number;
+}
+
+export interface AppConstants {
+  workingTime: WorkingTimeConstants;
+}
+
 export enum UserLevel {
   ADMIN = 'admin',
   HR = 'hr',

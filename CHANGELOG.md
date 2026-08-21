@@ -3,6 +3,18 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.1] - 2026-08-21 - Cross-day Business Trip Attendance & Constants API
+
+**Author**: Randy Lin
+
+### Added
+
+- `GET /api/constants` endpoint exposing `backend/src/constants.ts`'s `CONST` (working-time schedule) to the frontend.
+
+### Fixed
+
+- Attendance aggregation: cross-day business trips now bound each day's clock-in/out to that day's own segment (real trip start/end on the first/last day, standard work-start/work-end otherwise) instead of stamping every day with the trip's overall start/end.
+
 ## [1.1.0] - 2026-08-21 - Substitute & Manager Approval Stages
 
 **Author**: Randy Lin
