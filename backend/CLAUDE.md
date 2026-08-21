@@ -298,7 +298,7 @@ The system includes a migration service to import employee data from the existin
 // Role hierarchy:
 'admin'    → Full system access
 'hr'       → Employee management, cannot delete
-'manager'  → Department-level access (future)
+'manager'  → Department-scoped manager review (leave/business-trip/post-clock/official-business approval)
 'employee' → Personal profile access only
 ```
 

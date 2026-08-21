@@ -19,6 +19,14 @@ export interface ILeave extends Document {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  substitute: string;
+  substituteApproveStatus: 'pending' | 'approved' | 'rejected';
+  substituteMemo?: string;
+  substituteApproveAt?: Date;
+  manager?: string;
+  managerApproveStatus: 'pending' | 'approved' | 'rejected';
+  managerMemo?: string;
+  managerApproveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -91,6 +99,37 @@ const leaveSchema = new Schema<ILeave>({
   },
   approvedBy: {
     type: String
+  },
+  substitute: {
+    type: String,
+    index: true
+  },
+  substituteApproveStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+    index: true
+  },
+  substituteMemo: {
+    type: String
+  },
+  substituteApproveAt: {
+    type: Date
+  },
+  manager: {
+    type: String
+  },
+  managerApproveStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+    index: true
+  },
+  managerMemo: {
+    type: String
+  },
+  managerApproveAt: {
+    type: Date
   }
 }, {
   timestamps: true

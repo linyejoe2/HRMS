@@ -55,7 +55,8 @@ export class OfficialBusinessService {
       endTime,
       purpose: officialBusinessData.purpose,
       supportingInfo: officialBusinessData.supportingInfo || [],
-      status: 'created'
+      status: 'created',
+      department: applicantEmployee.department || ''
     });
 
     return officialBusiness.save();
@@ -213,6 +214,76 @@ export class OfficialBusinessService {
     }
 
     return officialBusiness.save();
+  }
+
+  /**
+   * Manager-approve official business request
+   */
+  static async managerApproveOfficialBusinessRequest(
+    officialBusinessId: string,
+    requesterEmpID: string,
+    requesterDepartment: string | undefined,
+    memo?: string
+  ): Promise<IOfficialBusiness> {
+    const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
+    if (!officialBusiness) {
+      throw new APIError('找不到該外出申請', 404);
+    }
+    if (!requesterDepartment || officialBusiness.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (officialBusiness.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (officialBusiness.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    officialBusiness.manager = requesterEmpID;
+    officialBusiness.managerApproveStatus = 'approved';
+    officialBusiness.managerMemo = memo;
+    officialBusiness.managerApproveAt = new Date();
+
+    return officialBusiness.save();
+  }
+
+  /**
+   * Manager-reject official business request
+   */
+  static async managerRejectOfficialBusinessRequest(
+    officialBusinessId: string,
+    requesterEmpID: string,
+    requesterDepartment: string | undefined,
+    memo: string
+  ): Promise<IOfficialBusiness> {
+    const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
+    if (!officialBusiness) {
+      throw new APIError('找不到該外出申請', 404);
+    }
+    if (!requesterDepartment || officialBusiness.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (officialBusiness.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (officialBusiness.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    officialBusiness.manager = requesterEmpID;
+    officialBusiness.managerApproveStatus = 'rejected';
+    officialBusiness.managerMemo = memo;
+    officialBusiness.managerApproveAt = new Date();
+
+    return officialBusiness.save();
+  }
+
+  /**
+   * Get official business requests pending manager review for a department
+   */
+  static async getPendingManagerOfficialBusinessRequests(department: string | undefined): Promise<IOfficialBusiness[]> {
+    if (!department) return [];
+    return OfficialBusiness.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ startTime: -1 });
   }
 
   /**

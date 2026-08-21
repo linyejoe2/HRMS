@@ -99,6 +99,57 @@ export class BusinessTripService {
     return await businessTrip.save();
   }
 
+  static async managerApproveBusinessTripRequest(businessTripId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) {
+      throw new APIError('Business trip request not found', 404);
+    }
+    if (!requesterDepartment || businessTrip.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (businessTrip.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (businessTrip.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    businessTrip.manager = requesterEmpID;
+    businessTrip.managerApproveStatus = 'approved';
+    businessTrip.managerMemo = memo;
+    businessTrip.managerApproveAt = new Date();
+
+    return await businessTrip.save();
+  }
+
+  static async managerRejectBusinessTripRequest(businessTripId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) {
+      throw new APIError('Business trip request not found', 404);
+    }
+    if (!requesterDepartment || businessTrip.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (businessTrip.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (businessTrip.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    businessTrip.manager = requesterEmpID;
+    businessTrip.managerApproveStatus = 'rejected';
+    businessTrip.managerMemo = memo;
+    businessTrip.managerApproveAt = new Date();
+
+    return await businessTrip.save();
+  }
+
+  static async getPendingManagerBusinessTripRequests(department: string | undefined): Promise<IBusinessTrip[]> {
+    if (!department) return [];
+    return await BusinessTrip.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  }
+
   static async getBusinessTripRequestById(businessTripId: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {

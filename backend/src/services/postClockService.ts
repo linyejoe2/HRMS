@@ -105,6 +105,57 @@ export class PostClockService {
     return await postClock.save();
   }
 
+  static async managerApprovePostClockRequest(postClockId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+    if (!requesterDepartment || postClock.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (postClock.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (postClock.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    postClock.manager = requesterEmpID;
+    postClock.managerApproveStatus = 'approved';
+    postClock.managerMemo = memo;
+    postClock.managerApproveAt = new Date();
+
+    return await postClock.save();
+  }
+
+  static async managerRejectPostClockRequest(postClockId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+    if (!requesterDepartment || postClock.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (postClock.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (postClock.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    postClock.manager = requesterEmpID;
+    postClock.managerApproveStatus = 'rejected';
+    postClock.managerMemo = memo;
+    postClock.managerApproveAt = new Date();
+
+    return await postClock.save();
+  }
+
+  static async getPendingManagerPostClockRequests(department: string | undefined): Promise<IPostClock[]> {
+    if (!department) return [];
+    return await PostClock.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  }
+
   static async getPostClockRequestById(postClockId: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {

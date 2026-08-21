@@ -8,7 +8,10 @@ import {
   getBusinessTripRequestById,
   cancelBusinessTripRequest,
   getCancelBusinessTripRequests,
-  getBusinessTripRequestBySequenceNumber
+  getBusinessTripRequestBySequenceNumber,
+  managerApproveBusinessTripRequest,
+  managerRejectBusinessTripRequest,
+  getPendingManagerBusinessTripRequests
 } from '../controllers/businessTripController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { uploadBusinessTripFiles } from '../middleware/upload';
@@ -23,11 +26,17 @@ router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllBusine
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getBusinessTripRequestBySequenceNumber);
 
+router.get('/pending/manager', authenticateToken, requireRole(['manager']), getPendingManagerBusinessTripRequests);
+
 router.get('/:id', authenticateToken, getBusinessTripRequestById);
 
 router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), approveBusinessTripRequest);
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), rejectBusinessTripRequest);
+
+router.put('/:id/manager-approve', authenticateToken, requireRole(['manager']), managerApproveBusinessTripRequest);
+
+router.put('/:id/manager-reject', authenticateToken, requireRole(['manager']), managerRejectBusinessTripRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelBusinessTripRequest);
 

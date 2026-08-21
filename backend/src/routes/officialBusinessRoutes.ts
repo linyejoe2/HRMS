@@ -18,6 +18,7 @@ router.get('/cancelled/all', requireRole(['admin', 'hr']), officialBusinessContr
 
 // Specific routes must come before dynamic :id route
 router.get('/sequence/:sequenceNumber', officialBusinessController.getOfficialBusinessRequestBySequenceNumber);
+router.get('/pending/manager', requireRole(['manager']), officialBusinessController.getPendingManagerOfficialBusinessRequests);
 
 // Dynamic routes - must come last to avoid matching specific paths
 router.get('/:id', officialBusinessController.getOfficialBusinessRequestById);
@@ -25,5 +26,7 @@ router.put('/:id/endtime', officialBusinessController.updateOfficialBusinessRequ
 router.put('/:id/cancel', officialBusinessController.cancelOfficialBusinessRequest);
 router.put('/:id/approve', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.approveOfficialBusinessRequest);
 router.put('/:id/reject', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.rejectOfficialBusinessRequest);
+router.put('/:id/manager-approve', requireRole(['manager']), officialBusinessController.managerApproveOfficialBusinessRequest);
+router.put('/:id/manager-reject', requireRole(['manager']), officialBusinessController.managerRejectOfficialBusinessRequest);
 
 export default router;

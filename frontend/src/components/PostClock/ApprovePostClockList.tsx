@@ -87,6 +87,10 @@ const ApprovePostClockList: React.FC = () => {
   // };
 
   const handleApproveClick = (request: PostClockRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setApproveDialogOpen(true);
   };
@@ -107,6 +111,10 @@ const ApprovePostClockList: React.FC = () => {
   };
 
   const handleRejectClick = (request: PostClockRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setRejectDialogOpen(true);
   };

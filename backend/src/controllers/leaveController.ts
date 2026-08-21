@@ -9,7 +9,7 @@ import { dayjsTz, errorToString, dayjsToTz } from '../util/utility';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
-  const { leaveType, reason, leaveStart, leaveEnd } = req.body;
+  const { leaveType, reason, leaveStart, leaveEnd, substitute } = req.body;
   const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
   const empID = isHrOverride ? req.body.empID : req.user!.empID;
 
@@ -17,7 +17,8 @@ export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
     leaveType,
     reason,
     leaveStart,
-    leaveEnd
+    leaveEnd,
+    substitute
   };
 
   // Handle uploaded files
@@ -91,6 +92,80 @@ export const rejectLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
     error: false,
     message: '請假申請已駁回',
     data: leave
+  });
+});
+
+export const substituteApproveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { memo } = req.body || {};
+  const leave = await LeaveService.substituteApproveLeaveRequest(id, req.user!.empID, memo);
+
+  res.json({
+    error: false,
+    message: '代理審核已核准',
+    data: leave
+  });
+});
+
+export const substituteRejectLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  if (!reason) {
+    return res.status(400).json({ error: true, message: '拒絕理由為必填' });
+  }
+  const leave = await LeaveService.substituteRejectLeaveRequest(id, req.user!.empID, reason);
+
+  res.json({
+    error: false,
+    message: '代理審核已拒絕',
+    data: leave
+  });
+});
+
+export const managerApproveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { memo } = req.body || {};
+  const leave = await LeaveService.managerApproveLeaveRequest(id, req.user!.empID, req.user!.department, memo);
+
+  res.json({
+    error: false,
+    message: '主管審核已核准',
+    data: leave
+  });
+});
+
+export const managerRejectLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  if (!reason) {
+    return res.status(400).json({ error: true, message: '拒絕理由為必填' });
+  }
+  const leave = await LeaveService.managerRejectLeaveRequest(id, req.user!.empID, req.user!.department, reason);
+
+  res.json({
+    error: false,
+    message: '主管審核已拒絕',
+    data: leave
+  });
+});
+
+export const getPendingSubstituteLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const leaves = await LeaveService.getPendingSubstituteLeaveRequests(req.user!.empID);
+
+  res.json({
+    error: false,
+    message: '成功取得待代理審核清單',
+    data: leaves
+  });
+});
+
+export const getPendingManagerLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const leaves = await LeaveService.getPendingManagerLeaveRequests(req.user!.department);
+
+  res.json({
+    error: false,
+    message: '成功取得待主管審核清單',
+    data: leaves
   });
 });
 

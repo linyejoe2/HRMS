@@ -16,6 +16,10 @@ export interface IPostClock extends Document {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  manager?: string;
+  managerApproveStatus: 'pending' | 'approved' | 'rejected';
+  managerMemo?: string;
+  managerApproveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,6 +80,21 @@ const postClockSchema = new Schema<IPostClock>({
   },
   approvedBy: {
     type: String
+  },
+  manager: {
+    type: String
+  },
+  managerApproveStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+    index: true
+  },
+  managerMemo: {
+    type: String
+  },
+  managerApproveAt: {
+    type: Date
   }
 }, {
   timestamps: true

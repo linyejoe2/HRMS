@@ -83,6 +83,10 @@ const ApproveOfficialBusinessTab: React.FC = () => {
 
   // Handle approve
   const handleApproveClick = (request: OfficialBusinessRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setApproveFiles([]);
     setApproveDialogOpen(true);
@@ -106,6 +110,10 @@ const ApproveOfficialBusinessTab: React.FC = () => {
 
   // Handle reject
   const handleRejectClick = (request: OfficialBusinessRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setRejectionReason('');
     setRejectFiles([]);

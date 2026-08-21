@@ -15,6 +15,11 @@ export interface IOfficialBusiness extends Document {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  department: string;
+  manager?: string;
+  managerApproveStatus: 'pending' | 'approved' | 'rejected';
+  managerMemo?: string;
+  managerApproveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +78,25 @@ const officialBusinessSchema = new Schema<IOfficialBusiness>({
   },
   approvedBy: {
     type: String
+  },
+  department: {
+    type: String,
+    index: true
+  },
+  manager: {
+    type: String
+  },
+  managerApproveStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+    index: true
+  },
+  managerMemo: {
+    type: String
+  },
+  managerApproveAt: {
+    type: Date
   }
 }, {
   timestamps: true

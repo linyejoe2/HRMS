@@ -11,6 +11,8 @@ interface EmployeeAutocompleteProps {
   required?: boolean;
   error?: boolean;
   helperText?: string;
+  departmentFilter?: string;
+  excludeEmpID?: string;
 }
 
 const EmployeeAutocomplete: React.FC<EmployeeAutocompleteProps> = ({
@@ -19,7 +21,9 @@ const EmployeeAutocomplete: React.FC<EmployeeAutocompleteProps> = ({
   label = '員工',
   required = false,
   error = false,
-  helperText
+  helperText,
+  departmentFilter,
+  excludeEmpID
 }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,9 +45,14 @@ const EmployeeAutocomplete: React.FC<EmployeeAutocompleteProps> = ({
     fetchEmployees();
   }, []);
 
+  const options = employees.filter((option) =>
+    (!departmentFilter || option.department === departmentFilter) &&
+    (!excludeEmpID || option.empID !== excludeEmpID)
+  );
+
   return (
     <Autocomplete
-      options={employees}
+      options={options}
       getOptionLabel={(option) => `${option.name} (${option.empID})`}
       value={value}
       onChange={(_, newValue) => onChange(newValue)}

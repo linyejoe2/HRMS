@@ -3,6 +3,22 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - 2026-08-21 - Substitute & Manager Approval Stages
+
+**Author**: Randy Lin
+
+### Added
+
+- Substitute (代理) and manager (主管) approval stages ahead of the existing HR/Admin decision, for leave, business-trip, post-clock, and official-business requests.
+- `代理審核` / `主管審核` tabs in 審核中心, visible to all employees; the 4 existing tabs stay HR/Admin-only.
+- Required 代理人 (substitute) picker on the leave request form, filtered to the requester's department.
+- New `substitute-approve/reject`, `manager-approve/reject`, and `pending/*` endpoints per module, plus aggregated `GET /api/approvals/pending-manager`.
+
+### Changed
+
+- HR/Admin approve/reject now shows a confirmation prompt when the substitute/manager stage hasn't cleared, but still proceeds unchanged once confirmed.
+- Employee edit dialog: 主管 (manager) role is selectable again.
+
 ## [1.0.1] - 2026-08-03 - Rebuild Employee Attendance Records
 
 **Author**: Randy Lin

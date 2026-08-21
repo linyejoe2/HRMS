@@ -83,6 +83,43 @@ export const rejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   });
 });
 
+export const managerApproveBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { memo } = req.body || {};
+  const businessTrip = await BusinessTripService.managerApproveBusinessTripRequest(id, req.user!.empID, req.user!.department, memo);
+
+  res.status(200).json({
+    error: false,
+    message: '主管審核已核准',
+    data: businessTrip
+  });
+});
+
+export const managerRejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  if (!reason) {
+    return res.status(400).json({ error: true, message: '拒絕理由為必填' });
+  }
+  const businessTrip = await BusinessTripService.managerRejectBusinessTripRequest(id, req.user!.empID, req.user!.department, reason);
+
+  res.status(200).json({
+    error: false,
+    message: '主管審核已拒絕',
+    data: businessTrip
+  });
+});
+
+export const getPendingManagerBusinessTripRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const businessTrips = await BusinessTripService.getPendingManagerBusinessTripRequests(req.user!.department);
+
+  res.status(200).json({
+    error: false,
+    message: '成功取得待主管審核清單',
+    data: businessTrips
+  });
+});
+
 export const getBusinessTripRequestById = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 

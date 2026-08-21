@@ -5,6 +5,7 @@ export interface User {
   role: UserLevel;
   lastLogin: string;
   hireDate: string;
+  department?: string;
 
   //   {
   //     "_id": "68c3ab8adae87c791839865c",
@@ -89,11 +90,14 @@ export interface Employee {
 
 export interface LeaveRequestForm {
   leaveType: string; // select
+  substitute: string; // empID of the chosen substitute
   reason: string;
   leaveStart: string; // use timedate choose components
   leaveEnd: string; // use timedate choose components
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
 }
+
+export type ApproveStatus = 'pending' | 'approved' | 'rejected';
 
 export interface LeaveRequest {
   _id?: string; // MongoDB ID
@@ -113,9 +117,24 @@ export interface LeaveRequest {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  substitute: string;
+  substituteApproveStatus: ApproveStatus;
+  substituteMemo?: string;
+  substituteApproveAt?: string;
+  manager?: string;
+  managerApproveStatus: ApproveStatus;
+  managerMemo?: string;
+  managerApproveAt?: string;
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type PendingManagerRequestType = 'leave' | 'businessTrip' | 'postClock' | 'officialBusiness';
+
+export interface PendingManagerItem {
+  requestType: PendingManagerRequestType;
+  data: LeaveRequest | BusinessTripRequest | PostClockRequest | OfficialBusinessRequest;
 }
 
 export interface CheckLeaveBalanceRes {
@@ -283,6 +302,10 @@ export interface PostClockRequest {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  manager?: string;
+  managerApproveStatus: ApproveStatus;
+  managerMemo?: string;
+  managerApproveAt?: string;
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
@@ -315,6 +338,10 @@ export interface BusinessTripRequest {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  manager?: string;
+  managerApproveStatus: ApproveStatus;
+  managerMemo?: string;
+  managerApproveAt?: string;
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
@@ -344,6 +371,11 @@ export interface OfficialBusinessRequest {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string; // Reason for rejection or cancellation
   approvedBy?: string; // empID of the approver/rejector/canceller
+  department: string;
+  manager?: string;
+  managerApproveStatus: ApproveStatus;
+  managerMemo?: string;
+  managerApproveAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

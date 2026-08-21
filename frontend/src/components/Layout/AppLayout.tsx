@@ -141,21 +141,34 @@ const AppLayout: React.FC = () => {
       path: '/officialbusiness'
     });
 
-    // Add Employee Management for HR and Admin only
-    if (user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR) {
-      // Add Approval Center with sub-items for HR and Admin only
-      baseItems.push({
-        text: '審核中心',
-        icon: <ApprovalIcon />,
-        path: '/leave/approve?tab=leave',
-        subItems: [
-          { text: '請假審核', path: '/leave/approve?tab=leave' },
-          { text: '補單審核', path: '/leave/approve?tab=postclock' },
-          { text: '因公免刷卡審核', path: '/leave/approve?tab=travel' },
-          { text: '外出審核', path: '/leave/approve?tab=officialbusiness' },
-        ]
-      });
+    // Approval Center is visible to everyone; 代理審核/主管審核 apply to any employee,
+    // while the 4 legacy tabs stay restricted to HR/Admin.
+    const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
+    const isManager = user?.role === UserLevel.MANAGER || isAdminOrHr;
+    const approvalSubItems: { text: string; path: string }[] = [
+      { text: '代理審核', path: '/leave/approve?tab=substitute' },
+    ];
+    if (isManager) {
+      approvalSubItems.push(
+        { text: '主管審核', path: '/leave/approve?tab=manager' })
+    }
+    if (isAdminOrHr) {
+      approvalSubItems.push(
+        { text: '請假審核', path: '/leave/approve?tab=leave' },
+        { text: '補單審核', path: '/leave/approve?tab=postclock' },
+        { text: '因公免刷卡審核', path: '/leave/approve?tab=travel' },
+        { text: '外出審核', path: '/leave/approve?tab=officialbusiness' },
+      );
+    }
+    baseItems.push({
+      text: '審核中心',
+      icon: <ApprovalIcon />,
+      path: isAdminOrHr ? '/leave/approve?tab=leave' : '/leave/approve?tab=substitute',
+      subItems: approvalSubItems
+    });
 
+    // Add Employee Management for HR and Admin only
+    if (isAdminOrHr) {
       baseItems.push({
         text: '員工管理',
         icon: <EmployeeIcon />,
@@ -163,7 +176,7 @@ const AppLayout: React.FC = () => {
       });
     }
 
-       // Variable Management for Admin only
+    // Variable Management for Admin only
     if (user?.role === UserLevel.ADMIN) {
       baseItems.push({
         text: '變數管理',
@@ -223,7 +236,7 @@ const AppLayout: React.FC = () => {
           </Typography>
         </Box>
       )}
-      
+
       <Divider />
 
       {/* Navigation Menu */}
@@ -240,7 +253,7 @@ const AppLayout: React.FC = () => {
                       setDrawerOpen(false);
                     }
                   }
-                  
+
                   if (item.subItems) {
                     handleApprovalMenuToggle();
                   }
@@ -329,7 +342,7 @@ const AppLayout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             臺龍電子人資系統
           </Typography>
-          
+
           {user && (
             <>
               <IconButton
@@ -351,7 +364,7 @@ const AppLayout: React.FC = () => {
                   {user.name ? user.name.charAt(0).toUpperCase() : user.empID.charAt(0).toUpperCase()}
                 </Avatar>
               </IconButton>
-              
+
               <Menu
                 id="profile-menu"
                 anchorEl={profileMenuAnchor}
@@ -389,12 +402,13 @@ const AppLayout: React.FC = () => {
 
       <Box
         component="nav"
-        sx={{ 
+        sx={{
           width: {
             xs: 0, // On small screens, always 0 (drawer is temporary anyway)
             md: drawerOpen ? `${DRAWER_WIDTH}px` : 0, // On desktop, respect drawerOpen
           },
-          flexShrink: { md: 0 } }}
+          flexShrink: { md: 0 }
+        }}
         aria-label="navigation menu"
       >
         <Drawer

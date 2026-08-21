@@ -10,6 +10,10 @@ import ApproveLeaveList from './ApproveLeaveList';
 import ApprovePostClockList from '../PostClock/ApprovePostClockList';
 import ApproveBusinessTripList from '../BusinessTrip/ApproveBusinessTripList';
 import ApproveOfficialBusinessTab from '../OfficialBusiness/ApproveOfficialBusinessTab';
+import ApproveSubstituteList from './ApproveSubstituteList';
+import ApproveManagerList from './ApproveManagerList';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserLevel } from '../../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -44,10 +48,15 @@ function a11yProps(index: number) {
   };
 }
 
+const TAB_NAMES = ['leave', 'postclock', 'travel', 'officialbusiness', 'substitute', 'manager'];
+
 const ApproveLeaveTab: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const tabParam = searchParams.get('tab');
+  const { user } = useAuth();
+  const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
+  const isManager = user?.role === UserLevel.MANAGER || isAdminOrHr;
 
   // Map tab parameter to index
   const getTabIndex = (tab: string | null): number => {
@@ -60,8 +69,12 @@ const ApproveLeaveTab: React.FC = () => {
         return 2;
       case 'officialbusiness':
         return 3;
+      case 'substitute':
+        return 4;
+      case 'manager':
+        return 5;
       default:
-        return 0;
+        return isAdminOrHr ? 0 : 4;
     }
   };
 
@@ -75,8 +88,7 @@ const ApproveLeaveTab: React.FC = () => {
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     // Update URL parameter
-    const tabNames = ['leave', 'postclock', 'travel', 'officialbusiness'];
-    navigate(`/leave/approve?tab=${tabNames[newValue]}`, { replace: true });
+    navigate(`/leave/approve?tab=${TAB_NAMES[newValue]}`, { replace: true });
   };
 
   return (
@@ -87,24 +99,40 @@ const ApproveLeaveTab: React.FC = () => {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="審核類型">
-          <Tab label="請假審核" {...a11yProps(0)} />
-          <Tab label="補單審核" {...a11yProps(1)} />
-          <Tab label="因公免刷卡審核" {...a11yProps(2)} />
-          <Tab label="外出審核" {...a11yProps(3)} />
+          <Tab label="代理審核" value={4} {...a11yProps(4)} />
+          {isManager && <Tab label="主管審核" value={5} {...a11yProps(5)} />}
+          {isAdminOrHr && <Tab label="請假審核" value={0} {...a11yProps(0)} />}
+          {isAdminOrHr && <Tab label="補單審核" value={1} {...a11yProps(1)} />}
+          {isAdminOrHr && <Tab label="因公免刷卡審核" value={2} {...a11yProps(2)} />}
+          {isAdminOrHr && <Tab label="外出審核" value={3} {...a11yProps(3)} />}
         </Tabs>
       </Box>
 
-      <TabPanel value={tabValue} index={0}>
-        <ApproveLeaveList />
+      {isAdminOrHr && (
+        <TabPanel value={tabValue} index={0}>
+          <ApproveLeaveList />
+        </TabPanel>
+      )}
+      {isAdminOrHr && (
+        <TabPanel value={tabValue} index={1}>
+          <ApprovePostClockList />
+        </TabPanel>
+      )}
+      {isAdminOrHr && (
+        <TabPanel value={tabValue} index={2}>
+          <ApproveBusinessTripList />
+        </TabPanel>
+      )}
+      {isAdminOrHr && (
+        <TabPanel value={tabValue} index={3}>
+          <ApproveOfficialBusinessTab />
+        </TabPanel>
+      )}
+      <TabPanel value={tabValue} index={4}>
+        <ApproveSubstituteList />
       </TabPanel>
-      <TabPanel value={tabValue} index={1}>
-        <ApprovePostClockList />
-      </TabPanel>
-      <TabPanel value={tabValue} index={2}>
-        <ApproveBusinessTripList />
-      </TabPanel>
-      <TabPanel value={tabValue} index={3}>
-        <ApproveOfficialBusinessTab />
+      <TabPanel value={tabValue} index={5}>
+        <ApproveManagerList />
       </TabPanel>
     </Box>
   );

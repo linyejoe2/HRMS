@@ -15,7 +15,13 @@ import {
   downloadLeaveSummaryReport,
   downloadEmployeeLeaveReport,
   downloadAnnualLeaveReport,
-  checkLeaveBalance
+  checkLeaveBalance,
+  substituteApproveLeaveRequest,
+  substituteRejectLeaveRequest,
+  managerApproveLeaveRequest,
+  managerRejectLeaveRequest,
+  getPendingSubstituteLeaveRequests,
+  getPendingManagerLeaveRequests
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -41,11 +47,23 @@ router.post('/check-balance/:empID', authenticateToken, checkLeaveBalance)
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 
+router.get('/pending/substitute', authenticateToken, getPendingSubstituteLeaveRequests);
+
+router.get('/pending/manager', authenticateToken, requireRole(['manager']), getPendingManagerLeaveRequests);
+
 router.get('/:id', authenticateToken, getLeaveRequestById);
 
 router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), approveLeaveRequest);
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), rejectLeaveRequest);
+
+router.put('/:id/substitute-approve', authenticateToken, substituteApproveLeaveRequest);
+
+router.put('/:id/substitute-reject', authenticateToken, substituteRejectLeaveRequest);
+
+router.put('/:id/manager-approve', authenticateToken, requireRole(['manager']), managerApproveLeaveRequest);
+
+router.put('/:id/manager-reject', authenticateToken, requireRole(['manager']), managerRejectLeaveRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 

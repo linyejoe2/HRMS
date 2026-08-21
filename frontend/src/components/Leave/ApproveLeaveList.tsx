@@ -184,6 +184,10 @@ const ApproveLeaveList: React.FC = () => {
 
 
   const handleApproveClick = async (request: LeaveRequest) => {
+    if (request.substituteApproveStatus !== 'approved' || request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過代理人/主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
 
     // Check leave balance first
@@ -268,6 +272,10 @@ const ApproveLeaveList: React.FC = () => {
   };
 
   const handleRejectClick = (request: LeaveRequest) => {
+    if (request.substituteApproveStatus !== 'approved' || request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過代理人/主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setRejectDialogOpen(true);
   };

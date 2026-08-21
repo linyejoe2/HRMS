@@ -111,6 +111,14 @@ cd frontend && npm install && npm run dev
   status: 'created'|'approved'|'rejected';
   rejectionReason?: string;
   approvedBy?: string;
+  substitute: string; // empID chosen by the requester
+  substituteApproveStatus: 'pending'|'approved'|'rejected';
+  substituteMemo?: string;
+  substituteApproveAt?: Date;
+  manager?: string; // empID of whichever department manager acted
+  managerApproveStatus: 'pending'|'approved'|'rejected';
+  managerMemo?: string;
+  managerApproveAt?: Date;
   YYYY: string; // Application year
   mm: string; // Application month
   DD: string; // Application day
@@ -118,6 +126,8 @@ cd frontend && npm install && npm run dev
   minutes: string;
 }
 ```
+
+Business-trip, post-clock, and official-business requests carry the same `manager`/`managerApproveStatus`/`managerMemo`/`managerApproveAt` fields (no `substitute*` fields — only leave requires a substitute).
 
 **Auth Flow**: Migrate → Register → Login → JWT → Role-based access
 
@@ -136,12 +146,22 @@ cd frontend && npm install && npm run dev
 
 **Leave Management (`/api/leave`)**
 
-- POST `/create` - Create leave request
+- POST `/create` - Create leave request (requires `substitute` empID)
 - GET `/my` - Get employee's leave requests
 - GET `/all` - Get all leave requests (HR/Admin only)
 - PUT `/:id/approve` - Approve leave request (HR/Admin only)
 - PUT `/:id/reject` - Reject leave request (HR/Admin only)
 - GET `/:id` - Get specific leave request
+- GET `/pending/substitute` - Leave requests awaiting the caller's substitute review
+- GET `/pending/manager` - Leave requests awaiting the caller's department manager review
+- PUT `/:id/substitute-approve`, `/:id/substitute-reject` - Substitute review decision
+- PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (manager role only)
+
+Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject` routes (no substitute step).
+
+**Approvals (`/api/approvals`)**
+
+- GET `/pending-manager` - Aggregated pending-manager items across all 4 request types, for the unified 主管審核 tab
 
 **Attendance (`/api/attendance`)**
 
@@ -216,14 +236,20 @@ theme.ts            # MUI theme configuration
 ### 📝 Leave Management
 - **Employee Features**:
   - Create leave requests with multiple types (婚假, 喪假, 病假, 事假, etc.)
+  - Must choose a same-department substitute (代理人) when creating a leave request
   - View personal leave request history
   - Download leave request forms as DOCX documents
   - Real-time status tracking (pending, approved, rejected)
 
+- **Approval Workflow** (leave, business-trip, post-clock, official-business):
+  - 代理審核 (substitute review, leave only) and 主管審核 (department manager review, all 4 types) tabs in 審核中心, visible to every employee
+  - Manager review only unlocks after the substitute has approved (leave only)
+  - A substitute/manager rejection freezes that stage without blocking HR/Admin's final decision
+
 - **HR/Admin Features**:
   - Review all leave requests with DataGrid interface
   - Filter by status (created, approved, rejected, all)
-  - Approve or reject requests with reasons
+  - Approve or reject requests with reasons, regardless of substitute/manager stage (with a confirmation prompt if not yet cleared)
   - Sortable columns and pagination
   - Audit trail with approval history
 

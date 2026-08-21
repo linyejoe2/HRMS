@@ -218,6 +218,74 @@ export class OfficialBusinessController {
   });
 
   /**
+   * Manager-approve official business request
+   * PUT /api/officialbusiness/:id/manager-approve
+   */
+  managerApproveOfficialBusinessRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { memo } = req.body || {};
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: true, message: '未授權' });
+      return;
+    }
+
+    const officialBusiness = await officialBusinessService.managerApproveOfficialBusinessRequest(id, user.empID, user.department, memo);
+
+    res.status(200).json({
+      error: false,
+      message: '主管審核已核准',
+      data: officialBusiness
+    });
+  });
+
+  /**
+   * Manager-reject official business request
+   * PUT /api/officialbusiness/:id/manager-reject
+   */
+  managerRejectOfficialBusinessRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: true, message: '未授權' });
+      return;
+    }
+    if (!reason) {
+      res.status(400).json({ error: true, message: '拒絕理由為必填' });
+      return;
+    }
+
+    const officialBusiness = await officialBusinessService.managerRejectOfficialBusinessRequest(id, user.empID, user.department, reason);
+
+    res.status(200).json({
+      error: false,
+      message: '主管審核已拒絕',
+      data: officialBusiness
+    });
+  });
+
+  /**
+   * Get official business requests pending manager review
+   * GET /api/officialbusiness/pending/manager
+   */
+  getPendingManagerOfficialBusinessRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: true, message: '未授權' });
+      return;
+    }
+
+    const officialBusinessRequests = await officialBusinessService.getPendingManagerOfficialBusinessRequests(user.department);
+
+    res.status(200).json({
+      error: false,
+      message: '成功取得待主管審核清單',
+      data: officialBusinessRequests
+    });
+  });
+
+  /**
    * Cancel official business request
    * PUT /api/officialbusiness/:id/cancel
    */

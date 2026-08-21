@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 import { LeaveRequest } from '../../types';
 import LeaveRequestModal from './LeaveRequestModal';
-import { getMyLeaveRequests, cancelLeaveRequest } from '../../services/api';
+import { getMyLeaveRequests, cancelLeaveRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import { generateLeaveRequestDocx } from '../../utils/docxGenerator';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -39,12 +39,25 @@ const AskLeaveTab: React.FC = () => {
   const [leaveDetailsDialogOpen, setLeaveDetailsDialogOpen] = useState(false);
   const [selectedLeaveData, setSelectedLeaveData] = useState<LeaveData | null>(null);
   const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
+  const [substituteNames, setSubstituteNames] = useState<Record<string, string>>({});
 
   const fetchLeaveRequests = async () => {
     try {
       setLoading(true);
       const response = await getMyLeaveRequests();
       setLeaveRequests(response.data.data);
+
+      const substituteEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.substitute).filter(Boolean))
+      ).filter(empID => !(empID in substituteNames));
+
+      if (substituteEmpIDs.length > 0) {
+        const names = await Promise.all(substituteEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setSubstituteNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(substituteEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching leave requests:', error);
       toast.error('無法載入請假申請');
@@ -146,15 +159,21 @@ const AskLeaveTab: React.FC = () => {
       valueGetter: (_, row) => new Date(row.leaveEnd).toLocaleString('zh-TW')
     },
     {
-      field: 'reason',
-      headerName: '請假理由',
-      flex: 1.5,
-    },
-    {
       field: 'duration',
       headerName: '請假時數',
       flex: 1,
       valueGetter: (_, row) => `${row.hour}小時`
+    },
+    {
+      field: 'substitute',
+      headerName: '代理人',
+      flex: 1,
+      valueGetter: (_, row) => substituteNames[row.substitute] ?? row.substitute
+    },
+    {
+      field: 'reason',
+      headerName: '請假理由',
+      flex: 1.5,
     },
     {
       field: 'supportingInfo',

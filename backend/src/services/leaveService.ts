@@ -172,11 +172,29 @@ export class LeaveService {
     reason: string;
     leaveStart: string;
     leaveEnd: string;
+    substitute: string;
     supportingInfo?: string[];
   }): Promise<ILeave> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
       throw new APIError('Employee not found', 404);
+    }
+
+    if (!leaveData.substitute) {
+      throw new APIError('請選擇代理人', 400);
+    }
+
+    if (leaveData.substitute === empID) {
+      throw new APIError('代理人不能是本人', 400);
+    }
+
+    const substituteEmployee = await Employee.findOne({
+      empID: leaveData.substitute,
+      isActive: true,
+      department: employee.department
+    });
+    if (!substituteEmployee) {
+      throw new APIError('代理人不存在、非在職，或部門不符', 400);
     }
 
     const leaveStart = dayjsToTz(leaveData.leaveStart)
@@ -211,7 +229,8 @@ export class LeaveService {
       hour: String(hours),
       minutes: String(minutes),
       supportingInfo: leaveData.supportingInfo,
-      status: 'created'
+      status: 'created',
+      substitute: leaveData.substitute
     });
 
     const isNotOverlapping = await this.checkLeaveRequestDidntRepeat(leave);
@@ -282,6 +301,111 @@ export class LeaveService {
     }
 
     return await leave.save();
+  }
+
+  static async substituteApproveLeaveRequest(leaveId: string, requesterEmpID: string, memo?: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+    if (leave.substitute !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請的代理人', 403);
+    }
+    if (leave.substituteApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成代理審核', 400);
+    }
+    if (leave.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    leave.substituteApproveStatus = 'approved';
+    leave.substituteMemo = memo;
+    leave.substituteApproveAt = new Date();
+
+    return await leave.save();
+  }
+
+  static async substituteRejectLeaveRequest(leaveId: string, requesterEmpID: string, memo: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+    if (leave.substitute !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請的代理人', 403);
+    }
+    if (leave.substituteApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成代理審核', 400);
+    }
+    if (leave.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    leave.substituteApproveStatus = 'rejected';
+    leave.substituteMemo = memo;
+    leave.substituteApproveAt = new Date();
+
+    return await leave.save();
+  }
+
+  static async managerApproveLeaveRequest(leaveId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+    if (!requesterDepartment || leave.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (leave.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (leave.substituteApproveStatus !== 'approved') {
+      throw new APIError('請先完成代理人審核', 400);
+    }
+    if (leave.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    leave.manager = requesterEmpID;
+    leave.managerApproveStatus = 'approved';
+    leave.managerMemo = memo;
+    leave.managerApproveAt = new Date();
+
+    return await leave.save();
+  }
+
+  static async managerRejectLeaveRequest(leaveId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+    if (!requesterDepartment || leave.department !== requesterDepartment) {
+      throw new APIError('無權限：您不是該部門主管', 403);
+    }
+    if (leave.managerApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (leave.substituteApproveStatus !== 'approved') {
+      throw new APIError('請先完成代理人審核', 400);
+    }
+    if (leave.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    leave.manager = requesterEmpID;
+    leave.managerApproveStatus = 'rejected';
+    leave.managerMemo = memo;
+    leave.managerApproveAt = new Date();
+
+    return await leave.save();
+  }
+
+  static async getPendingSubstituteLeaveRequests(empID: string): Promise<ILeave[]> {
+    return await Leave.find({ substitute: empID, substituteApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  }
+
+  static async getPendingManagerLeaveRequests(department: string | undefined): Promise<ILeave[]> {
+    if (!department) return [];
+    return await Leave.find({ department, managerApproveStatus: 'pending', substituteApproveStatus: 'approved', status: 'created' }).sort({ createdAt: -1 });
   }
 
   static async getLeaveRequestById(leaveId: string): Promise<ILeave> {

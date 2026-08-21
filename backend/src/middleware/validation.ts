@@ -72,6 +72,10 @@ export const leaveRequestSchema = Joi.object({
     'string.isoDate': '結束日期必須是有效的 ISO 日期格式',
     'any.required': '結束日期為必填項目'
   }),
+  substitute: Joi.string().required().messages({
+    'string.empty': '請選擇代理人',
+    'any.required': '請選擇代理人'
+  }),
   // Only honored server-side when the caller is hr/admin; ignored for self-serve requests.
   empID: Joi.string().optional()
 });

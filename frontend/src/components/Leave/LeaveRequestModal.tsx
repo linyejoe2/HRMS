@@ -67,6 +67,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
   const { files, setFiles, clearFiles } = useFileUpload();
   const { user } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [substituteEmployee, setSubstituteEmployee] = useState<Employee | null>(null);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<LeaveRequestForm | null>(null);
   const [warningMessage, setWarningMessage] = useState('');
@@ -84,6 +85,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
   } = useForm<LeaveFormData>({
     defaultValues: {
       leaveType: '',
+      substitute: '',
       reason: '',
       leaveStartDate: dayjs().format('YYYY-MM-DD'),
       leaveStartTime: '08:30',
@@ -130,6 +132,15 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       setValue('leaveType', '');
     }
   }, [leaveBalance, leaveType, setValue]);
+
+  // Reset the substitute pick when the HR-mode target employee changes, since
+  // the substitute is filtered to the target's department.
+  React.useEffect(() => {
+    if (hrMode) {
+      setSubstituteEmployee(null);
+      setValue('substitute', '');
+    }
+  }, [hrMode, selectedEmployee, setValue]);
 
   // Validate date/time combination
   React.useEffect(() => {
@@ -198,6 +209,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
 
     const data: LeaveRequestForm = {
       leaveType: formData.leaveType,
+      substitute: formData.substitute,
       reason: formData.reason ?? "",
       leaveStart,
       leaveEnd
@@ -242,6 +254,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       toast.success(hrMode ? '請假申請已建立並核准' : '請假申請已成功送出');
       reset({
         leaveType: '',
+        substitute: '',
         reason: '',
         leaveStartDate: dayjs().format('YYYY-MM-DD'),
         leaveStartTime: '08:30',
@@ -250,6 +263,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       });
       clearFiles();
       setSelectedEmployee(null);
+      setSubstituteEmployee(null);
       setLeaveBalance(null);
       setPendingSubmitData(null);
       onClose();
@@ -273,6 +287,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
     if (!loading) {
       reset({
         leaveType: '',
+        substitute: '',
         reason: '',
         leaveStartDate: dayjs().format('YYYY-MM-DD'),
         leaveStartTime: '08:30',
@@ -281,6 +296,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       });
       clearFiles();
       setSelectedEmployee(null);
+      setSubstituteEmployee(null);
       onClose();
     }
   };
@@ -324,7 +340,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                 </Grid>
               )}
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="leaveType"
                   control={control}
@@ -345,6 +361,29 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                         </MenuItem>
                       ))}
                     </TextField>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="substitute"
+                  control={control}
+                  rules={{ required: '請選擇代理人' }}
+                  render={({ field }) => (
+                    <EmployeeAutocomplete
+                      value={substituteEmployee}
+                      onChange={(employee) => {
+                        setSubstituteEmployee(employee);
+                        field.onChange(employee?.empID ?? '');
+                      }}
+                      label="代理人"
+                      required
+                      error={!!errors.substitute}
+                      helperText={errors.substitute?.message}
+                      departmentFilter={hrMode ? selectedEmployee?.department : user?.department}
+                      excludeEmpID={targetEmpID}
+                    />
                   )}
                 />
               </Grid>

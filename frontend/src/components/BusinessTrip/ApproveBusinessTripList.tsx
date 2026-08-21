@@ -86,6 +86,10 @@ const ApproveBusinessTripList: React.FC = () => {
   // };
 
   const handleApproveClick = (request: BusinessTripRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setApproveDialogOpen(true);
   };
@@ -106,6 +110,10 @@ const ApproveBusinessTripList: React.FC = () => {
   };
 
   const handleRejectClick = (request: BusinessTripRequest) => {
+    if (request.managerApproveStatus !== 'approved') {
+      if (!window.confirm('這個申請還沒有經過主管簽核，確定要直接審核嗎?')) return;
+    }
+
     setSelectedRequest(request);
     setRejectDialogOpen(true);
   };

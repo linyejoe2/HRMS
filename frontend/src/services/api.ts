@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = ""
@@ -285,6 +285,7 @@ export const leaveAPI = {
   create: (leaveData: LeaveRequestForm, empID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
     const formData = new FormData();
     formData.append('leaveType', leaveData.leaveType);
+    formData.append('substitute', leaveData.substitute);
     formData.append('reason', leaveData.reason);
     formData.append('leaveStart', leaveData.leaveStart);
     formData.append('leaveEnd', leaveData.leaveEnd);
@@ -366,7 +367,31 @@ export const leaveAPI = {
     timeStart: string;
     timeEnd: string;
     leaveType: string;
-  }, employeeID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: CheckLeaveBalanceRes }>> => api.post(`/leave/check-balance/${employeeID}`, queryParams)
+  }, employeeID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: CheckLeaveBalanceRes }>> => api.post(`/leave/check-balance/${employeeID}`, queryParams),
+
+  // Get leave requests pending my substitute review
+  getPendingSubstitute: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
+    api.get('/leave/pending/substitute'),
+
+  // Get leave requests pending my department's manager review
+  getPendingManager: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
+    api.get('/leave/pending/manager'),
+
+  // Substitute approves the leave request
+  substituteApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.put(`/leave/${id}/substitute-approve`, { memo }),
+
+  // Substitute rejects the leave request
+  substituteReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.put(`/leave/${id}/substitute-reject`, { reason }),
+
+  // Manager approves the leave request
+  managerApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.put(`/leave/${id}/manager-approve`, { memo }),
+
+  // Manager rejects the leave request
+  managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.put(`/leave/${id}/manager-reject`, { reason })
 
 };
 
@@ -478,7 +503,19 @@ export const postClockAPI = {
 
   // Get cancelled postclock requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
-    api.get(`/postclock/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+    api.get(`/postclock/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`),
+
+  // Get postclock requests pending my department's manager review
+  getPendingManager: (): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
+    api.get('/postclock/pending/manager'),
+
+  // Manager approves the postclock request
+  managerApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/manager-approve`, { memo }),
+
+  // Manager rejects the postclock request
+  managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/manager-reject`, { reason })
 };
 
 // Convenience functions for postclock operations
@@ -571,7 +608,19 @@ export const businessTripAPI = {
 
   // Get cancelled business trip requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>
-    api.get(`/businesstrip/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+    api.get(`/businesstrip/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`),
+
+  // Get business trip requests pending my department's manager review
+  getPendingManager: (): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>
+    api.get('/businesstrip/pending/manager'),
+
+  // Manager approves the business trip request
+  managerApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/manager-approve`, { memo }),
+
+  // Manager rejects the business trip request
+  managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/manager-reject`, { reason })
 };
 
 // Convenience functions for business trip operations
@@ -660,7 +709,25 @@ export const officialBusinessAPI = {
 
   // Get cancelled official business requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest[] }>> =>
-    api.get(`/officialbusiness/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`)
+    api.get(`/officialbusiness/cancelled/all${employeeID ? `?employeeID=${employeeID}` : ''}`),
+
+  // Get official business requests pending my department's manager review
+  getPendingManager: (): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest[] }>> =>
+    api.get('/officialbusiness/pending/manager'),
+
+  // Manager approves the official business request
+  managerApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/manager-approve`, { memo }),
+
+  // Manager rejects the official business request
+  managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.put(`/officialbusiness/${id}/manager-reject`, { reason })
+};
+
+export const approvalAPI = {
+  // Get requests from all 4 modules pending my department's manager review
+  getPendingManagerAll: (): Promise<AxiosResponse<{ error: boolean, message: string, data: PendingManagerItem[] }>> =>
+    api.get('/approvals/pending-manager')
 };
 
 // Convenience functions for official business operations
