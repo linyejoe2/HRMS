@@ -26,7 +26,7 @@ router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllPostCl
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getPostClockRequestBySequenceNumber);
 
-router.get('/pending/manager', authenticateToken, requireRole(['manager']), getPendingManagerPostClockRequests);
+router.get('/pending/manager', authenticateToken, requireRole(['admin', 'hr', 'manager']), getPendingManagerPostClockRequests);
 
 router.get('/:id', authenticateToken, getPostClockRequestById);
 
@@ -34,9 +34,9 @@ router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uplo
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), rejectPostClockRequest);
 
-router.put('/:id/manager-approve', authenticateToken, requireRole(['manager']), managerApprovePostClockRequest);
+router.put('/:id/manager-approve', authenticateToken, requireRole(['admin', 'hr', 'manager']), managerApprovePostClockRequest);
 
-router.put('/:id/manager-reject', authenticateToken, requireRole(['manager']), managerRejectPostClockRequest);
+router.put('/:id/manager-reject', authenticateToken, requireRole(['admin', 'hr', 'manager']), managerRejectPostClockRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelPostClockRequest);
 

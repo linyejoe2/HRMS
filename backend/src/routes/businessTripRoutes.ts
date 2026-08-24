@@ -26,7 +26,7 @@ router.get('/all', authenticateToken, requireRole(['hr', 'admin']), getAllBusine
 
 router.get('/sequence/:sequenceNumber', authenticateToken, getBusinessTripRequestBySequenceNumber);
 
-router.get('/pending/manager', authenticateToken, requireRole(['manager']), getPendingManagerBusinessTripRequests);
+router.get('/pending/manager', authenticateToken, requireRole(['admin', 'hr', 'manager']), getPendingManagerBusinessTripRequests);
 
 router.get('/:id', authenticateToken, getBusinessTripRequestById);
 
@@ -34,9 +34,9 @@ router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uplo
 
 router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), rejectBusinessTripRequest);
 
-router.put('/:id/manager-approve', authenticateToken, requireRole(['manager']), managerApproveBusinessTripRequest);
+router.put('/:id/manager-approve', authenticateToken, requireRole(['admin', 'hr', 'manager']), managerApproveBusinessTripRequest);
 
-router.put('/:id/manager-reject', authenticateToken, requireRole(['manager']), managerRejectBusinessTripRequest);
+router.put('/:id/manager-reject', authenticateToken, requireRole(['admin', 'hr', 'manager']), managerRejectBusinessTripRequest);
 
 router.put('/:id/cancel', authenticateToken, cancelBusinessTripRequest);
 

@@ -14,11 +14,11 @@ router.get('/my', officialBusinessController.getMyOfficialBusinessRequests);
 
 // Routes accessible only by HR and Admin - must come before /:id route
 router.get('/all', requireRole(['admin', 'hr']), officialBusinessController.getAllOfficialBusinessRequests);
-router.get('/cancelled/all', requireRole(['admin', 'hr']), officialBusinessController.getCancelledOfficialBusinessRequests);
+router.get('/cancelled/all', requireRole(['admin', 'hr',]), officialBusinessController.getCancelledOfficialBusinessRequests);
 
 // Specific routes must come before dynamic :id route
 router.get('/sequence/:sequenceNumber', officialBusinessController.getOfficialBusinessRequestBySequenceNumber);
-router.get('/pending/manager', requireRole(['manager']), officialBusinessController.getPendingManagerOfficialBusinessRequests);
+router.get('/pending/manager', requireRole(['admin', 'hr', 'manager']), officialBusinessController.getPendingManagerOfficialBusinessRequests);
 
 // Dynamic routes - must come last to avoid matching specific paths
 router.get('/:id', officialBusinessController.getOfficialBusinessRequestById);
@@ -26,7 +26,7 @@ router.put('/:id/endtime', officialBusinessController.updateOfficialBusinessRequ
 router.put('/:id/cancel', officialBusinessController.cancelOfficialBusinessRequest);
 router.put('/:id/approve', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.approveOfficialBusinessRequest);
 router.put('/:id/reject', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.rejectOfficialBusinessRequest);
-router.put('/:id/manager-approve', requireRole(['manager']), officialBusinessController.managerApproveOfficialBusinessRequest);
-router.put('/:id/manager-reject', requireRole(['manager']), officialBusinessController.managerRejectOfficialBusinessRequest);
+router.put('/:id/manager-approve', requireRole(['admin', 'hr', 'manager']), officialBusinessController.managerApproveOfficialBusinessRequest);
+router.put('/:id/manager-reject', requireRole(['admin', 'hr', 'manager']), officialBusinessController.managerRejectOfficialBusinessRequest);
 
 export default router;
