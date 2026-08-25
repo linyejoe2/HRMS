@@ -9,7 +9,13 @@ import {
   MenuItem,
   Grid,
   Typography,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Box
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -31,10 +37,15 @@ interface PostClockRequestModalProps {
   hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
 }
 
+const POSTCLOCK_REASON_OPTIONS = ['忘記刷卡', '卡片遺失/損壞/未帶', '刷卡設備異常/刷卡未成功'];
+const OTHER_REASON_VALUE = '其他';
+
 const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onClose, hrMode = false }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [reasonChoice, setReasonChoice] = useState<string>('');
+  const [customReason, setCustomReason] = useState<string>('');
 
   type FormData = {
     date: string;
@@ -42,7 +53,6 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
     date2: string;
     time2: string;
     clockType: 'in' | 'out' | 'in&out';
-    reason: string;
     dateObj: Dayjs | null;
     timeObj: Dayjs | null;
   };
@@ -60,7 +70,6 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       date2: dayjs().toISOString(),
       time2: dayjs().hour(17).minute(30).second(0).toISOString(),
       clockType: 'in' as const,
-      reason: '',
       dateObj: null,
       timeObj: null
     }
@@ -73,6 +82,12 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
     try {
       if (hrMode && !selectedEmployee) {
         toast.error('請選擇員工');
+        return;
+      }
+
+      const finalReason = reasonChoice === OTHER_REASON_VALUE ? customReason.trim() : reasonChoice;
+      if (!finalReason) {
+        toast.error('請填寫補單原因');
         return;
       }
 
@@ -91,7 +106,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         date: dateObj.format('YYYY-MM-DD'),
         time: combinedDateTime.toISOString(),
         clockType: data.clockType,
-        reason: data.reason,
+        reason: finalReason,
         supportingInfo: files.length > 0 ? files : undefined
       };
 
@@ -116,6 +131,8 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       reset();
       clearFiles();
       setSelectedEmployee(null);
+      setReasonChoice('');
+      setCustomReason('');
       onClose();
     } catch (error: any) {
       console.error('Error creating postclock request:', error);
@@ -131,6 +148,8 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       reset();
       clearFiles();
       setSelectedEmployee(null);
+      setReasonChoice('');
+      setCustomReason('');
       onClose();
     }
   };
@@ -272,25 +291,34 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
               </Grid>
 
               <Grid item xs={12}>
-                <Controller
-                  name="reason"
-                  control={control}
-                  rules={{ required: '請填寫補單原因' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="補單原因"
-                      multiline
-                      rows={3}
-                      fullWidth
-                      error={!!errors.reason}
-                      helperText={errors.reason?.message}
-                      placeholder="請說明為何需要補單..."
-                      required
-                    />
-                  )}
-                />
+                <FormControl component="fieldset" required>
+                  <FormLabel component="legend">補單原因</FormLabel>
+                  <RadioGroup
+                    value={reasonChoice}
+                    onChange={(e) => setReasonChoice(e.target.value)}
+                  >
+                    {POSTCLOCK_REASON_OPTIONS.map((option) => (
+                      <FormControlLabel key={option} value={option} control={<Radio />} label={option} />
+                    ))}
+                    <FormControlLabel value={OTHER_REASON_VALUE} control={<Radio />} label="其他" />
+                  </RadioGroup>
+                </FormControl>
               </Grid>
+
+              {reasonChoice === OTHER_REASON_VALUE && (
+                <Grid item xs={12}>
+                  <TextField
+                    label="請說明原因"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="請說明為何需要補單..."
+                    required
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <FileUploadField
@@ -302,6 +330,18 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                 />
               </Grid>
             </Grid>
+
+            <Box sx={{ mt: 3, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary" component="div">
+                <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                  <li>請據實填寫，如有虛報出勤將依公司管理規章處理</li>
+                  <li>補卡期限於3日內完成補單程序</li>
+                  <li>每月補卡不得超過3次，特殊情況除外</li>
+                  <li>逾期申請須經部門主管核准</li>
+                  <li>人資核准後始得修正出勤紀錄</li>
+                </Box>
+              </Typography>
+            </Box>
           </DialogContent>
 
           <DialogActions sx={{ p: 3, pt: 2 }}>
