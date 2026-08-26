@@ -3,6 +3,20 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - 2026-08-28 - Business Trip Clock-In/Out Tracking
+
+**Author**: Randy Lin
+
+### Added
+
+- `BusinessTrip.clockTimes`: a per-day `{ clockIn, clockOut }` array recording actual attendance during a business trip, defaulted on creation from `constants.ts`'s working-time schedule (real trip start/end on the first/last day, standard work hours in between).
+- `PUT /api/businesstrip/:id/clock-times`: lets the employee record/adjust their clock times at any time, even after the trip is approved (blocked only once rejected/cancelled).
+- New `填寫/修改出差期間上下班時間` button and `BusinessTripClockTimesModal` in 因公免刷卡申請, one editable time pair per day; auto-initializes per-day defaults client-side for older trips that predate this field.
+
+### Changed
+
+- Attendance aggregation now prefers a business trip's recorded `clockTimes` over the previous computed-segment estimate when available.
+
 ## [1.2.3] - 2026-08-28 - Substitute Availability Checks
 
 **Author**: Randy Lin

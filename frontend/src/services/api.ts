@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem, AppConstants } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, BusinessTripClockTime, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem, AppConstants } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = ""
@@ -617,6 +617,10 @@ export const businessTripAPI = {
   // Cancel business trip request
   cancel: (id: string, reason?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
     api.put(`/businesstrip/${id}/cancel`, reason ? { reason } : {}),
+
+  // Update per-day clock-in/out times during the trip (applicant only, any status except rejected/cancelled)
+  updateClockTimes: (id: string, clockTimes: BusinessTripClockTime[]): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.put(`/businesstrip/${id}/clock-times`, { clockTimes }),
 
   // Get cancelled business trip requests (HR/Admin only)
   getCancelled: (employeeID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest[] }>> =>

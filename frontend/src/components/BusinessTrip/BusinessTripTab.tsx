@@ -12,7 +12,8 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   GetApp as DownloadIcon,
-  Attachment as AttachmentIcon
+  Attachment as AttachmentIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
@@ -20,6 +21,7 @@ import { getMyBusinessTripRequests, cancelBusinessTripRequest, employeeAPI } fro
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import BusinessTripRequestModal from './BusinessTripRequestModal';
+import BusinessTripClockTimesModal from './BusinessTripClockTimesModal';
 import { generateBusinessTripRequestDocx } from '../../utils/docxGenerator';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
@@ -34,6 +36,8 @@ const BusinessTripTab: React.FC = () => {
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [clockTimesModalOpen, setClockTimesModalOpen] = useState(false);
+  const [selectedTripForClockTimes, setSelectedTripForClockTimes] = useState<BusinessTripRequest | null>(null);
 
   const fetchBusinessTripRequests = async () => {
     try {
@@ -82,6 +86,11 @@ const BusinessTripTab: React.FC = () => {
   const handleCancelClick = (tripId: string) => {
     setSelectedTripId(tripId);
     setCancelConfirmOpen(true);
+  };
+
+  const handleEditClockTimesClick = (request: BusinessTripRequest) => {
+    setSelectedTripForClockTimes(request);
+    setClockTimesModalOpen(true);
   };
 
   const handleCancelConfirm = async () => {
@@ -229,7 +238,7 @@ const BusinessTripTab: React.FC = () => {
       field: 'actions',
       type: 'actions',
       headerName: '操作',
-      flex: 1,
+      flex: 1.5,
       getActions: (params) => {
         const actions = [];
 
@@ -244,6 +253,20 @@ const BusinessTripTab: React.FC = () => {
             onClick={() => handleDownload(params.row)}
           />
         );
+
+        if (params.row.status === 'created' || params.row.status === 'approved') {
+          actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="填寫/修改出差期間上下班時間">
+                  <EditIcon color="primary" />
+                </Tooltip>
+              }
+              label="填寫/修改出差期間上下班時間"
+              onClick={() => handleEditClockTimesClick(params.row)}
+            />
+          );
+        }
 
         if (params.row.status === 'created') {
           actions.push(
@@ -330,6 +353,13 @@ const BusinessTripTab: React.FC = () => {
       <BusinessTripRequestModal
         open={isModalOpen}
         onClose={handleModalClose}
+      />
+
+      <BusinessTripClockTimesModal
+        open={clockTimesModalOpen}
+        onClose={() => setClockTimesModalOpen(false)}
+        request={selectedTripForClockTimes}
+        onSaved={fetchBusinessTripRequests}
       />
 
       <ConfirmationModal

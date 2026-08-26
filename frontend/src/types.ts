@@ -343,6 +343,11 @@ export interface BusinessTripRequestForm {
   rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
 
+export interface BusinessTripClockTime {
+  clockIn: string;
+  clockOut: string;
+}
+
 export interface BusinessTripRequest {
   _id?: string; // MongoDB ID
   name: string; // from table employee
@@ -355,6 +360,7 @@ export interface BusinessTripRequest {
   transportation?: string;
   estimatedCost?: number;
   notes?: string;
+  clockTimes?: BusinessTripClockTime[]; // Per-day clock-in/out during the trip; employee-editable any time
   supportingInfo?: string[]; // Array of file paths/URLs - 相關資料
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;

@@ -161,6 +161,8 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 
 Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject` routes (no substitute step).
 
+Business-trip requests also carry a `clockTimes: { clockIn, clockOut }[]` field (one pair per day, defaulted from `constants.ts`'s working-time schedule on creation) and `PUT /api/businesstrip/:id/clock-times` lets the employee record/adjust it at any time, even after approval.
+
 **Approvals (`/api/approvals`)**
 
 - GET `/pending-manager` - Aggregated pending-manager items across all 4 request types, for the unified 主管審核 tab
@@ -271,6 +273,7 @@ theme.ts            # MUI theme configuration
 - Date range queries and reporting
 - Individual and department-level analytics
 - Integration with existing attendance systems
+- Business trips: uses the employee's own recorded per-day clock-in/out (`clockTimes`) when available, falling back to a computed work-hour estimate otherwise
 
 **Testing**
 

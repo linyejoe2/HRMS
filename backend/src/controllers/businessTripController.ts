@@ -26,6 +26,19 @@ export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   });
 });
 
+export const updateBusinessTripClockTimes = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { clockTimes } = req.body;
+
+  const businessTrip = await BusinessTripService.updateClockTimes(id, req.user!.empID, clockTimes);
+
+  res.status(200).json({
+    error: false,
+    message: '上下班時間已更新',
+    data: businessTrip
+  });
+});
+
 export const getMyBusinessTripRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
   const empID = req.user!.empID;
 

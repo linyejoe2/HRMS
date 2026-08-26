@@ -11,7 +11,8 @@ import {
   getBusinessTripRequestBySequenceNumber,
   managerApproveBusinessTripRequest,
   managerRejectBusinessTripRequest,
-  getPendingManagerBusinessTripRequests
+  getPendingManagerBusinessTripRequests,
+  updateBusinessTripClockTimes
 } from '../controllers/businessTripController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { uploadBusinessTripFiles } from '../middleware/upload';
@@ -37,6 +38,8 @@ router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploa
 router.put('/:id/manager-approve', authenticateToken, managerApproveBusinessTripRequest);
 
 router.put('/:id/manager-reject', authenticateToken, managerRejectBusinessTripRequest);
+
+router.put('/:id/clock-times', authenticateToken, updateBusinessTripClockTimes);
 
 router.put('/:id/cancel', authenticateToken, cancelBusinessTripRequest);
 

@@ -1,6 +1,11 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { Counter } from './Counter';
 
+export interface IBusinessTripClockTime {
+  clockIn: Date;
+  clockOut: Date;
+}
+
 export interface IBusinessTrip extends Document {
   sequenceNumber: number;
   empID: string;
@@ -13,6 +18,7 @@ export interface IBusinessTrip extends Document {
   transportation?: string; // Mode of transportation
   estimatedCost?: number; // Estimated cost
   notes?: string; // Additional notes
+  clockTimes: IBusinessTripClockTime[]; // Per-day clock-in/out during the trip; defaulted from constants.ts on create, editable by the employee any time
   supportingInfo?: string[]; // Array of file paths or URLs to supporting documents (相關資料)
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
@@ -25,6 +31,11 @@ export interface IBusinessTrip extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const clockTimeSchema = new Schema<IBusinessTripClockTime>({
+  clockIn: { type: Date, required: true },
+  clockOut: { type: Date, required: true }
+}, { _id: false });
 
 const businessTripSchema = new Schema<IBusinessTrip>({
   sequenceNumber: {
@@ -69,6 +80,10 @@ const businessTripSchema = new Schema<IBusinessTrip>({
   },
   notes: {
     type: String
+  },
+  clockTimes: {
+    type: [clockTimeSchema],
+    default: []
   },
   supportingInfo: {
     type: [String]

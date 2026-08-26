@@ -192,6 +192,28 @@ const AttendanceTab: React.FC = () => {
       businessTrips.forEach((bt: any) => {
 
         if (hiddenFromAttendanceEmpIDs.has(bt.empID)) return;
+
+        // Prefer the employee's own recorded clock-in/out times when present,
+        // instead of the computed work-hour segments below.
+        if (bt.clockTimes && bt.clockTimes.length > 0) {
+          bt.clockTimes.forEach((entry: { clockIn: string; clockOut: string }) => {
+            const clockIn = dayjsToTz(entry.clockIn);
+            const clockOut = dayjsToTz(entry.clockOut);
+            const dateStr = toTaipeiDate(clockIn.toISOString());
+            const record = getOrCreateRecord(bt.empID, dateStr);
+
+            if (!record.clockInTime || dayjs(record.clockInTime).isAfter(clockIn)) {
+              record.clockInTime = clockIn.toISOString();
+              record.clockInSource = '因公免刷卡';
+            }
+            if (!record.clockOutTime || dayjs(record.clockOutTime).isBefore(clockOut)) {
+              record.clockOutTime = clockOut.toISOString();
+              record.clockOutSource = '因公免刷卡';
+            }
+          });
+          return;
+        }
+
         const tripStart = dayjsToTz(bt.tripStart);
         const tripEnd = dayjsToTz(bt.tripEnd);
         const firstDay = tripStart.startOf('day');

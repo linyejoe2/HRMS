@@ -1,5 +1,34 @@
-import { BusinessTrip, IBusinessTrip, Employee } from '../models';
+import { BusinessTrip, IBusinessTrip, IBusinessTripClockTime, Employee } from '../models';
 import { APIError } from '../middleware/errorHandler';
+import { dayjsToTz } from '../util/utility';
+import { CONST } from '../constants';
+import { Dayjs } from 'dayjs';
+
+// Builds one clock-in/out pair per day of the trip: the actual trip start/end time
+// on the first/last day, and the standard work-start/work-end time (from constants.ts)
+// on every day in between — mirrors how AttendanceTab.tsx bounds each day's segment.
+function buildDefaultClockTimes(tripStart: Dayjs, tripEnd: Dayjs): IBusinessTripClockTime[] {
+  const { workStart, workEnd } = CONST.workingTime;
+  const firstDay = tripStart.startOf('day');
+  const lastDay = tripEnd.startOf('day');
+  const clockTimes: IBusinessTripClockTime[] = [];
+
+  for (let cursor = firstDay; !cursor.isAfter(lastDay); cursor = cursor.add(1, 'day')) {
+    const isFirstDay = cursor.isSame(firstDay, 'day');
+    const isLastDay = cursor.isSame(lastDay, 'day');
+
+    const clockIn = isFirstDay
+      ? tripStart
+      : cursor.hour(workStart.hour).minute(workStart.minute).second(0).millisecond(0);
+    const clockOut = isLastDay
+      ? tripEnd
+      : cursor.hour(workEnd.hour).minute(workEnd.minute).second(0).millisecond(0);
+
+    clockTimes.push({ clockIn: clockIn.toDate(), clockOut: clockOut.toDate() });
+  }
+
+  return clockTimes;
+}
 
 export class BusinessTripService {
   static async createBusinessTripRequest(empID: string, businessTripData: {
@@ -19,11 +48,11 @@ export class BusinessTripService {
       throw new APIError('Employee not found', 404);
     }
 
-    const tripStart = new Date(businessTripData.tripStart);
-    const tripEnd = new Date(businessTripData.tripEnd);
+    const tripStart = dayjsToTz(businessTripData.tripStart);
+    const tripEnd = dayjsToTz(businessTripData.tripEnd);
 
     // Validate dates
-    if (tripEnd <= tripStart) {
+    if (!tripEnd.isAfter(tripStart)) {
       throw new APIError('Trip end date must be after start date', 400);
     }
 
@@ -33,11 +62,12 @@ export class BusinessTripService {
       department: employee.department || '',
       destination: businessTripData.destination,
       purpose: businessTripData.purpose,
-      tripStart,
-      tripEnd,
+      tripStart: tripStart.toDate(),
+      tripEnd: tripEnd.toDate(),
       transportation: businessTripData.transportation,
       estimatedCost: businessTripData.estimatedCost,
       notes: businessTripData.notes,
+      clockTimes: buildDefaultClockTimes(tripStart, tripEnd),
       supportingInfo: businessTripData.supportingInfo,
       status: 'created',
       agent: businessTripData.agent,
@@ -47,6 +77,48 @@ export class BusinessTripService {
     const savedBusinessTrip = await businessTrip.save();
 
     return savedBusinessTrip;
+  }
+
+  /**
+   * Let the employee record/adjust their actual clock-in/out times during the trip.
+   * Allowed regardless of status ('created' or 'approved') so it works even after
+   * the trip has already been approved; blocked once the request is rejected/cancelled
+   * since it never happened.
+   */
+  static async updateClockTimes(
+    businessTripId: string,
+    requesterEmpID: string,
+    clockTimes: { clockIn: string; clockOut: string }[]
+  ): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) {
+      throw new APIError('Business trip request not found', 404);
+    }
+
+    if (businessTrip.empID !== requesterEmpID) {
+      throw new APIError('只有申請人可以修改此申請', 403);
+    }
+
+    if (businessTrip.status === 'rejected' || businessTrip.status === 'cancel') {
+      throw new APIError('此申請已被拒絕或取消，無法修改上下班時間', 400);
+    }
+
+    if (!Array.isArray(clockTimes) || clockTimes.length === 0) {
+      throw new APIError('請至少提供一組上下班時間', 400);
+    }
+
+    const parsed = clockTimes.map(({ clockIn, clockOut }) => {
+      const clockInDayjs = dayjsToTz(clockIn);
+      const clockOutDayjs = dayjsToTz(clockOut);
+      if (!clockOutDayjs.isAfter(clockInDayjs)) {
+        throw new APIError('下班時間必須晚於上班時間', 400);
+      }
+      return { clockIn: clockInDayjs.toDate(), clockOut: clockOutDayjs.toDate() };
+    });
+
+    businessTrip.clockTimes = parsed;
+
+    return await businessTrip.save();
   }
 
   static async getBusinessTripRequestsByEmployee(empID: string): Promise<IBusinessTrip[]> {
