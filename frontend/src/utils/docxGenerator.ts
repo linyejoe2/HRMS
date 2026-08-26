@@ -3,6 +3,7 @@ import Docxtemplater from 'docxtemplater';
 import dayjs from 'dayjs';
 import { LeaveRequest, PostClockRequest, BusinessTripRequest, OfficialBusinessRequest } from '../types';
 import { toTaipeiString } from '@/utils/util/utility';
+import { employeeAPI } from '@/services/api';
 
 export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Promise<void> => {
   try {
@@ -35,7 +36,8 @@ export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Prom
       ...leaveRequest,
       day: Number((parseInt(leaveRequest.hour) / 8).toFixed(2)),
       leaveStart: toTaipeiString(leaveRequest.leaveStart),
-      leaveEnd: toTaipeiString(leaveRequest.leaveEnd)
+      leaveEnd: toTaipeiString(leaveRequest.leaveEnd),
+      substituteName: await employeeAPI.getNameById(leaveRequest.substitute)
     }
     // // Prepare template data
     // const templateData = {
