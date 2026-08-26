@@ -298,7 +298,7 @@ The system includes a migration service to import employee data from the existin
 // Role hierarchy:
 'admin'    → Full system access
 'hr'       → Employee management, cannot delete
-'manager'  → Department-scoped manager review (leave/business-trip/post-clock/official-business approval)
+'manager'  → Job-title label only; manager-review authorization is driven by Employee.manager assignment, not this role
 'employee' → Personal profile access only
 ```
 

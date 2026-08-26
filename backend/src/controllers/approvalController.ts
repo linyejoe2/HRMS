@@ -13,13 +13,13 @@ export interface PendingManagerItem {
 }
 
 export const getPendingManagerApprovals = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const department = req.user!.department;
+  const managerEmpID = req.user!.empID;
 
   const [leaves, trips, clocks, officialBusinesses] = await Promise.all([
-    LeaveService.getPendingManagerLeaveRequests(department),
-    BusinessTripService.getPendingManagerBusinessTripRequests(department),
-    PostClockService.getPendingManagerPostClockRequests(department),
-    OfficialBusinessService.getPendingManagerOfficialBusinessRequests(department)
+    LeaveService.getPendingManagerLeaveRequests(managerEmpID),
+    BusinessTripService.getPendingManagerBusinessTripRequests(managerEmpID),
+    PostClockService.getPendingManagerPostClockRequests(managerEmpID),
+    OfficialBusinessService.getPendingManagerOfficialBusinessRequests(managerEmpID)
   ]);
 
   const items: PendingManagerItem[] = [

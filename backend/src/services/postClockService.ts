@@ -105,13 +105,14 @@ export class PostClockService {
     return await postClock.save();
   }
 
-  static async managerApprovePostClockRequest(postClockId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<IPostClock> {
+  static async managerApprovePostClockRequest(postClockId: string, requesterEmpID: string, memo?: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
       throw new APIError('PostClock request not found', 404);
     }
-    if (!requesterDepartment || postClock.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: postClock.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (postClock.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -128,13 +129,14 @@ export class PostClockService {
     return await postClock.save();
   }
 
-  static async managerRejectPostClockRequest(postClockId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<IPostClock> {
+  static async managerRejectPostClockRequest(postClockId: string, requesterEmpID: string, memo: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
       throw new APIError('PostClock request not found', 404);
     }
-    if (!requesterDepartment || postClock.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: postClock.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (postClock.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -151,9 +153,10 @@ export class PostClockService {
     return await postClock.save();
   }
 
-  static async getPendingManagerPostClockRequests(department: string | undefined): Promise<IPostClock[]> {
-    if (!department) return [];
-    return await PostClock.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  static async getPendingManagerPostClockRequests(managerEmpID: string): Promise<IPostClock[]> {
+    const managedEmpIDs = (await Employee.find({ manager: managerEmpID }).select('empID')).map(e => e.empID);
+    if (managedEmpIDs.length === 0) return [];
+    return await PostClock.find({ empID: { $in: managedEmpIDs }, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
   }
 
   static async getPostClockRequestById(postClockId: string): Promise<IPostClock> {

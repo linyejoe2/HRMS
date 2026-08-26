@@ -75,8 +75,24 @@ const EmployeeManagement: React.FC = () => {
     open: boolean;
     employee: Employee | null;
   }>({ open: false, employee: null });
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
 
   const limit = 100;
+
+  // Resolve manager empIDs to display names for any not already cached
+  const resolveManagerNames = async (list: Employee[]) => {
+    const unresolvedEmpIDs = Array.from(
+      new Set(list.map(e => e.manager).filter((empID): empID is string => !!empID))
+    ).filter(empID => !(empID in managerNames));
+
+    if (unresolvedEmpIDs.length === 0) return;
+
+    const names = await Promise.all(unresolvedEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+    setManagerNames(prev => ({
+      ...prev,
+      ...Object.fromEntries(unresolvedEmpIDs.map((empID, index) => [empID, names[index]]))
+    }));
+  };
 
   // Check permissions
   const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
@@ -94,6 +110,7 @@ const EmployeeManagement: React.FC = () => {
       setEmployees(response.data.data.employees || []);
       setTotal(response.data.data.total || 0);
       setTotalPages(response.data.data.pages || 1);
+      resolveManagerNames(response.data.data.employees || []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || '載入員工資料失敗');
       setEmployees([]);
@@ -116,6 +133,7 @@ const EmployeeManagement: React.FC = () => {
       setTotal(response.data.data.employees?.length || 0);
       setTotalPages(1);
       setPage(1);
+      resolveManagerNames(response.data.data.employees || []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || '搜尋員工失敗');
       setEmployees([]);
@@ -439,6 +457,7 @@ const EmployeeManagement: React.FC = () => {
                   <TableCell>員工編號</TableCell>
                   <TableCell>姓名</TableCell>
                   <TableCell>部門</TableCell>
+                  <TableCell>主管</TableCell>
                   <TableCell>系統等級</TableCell>
                   <TableCell>狀態</TableCell>
                   <TableCell>最後登入</TableCell>
@@ -449,7 +468,7 @@ const EmployeeManagement: React.FC = () => {
               <TableBody>
                 {employees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       <Typography color="text.secondary">
                         {loading ? '載入中...' : searchQuery ? '找不到符合條件的員工' : '尚無員工資料'}
                       </Typography>
@@ -461,6 +480,7 @@ const EmployeeManagement: React.FC = () => {
                       <TableCell>{employee.empID}</TableCell>
                       <TableCell>{employee.name}</TableCell>
                       <TableCell>{getDepartmentDescription(employee.department)}</TableCell>
+                      <TableCell>{employee.manager ? (managerNames[employee.manager] ?? employee.manager) : '-'}</TableCell>
                       <TableCell>
                         <Chip
                           label={getRoleText(employee.role)}

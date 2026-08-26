@@ -86,7 +86,7 @@ export const rejectPostClockRequest = asyncHandler(async (req: AuthRequest, res:
 export const managerApprovePostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { memo } = req.body || {};
-  const postClock = await PostClockService.managerApprovePostClockRequest(id, req.user!.empID, req.user!.department, memo);
+  const postClock = await PostClockService.managerApprovePostClockRequest(id, req.user!.empID, memo);
 
   res.status(200).json({
     error: false,
@@ -101,7 +101,7 @@ export const managerRejectPostClockRequest = asyncHandler(async (req: AuthReques
   if (!reason) {
     return res.status(400).json({ error: true, message: '拒絕理由為必填' });
   }
-  const postClock = await PostClockService.managerRejectPostClockRequest(id, req.user!.empID, req.user!.department, reason);
+  const postClock = await PostClockService.managerRejectPostClockRequest(id, req.user!.empID, reason);
 
   res.status(200).json({
     error: false,
@@ -111,7 +111,7 @@ export const managerRejectPostClockRequest = asyncHandler(async (req: AuthReques
 });
 
 export const getPendingManagerPostClockRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const postClocks = await PostClockService.getPendingManagerPostClockRequests(req.user!.department);
+  const postClocks = await PostClockService.getPendingManagerPostClockRequests(req.user!.empID);
 
   res.status(200).json({
     error: false,

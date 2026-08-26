@@ -50,7 +50,7 @@ router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequ
 
 router.get('/pending/substitute', authenticateToken, getPendingSubstituteLeaveRequests);
 
-router.get('/pending/manager', authenticateToken, requireRole(['hr', 'admin', 'manager']), getPendingManagerLeaveRequests);
+router.get('/pending/manager', authenticateToken, getPendingManagerLeaveRequests);
 
 router.get('/:id', authenticateToken, getLeaveRequestById);
 
@@ -62,9 +62,9 @@ router.put('/:id/substitute-approve', authenticateToken, substituteApproveLeaveR
 
 router.put('/:id/substitute-reject', authenticateToken, substituteRejectLeaveRequest);
 
-router.put('/:id/manager-approve', authenticateToken, requireRole(['hr', 'admin', 'manager']), managerApproveLeaveRequest);
+router.put('/:id/manager-approve', authenticateToken, managerApproveLeaveRequest);
 
-router.put('/:id/manager-reject', authenticateToken, requireRole(['hr', 'admin', 'manager']), managerRejectLeaveRequest);
+router.put('/:id/manager-reject', authenticateToken, managerRejectLeaveRequest);
 
 router.put('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), addLeaveSupportingInfo);
 

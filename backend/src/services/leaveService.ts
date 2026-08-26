@@ -347,13 +347,14 @@ export class LeaveService {
     return await leave.save();
   }
 
-  static async managerApproveLeaveRequest(leaveId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<ILeave> {
+  static async managerApproveLeaveRequest(leaveId: string, requesterEmpID: string, memo?: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
     }
-    if (!requesterDepartment || leave.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: leave.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (leave.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -373,13 +374,14 @@ export class LeaveService {
     return await leave.save();
   }
 
-  static async managerRejectLeaveRequest(leaveId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<ILeave> {
+  static async managerRejectLeaveRequest(leaveId: string, requesterEmpID: string, memo: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {
       throw new APIError('Leave request not found', 404);
     }
-    if (!requesterDepartment || leave.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: leave.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (leave.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -403,9 +405,10 @@ export class LeaveService {
     return await Leave.find({ substitute: empID, substituteApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
   }
 
-  static async getPendingManagerLeaveRequests(department: string | undefined): Promise<ILeave[]> {
-    if (!department) return [];
-    return await Leave.find({ department, managerApproveStatus: 'pending', substituteApproveStatus: 'approved', status: 'created' }).sort({ createdAt: -1 });
+  static async getPendingManagerLeaveRequests(managerEmpID: string): Promise<ILeave[]> {
+    const managedEmpIDs = (await Employee.find({ manager: managerEmpID }).select('empID')).map(e => e.empID);
+    if (managedEmpIDs.length === 0) return [];
+    return await Leave.find({ empID: { $in: managedEmpIDs }, managerApproveStatus: 'pending', substituteApproveStatus: 'approved', status: 'created' }).sort({ createdAt: -1 });
   }
 
   static async getLeaveRequestById(leaveId: string): Promise<ILeave> {

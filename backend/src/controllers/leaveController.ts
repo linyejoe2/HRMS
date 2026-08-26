@@ -125,7 +125,7 @@ export const substituteRejectLeaveRequest = asyncHandler(async (req: AuthRequest
 export const managerApproveLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { memo } = req.body || {};
-  const leave = await LeaveService.managerApproveLeaveRequest(id, req.user!.empID, req.user!.department, memo);
+  const leave = await LeaveService.managerApproveLeaveRequest(id, req.user!.empID, memo);
 
   res.json({
     error: false,
@@ -140,7 +140,7 @@ export const managerRejectLeaveRequest = asyncHandler(async (req: AuthRequest, r
   if (!reason) {
     return res.status(400).json({ error: true, message: '拒絕理由為必填' });
   }
-  const leave = await LeaveService.managerRejectLeaveRequest(id, req.user!.empID, req.user!.department, reason);
+  const leave = await LeaveService.managerRejectLeaveRequest(id, req.user!.empID, reason);
 
   res.json({
     error: false,
@@ -160,7 +160,7 @@ export const getPendingSubstituteLeaveRequests = asyncHandler(async (req: AuthRe
 });
 
 export const getPendingManagerLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const leaves = await LeaveService.getPendingManagerLeaveRequests(req.user!.department);
+  const leaves = await LeaveService.getPendingManagerLeaveRequests(req.user!.empID);
 
   res.json({
     error: false,

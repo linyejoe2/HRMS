@@ -230,7 +230,7 @@ export class OfficialBusinessController {
       return;
     }
 
-    const officialBusiness = await officialBusinessService.managerApproveOfficialBusinessRequest(id, user.empID, user.department, memo);
+    const officialBusiness = await officialBusinessService.managerApproveOfficialBusinessRequest(id, user.empID, memo);
 
     res.status(200).json({
       error: false,
@@ -256,7 +256,7 @@ export class OfficialBusinessController {
       return;
     }
 
-    const officialBusiness = await officialBusinessService.managerRejectOfficialBusinessRequest(id, user.empID, user.department, reason);
+    const officialBusiness = await officialBusinessService.managerRejectOfficialBusinessRequest(id, user.empID, reason);
 
     res.status(200).json({
       error: false,
@@ -276,7 +276,7 @@ export class OfficialBusinessController {
       return;
     }
 
-    const officialBusinessRequests = await officialBusinessService.getPendingManagerOfficialBusinessRequests(user.department);
+    const officialBusinessRequests = await officialBusinessService.getPendingManagerOfficialBusinessRequests(user.empID);
 
     res.status(200).json({
       error: false,

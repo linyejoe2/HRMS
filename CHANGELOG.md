@@ -3,6 +3,22 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-08-26 - Manager Assignment & Approval Refinements
+
+**Author**: Randy Lin
+
+### Added
+
+- `Employee.manager` field: a designated manager (empID) per employee, editable in the employee edit dialog and shown as a 主管 column in 員工管理.
+- `GET /api/constants` endpoint exposing `backend/src/constants.ts`'s working-time schedule to the frontend.
+- 補單原因 radio-button reasons (with an "其他" free-text option) and a policy reminder note in the post-clock request form.
+- `FilePreviewDialog` gained an optional `memo` note and `onUpload` control, used on 請假審核's 佐證資料 dialog to backfill missing files during the system-migration window; 主管審核's grid now shows an 附件 column too.
+
+### Changed
+
+- Manager-approve/reject and pending-manager queries (leave, business-trip, post-clock, official-business) now authorize via the requester matching the request-owner's `Employee.manager`, replacing the old department+role('manager') match; 主管審核 is now visible to every employee rather than gated by role.
+- Cross-day business-trip attendance now bounds each day's clock-in/out to that day's own segment instead of the trip's overall start/end.
+
 ## [1.1.0] - 2026-08-21 - Substitute & Manager Approval Stages
 
 **Author**: Randy Lin

@@ -14,6 +14,7 @@ export interface IEmployee extends Document {
   role: 'admin' | 'hr' | 'employee' | 'manager' | 'director';
   lastLogin?: Date;
   department?: string; // Department code reference (e.g., "2000", "8000")
+  manager?: string; // Designated manager's empID (references Employee.empID) — who approves this employee's manager-review stage
   hireDate?: Date; // 到職日期 (入職日期)
   salary?: number;
   createdAt: Date;
@@ -106,6 +107,11 @@ const EmployeeSchema = new Schema<IEmployee>({
   department: { // Department code (references Department.code)
     type: String,
     ref: 'Department',
+    trim: true
+  },
+  manager: { // Designated manager's empID (references Employee.empID)
+    type: String,
+    ref: 'Employee',
     trim: true
   },
   hireDate: { // 到職日期
@@ -260,6 +266,7 @@ const EmployeeSchema = new Schema<IEmployee>({
 
 // Indexes for performance
 EmployeeSchema.index({ department: 1 });
+EmployeeSchema.index({ manager: 1 });
 EmployeeSchema.index({ isActive: 1 });
 EmployeeSchema.index({ dateOfBirth: 1 }); // 新增索引
 EmployeeSchema.index({ jobTitle: 1 }); // 新增索引

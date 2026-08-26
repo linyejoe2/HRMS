@@ -222,15 +222,15 @@ export class OfficialBusinessService {
   static async managerApproveOfficialBusinessRequest(
     officialBusinessId: string,
     requesterEmpID: string,
-    requesterDepartment: string | undefined,
     memo?: string
   ): Promise<IOfficialBusiness> {
     const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
     if (!officialBusiness) {
       throw new APIError('找不到該外出申請', 404);
     }
-    if (!requesterDepartment || officialBusiness.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: officialBusiness.applicant });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (officialBusiness.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -253,15 +253,15 @@ export class OfficialBusinessService {
   static async managerRejectOfficialBusinessRequest(
     officialBusinessId: string,
     requesterEmpID: string,
-    requesterDepartment: string | undefined,
     memo: string
   ): Promise<IOfficialBusiness> {
     const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
     if (!officialBusiness) {
       throw new APIError('找不到該外出申請', 404);
     }
-    if (!requesterDepartment || officialBusiness.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: officialBusiness.applicant });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (officialBusiness.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -281,9 +281,10 @@ export class OfficialBusinessService {
   /**
    * Get official business requests pending manager review for a department
    */
-  static async getPendingManagerOfficialBusinessRequests(department: string | undefined): Promise<IOfficialBusiness[]> {
-    if (!department) return [];
-    return OfficialBusiness.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ startTime: -1 });
+  static async getPendingManagerOfficialBusinessRequests(managerEmpID: string): Promise<IOfficialBusiness[]> {
+    const managedEmpIDs = (await Employee.find({ manager: managerEmpID }).select('empID')).map(e => e.empID);
+    if (managedEmpIDs.length === 0) return [];
+    return OfficialBusiness.find({ applicant: { $in: managedEmpIDs }, managerApproveStatus: 'pending', status: 'created' }).sort({ startTime: -1 });
   }
 
   /**

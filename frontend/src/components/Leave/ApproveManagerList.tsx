@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Chip, Tooltip, Typography } from '@mui/material';
-import { Check as ApproveIcon, Close as RejectIcon } from '@mui/icons-material';
+import { Check as ApproveIcon, Close as RejectIcon, Attachment as AttachmentIcon } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
 import {
   BusinessTripRequest,
   LeaveRequest,
@@ -13,6 +15,7 @@ import {
 import { approvalAPI, businessTripAPI, leaveAPI, officialBusinessAPI, postClockAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
+import FilePreviewDialog from '../common/FilePreviewDialog';
 import { getDepartmentDescription } from '@/services/variableService';
 import { leaveDisplaynameConverter } from '@/services/leaveService';
 
@@ -76,6 +79,8 @@ const ApproveManagerList: React.FC = () => {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PendingManagerItem | null>(null);
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   const fetchPendingItems = async () => {
     try {
@@ -183,6 +188,33 @@ const ApproveManagerList: React.FC = () => {
       sortable: false
     },
     {
+      field: 'supportingInfo',
+      headerName: '附件',
+      flex: 0.8,
+      renderCell: (params) => {
+        const files = (params.row as PendingManagerItem).data.supportingInfo || [];
+        if (files.length === 0) return '-';
+
+        return (
+          <Tooltip title="點擊查看檔案">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedFiles(files);
+                setFileDialogOpen(true);
+              }}
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge badgeContent={files.length} color="primary">
+                <AttachmentIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        );
+      },
+      sortable: false
+    },
+    {
       field: 'actions',
       type: 'actions',
       headerName: '操作',
@@ -274,6 +306,12 @@ const ApproveManagerList: React.FC = () => {
             </Box>
           )
         }
+      />
+      <FilePreviewDialog
+        open={fileDialogOpen}
+        onClose={() => setFileDialogOpen(false)}
+        files={selectedFiles}
+        title="附件資料"
       />
     </Box>
   );

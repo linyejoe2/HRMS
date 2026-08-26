@@ -99,13 +99,14 @@ export class BusinessTripService {
     return await businessTrip.save();
   }
 
-  static async managerApproveBusinessTripRequest(businessTripId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo?: string): Promise<IBusinessTrip> {
+  static async managerApproveBusinessTripRequest(businessTripId: string, requesterEmpID: string, memo?: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {
       throw new APIError('Business trip request not found', 404);
     }
-    if (!requesterDepartment || businessTrip.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: businessTrip.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (businessTrip.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -122,13 +123,14 @@ export class BusinessTripService {
     return await businessTrip.save();
   }
 
-  static async managerRejectBusinessTripRequest(businessTripId: string, requesterEmpID: string, requesterDepartment: string | undefined, memo: string): Promise<IBusinessTrip> {
+  static async managerRejectBusinessTripRequest(businessTripId: string, requesterEmpID: string, memo: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {
       throw new APIError('Business trip request not found', 404);
     }
-    if (!requesterDepartment || businessTrip.department !== requesterDepartment) {
-      throw new APIError('無權限：您不是該部門主管', 403);
+    const ownerEmployee = await Employee.findOne({ empID: businessTrip.empID });
+    if (!ownerEmployee?.manager || ownerEmployee.manager !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請人的主管', 403);
     }
     if (businessTrip.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
@@ -145,9 +147,10 @@ export class BusinessTripService {
     return await businessTrip.save();
   }
 
-  static async getPendingManagerBusinessTripRequests(department: string | undefined): Promise<IBusinessTrip[]> {
-    if (!department) return [];
-    return await BusinessTrip.find({ department, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  static async getPendingManagerBusinessTripRequests(managerEmpID: string): Promise<IBusinessTrip[]> {
+    const managedEmpIDs = (await Employee.find({ manager: managerEmpID }).select('empID')).map(e => e.empID);
+    if (managedEmpIDs.length === 0) return [];
+    return await BusinessTrip.find({ empID: { $in: managedEmpIDs }, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
   }
 
   static async getBusinessTripRequestById(businessTripId: string): Promise<IBusinessTrip> {

@@ -141,17 +141,14 @@ const AppLayout: React.FC = () => {
       path: '/officialbusiness'
     });
 
-    // Approval Center is visible to everyone; 代理審核/主管審核 apply to any employee,
+    // Approval Center is visible to everyone; 代理審核/主管審核 apply to any employee
+    // (manager eligibility is now data-driven via Employee.manager, not role-based),
     // while the 4 legacy tabs stay restricted to HR/Admin.
     const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
-    const isManager = user?.role === UserLevel.MANAGER || isAdminOrHr;
     const approvalSubItems: { text: string; path: string }[] = [
       { text: '代理審核', path: '/leave/approve?tab=substitute' },
+      { text: '主管審核', path: '/leave/approve?tab=manager' },
     ];
-    if (isManager) {
-      approvalSubItems.push(
-        { text: '主管審核', path: '/leave/approve?tab=manager' })
-    }
     if (isAdminOrHr) {
       approvalSubItems.push(
         { text: '請假審核', path: '/leave/approve?tab=leave' },

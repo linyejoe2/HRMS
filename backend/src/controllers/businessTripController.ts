@@ -86,7 +86,7 @@ export const rejectBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
 export const managerApproveBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { memo } = req.body || {};
-  const businessTrip = await BusinessTripService.managerApproveBusinessTripRequest(id, req.user!.empID, req.user!.department, memo);
+  const businessTrip = await BusinessTripService.managerApproveBusinessTripRequest(id, req.user!.empID, memo);
 
   res.status(200).json({
     error: false,
@@ -101,7 +101,7 @@ export const managerRejectBusinessTripRequest = asyncHandler(async (req: AuthReq
   if (!reason) {
     return res.status(400).json({ error: true, message: '拒絕理由為必填' });
   }
-  const businessTrip = await BusinessTripService.managerRejectBusinessTripRequest(id, req.user!.empID, req.user!.department, reason);
+  const businessTrip = await BusinessTripService.managerRejectBusinessTripRequest(id, req.user!.empID, reason);
 
   res.status(200).json({
     error: false,
@@ -111,7 +111,7 @@ export const managerRejectBusinessTripRequest = asyncHandler(async (req: AuthReq
 });
 
 export const getPendingManagerBusinessTripRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const businessTrips = await BusinessTripService.getPendingManagerBusinessTripRequests(req.user!.department);
+  const businessTrips = await BusinessTripService.getPendingManagerBusinessTripRequests(req.user!.empID);
 
   res.status(200).json({
     error: false,

@@ -32,6 +32,7 @@ import { toast } from 'react-toastify';
 import { getLeaveColorByHours } from '../../utils/leaveCalculations';
 import { fetchUserLeaveData, LeaveData } from '../../services/leaveService';
 import LeaveDetailsDialog from './EditEmployeeLeaveDialog';
+import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 
 interface AddEditEmployeeModalProps {
   open: boolean;
@@ -98,6 +99,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
     companyContributionAmount: ''
   });
 
+  const [managerEmployee, setManagerEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(false);
   const [rebuildingAttendance, setRebuildingAttendance] = useState(false);
   const [rebuildConfirmOpen, setRebuildConfirmOpen] = useState(false);
@@ -365,6 +367,15 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
       if (employee.empID) {
         fetchLeaveInfo(employee.empID, employee.hireDate);
       }
+
+      // Resolve the designated manager's full record for display in the picker
+      if (employee.manager) {
+        employeeAPI.getByEmpID(employee.manager)
+          .then(res => setManagerEmployee(res.data.data.employee))
+          .catch(() => setManagerEmployee(null));
+      } else {
+        setManagerEmployee(null);
+      }
     } else {
       setFormData({
         name: '',
@@ -414,6 +425,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         selfContributionAmount: '',
         companyContributionAmount: ''
       });
+      setManagerEmployee(null);
     }
     setErrors({});
     setShowSensitive(false);
@@ -478,6 +490,7 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
         empID: formData.empID.trim(),
         cardID: formData.cardID ? formData.cardID.trim() : undefined,
         department: formData.department,
+        manager: managerEmployee?.empID || '',
         role: formData.role,
         isActive: formData.isActive
       };
@@ -688,6 +701,15 @@ const AddEditEmployeeModal: React.FC<AddEditEmployeeModalProps> = ({
                   </Typography>
                 )}
               </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <EmployeeAutocomplete
+                value={managerEmployee}
+                onChange={setManagerEmployee}
+                label="主管"
+                excludeEmpID={formData.empID || undefined}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6}>

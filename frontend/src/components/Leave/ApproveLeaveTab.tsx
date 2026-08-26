@@ -56,7 +56,6 @@ const ApproveLeaveTab: React.FC = () => {
   const tabParam = searchParams.get('tab');
   const { user } = useAuth();
   const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
-  const isManager = user?.role === UserLevel.MANAGER || isAdminOrHr;
 
   // Map tab parameter to index
   const getTabIndex = (tab: string | null): number => {
@@ -100,7 +99,7 @@ const ApproveLeaveTab: React.FC = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="審核類型">
           <Tab label="代理審核" value={4} {...a11yProps(4)} />
-          {isManager && <Tab label="主管審核" value={5} {...a11yProps(5)} />}
+          <Tab label="主管審核" value={5} {...a11yProps(5)} />
           {isAdminOrHr && <Tab label="請假審核" value={0} {...a11yProps(0)} />}
           {isAdminOrHr && <Tab label="補單審核" value={1} {...a11yProps(1)} />}
           {isAdminOrHr && <Tab label="因公免刷卡審核" value={2} {...a11yProps(2)} />}

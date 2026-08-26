@@ -88,6 +88,7 @@ cd frontend && npm install && npm run dev
   empID: string;
   name: string;
   department: string;
+  manager?: string; // empID of this employee's designated manager (drives 主管審核 routing)
   email?: string;
   password?: string;
   role: 'admin'|'hr'|'manager'|'employee';
@@ -155,7 +156,7 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 - GET `/pending/substitute` - Leave requests awaiting the caller's substitute review
 - GET `/pending/manager` - Leave requests awaiting the caller's department manager review
 - PUT `/:id/substitute-approve`, `/:id/substitute-reject` - Substitute review decision
-- PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (manager role only)
+- PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (caller must be the requester's assigned `Employee.manager`)
 
 Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject` routes (no substitute step).
 
@@ -246,7 +247,8 @@ theme.ts            # MUI theme configuration
   - Real-time status tracking (pending, approved, rejected)
 
 - **Approval Workflow** (leave, business-trip, post-clock, official-business):
-  - 代理審核 (substitute review, leave only) and 主管審核 (department manager review, all 4 types) tabs in 審核中心, visible to every employee
+  - 代理審核 (substitute review, leave only) and 主管審核 (manager review, all 4 types) tabs in 審核中心, visible to every employee
+  - Manager review routes to whoever is set as the requester's `Employee.manager` (assigned in the employee edit dialog), not by role or department
   - Manager review only unlocks after the substitute has approved (leave only)
   - A substitute/manager rejection freezes that stage without blocking HR/Admin's final decision
 

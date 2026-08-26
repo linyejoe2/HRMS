@@ -35,6 +35,7 @@ export interface Employee {
   role: UserLevel;
   lastLogin?: string;
   department?: string;
+  manager?: string; // Designated manager's empID
   hireDate?: string; // 入職日期
   salary?: number; // 薪水
   createdAt?: string;
