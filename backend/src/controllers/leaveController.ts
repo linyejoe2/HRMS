@@ -180,6 +180,24 @@ export const getLeaveRequestById = asyncHandler(async (req: AuthRequest, res: Re
   });
 });
 
+export const addLeaveSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const files = req.files as Express.Multer.File[];
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: true, message: '請選擇要上傳的檔案' });
+  }
+
+  const filePaths = files.map(file => `/uploads/leave/${file.filename}`);
+  const leave = await LeaveService.addLeaveSupportingInfo(id, filePaths);
+
+  res.json({
+    error: false,
+    message: '佐證資料已上傳',
+    data: leave
+  });
+});
+
 export const cancelLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { reason } = req.body;

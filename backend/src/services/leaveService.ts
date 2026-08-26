@@ -417,6 +417,20 @@ export class LeaveService {
     return leave;
   }
 
+  // Append supporting files to an existing leave request, regardless of its current
+  // status/stage — used by HR/Admin to backfill missing documents (e.g. during the
+  // system-migration catch-up window).
+  static async addLeaveSupportingInfo(leaveId: string, filePaths: string[]): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+
+    leave.supportingInfo = [...(leave.supportingInfo || []), ...filePaths];
+
+    return await leave.save();
+  }
+
   static async cancelLeaveRequest(leaveId: string, cancelledBy: string, reason?: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {

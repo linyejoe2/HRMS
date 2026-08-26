@@ -21,7 +21,8 @@ import {
   managerApproveLeaveRequest,
   managerRejectLeaveRequest,
   getPendingSubstituteLeaveRequests,
-  getPendingManagerLeaveRequests
+  getPendingManagerLeaveRequests,
+  addLeaveSupportingInfo
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { validateLeaveRequest } from '../middleware/validation';
@@ -64,6 +65,8 @@ router.put('/:id/substitute-reject', authenticateToken, substituteRejectLeaveReq
 router.put('/:id/manager-approve', authenticateToken, requireRole(['hr', 'admin', 'manager']), managerApproveLeaveRequest);
 
 router.put('/:id/manager-reject', authenticateToken, requireRole(['hr', 'admin', 'manager']), managerRejectLeaveRequest);
+
+router.put('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), uploadLeaveFiles.array('files', 10), addLeaveSupportingInfo);
 
 router.put('/:id/cancel', authenticateToken, cancelLeaveRequest);
 

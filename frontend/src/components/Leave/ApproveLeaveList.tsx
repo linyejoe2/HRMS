@@ -136,6 +136,7 @@ const ApproveLeaveList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [fileDialogRequestId, setFileDialogRequestId] = useState<string | null>(null);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [warningAdjustment, setWarningAdjustment] = useState({
@@ -315,6 +316,21 @@ const ApproveLeaveList: React.FC = () => {
     }
   };
 
+  const handleUploadSupportingInfo = async (newFiles: File[]) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await leaveAPI.addSupportingInfo(fileDialogRequestId, newFiles);
+      const updatedLeave = response.data.data;
+      setSelectedFiles(updatedLeave.supportingInfo || []);
+      setLeaveRequests(prev => prev.map(r => r._id === updatedLeave._id ? updatedLeave : r));
+      toast.success('檔案上傳成功');
+    } catch (error: any) {
+      console.error('Error uploading supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案上傳失敗');
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -432,20 +448,20 @@ const ApproveLeaveList: React.FC = () => {
       headerName: '佐證資料',
       flex: 1,
       renderCell: (params) => {
-        const files = params.value as string[] | undefined;
-        if (!files || files.length === 0) return '-';
+        const files = (params.value as string[] | undefined) || [];
 
         return (
-          <Tooltip title="點擊查看檔案">
+          <Tooltip title="點擊查看/上傳檔案">
             <IconButton
               size="small"
               onClick={() => {
                 setSelectedFiles(files);
+                setFileDialogRequestId(params.row._id ?? null);
                 setFileDialogOpen(true);
               }}
               sx={{ color: 'primary.main' }}
             >
-              <Badge badgeContent={files.length} color="primary">
+              <Badge badgeContent={files.length || undefined} color="primary">
                 <AttachmentIcon />
               </Badge>
             </IconButton>
@@ -736,9 +752,14 @@ const ApproveLeaveList: React.FC = () => {
       {/* File Preview Dialog */}
       <FilePreviewDialog
         open={fileDialogOpen}
-        onClose={() => setFileDialogOpen(false)}
+        onClose={() => {
+          setFileDialogOpen(false);
+          setFileDialogRequestId(null);
+        }}
         files={selectedFiles}
         title="請假佐證資料"
+        memo="由於系統轉換開啟特殊補檔模式到 9/4"
+        onUpload={handleUploadSupportingInfo}
       />
 
       {/* Warning Dialog for insufficient leave balance */}
@@ -773,7 +794,7 @@ const ApproveLeaveList: React.FC = () => {
             <Button
               variant="outlined"
               size="small"
-              sx={{...buttonStyle, display: "none"}}
+              sx={{ ...buttonStyle, display: "none" }}
               onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes - 60 })}
             >
               - 一小時
@@ -808,7 +829,7 @@ const ApproveLeaveList: React.FC = () => {
             <Button
               variant="outlined"
               size="small"
-              sx={{...buttonStyle, display: "none"}}
+              sx={{ ...buttonStyle, display: "none" }}
               onClick={() => setWarningAdjustment({ ...warningAdjustment, minutes: warningAdjustment.minutes + 60 })}
             >
               + 一小時

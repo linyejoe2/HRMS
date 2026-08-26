@@ -14,19 +14,24 @@ import {
   Alert,
   Chip,
   Paper,
+  CircularProgress,
 } from '@mui/material';
 import {
   Description as FileIcon,
   Visibility as PreviewIcon,
   Download as DownloadIcon,
+  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import FilePreview from './FilePreview';
+import { validateFiles } from '../../utils/fileValidation';
 
 interface FilePreviewDialogProps {
   open: boolean;
   onClose: () => void;
   files: string[]; // Array of file paths
   title?: string;
+  memo?: string; // Optional note shown at the bottom of the dialog
+  onUpload?: (files: File[]) => Promise<void> | void; // When provided, shows an "上傳檔案" button (e.g. to append to leave.supportingInfo)
 }
 
 const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
@@ -34,9 +39,12 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
   onClose,
   files,
   title = '佐證資料',
+  memo,
+  onUpload,
 }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const getFileName = (filePath: string): string => {
     return filePath.split('/').pop() || '未知檔案';
@@ -81,6 +89,23 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleUploadFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (selectedFiles && selectedFiles.length > 0 && onUpload) {
+      const validFiles = validateFiles(Array.from(selectedFiles));
+      if (validFiles.length > 0) {
+        setUploading(true);
+        try {
+          await onUpload(validFiles);
+        } finally {
+          setUploading(false);
+        }
+      }
+    }
+    // Reset input to allow selecting the same file again
+    event.target.value = '';
   };
 
   return (
@@ -170,9 +195,33 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
               </List>
             </Paper>
           )}
+
+          {memo && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {memo}
+            </Alert>
+          )}
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: onUpload ? 'space-between' : 'flex-end' }}>
+          {onUpload && (
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={uploading ? <CircularProgress size={16} /> : <AttachFileIcon />}
+              disabled={uploading}
+            >
+              {uploading ? '上傳中...' : '上傳檔案'}
+              <input
+                type="file"
+                hidden
+                multiple
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                onChange={handleUploadFiles}
+                disabled={uploading}
+              />
+            </Button>
+          )}
           <Button onClick={onClose}>關閉</Button>
         </DialogActions>
       </Dialog>

@@ -391,7 +391,16 @@ export const leaveAPI = {
 
   // Manager rejects the leave request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
-    api.put(`/leave/${id}/manager-reject`, { reason })
+    api.put(`/leave/${id}/manager-reject`, { reason }),
+
+  // Append supporting files to an existing leave request, regardless of status (HR/Admin only)
+  addSupportingInfo: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.put(`/leave/${id}/supporting-info`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
 
 };
 
