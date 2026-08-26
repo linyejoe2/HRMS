@@ -193,7 +193,7 @@ export class LeaveService {
     const substituteEmployee = await Employee.findOne({
       empID: leaveData.substitute,
       isActive: true,
-      department: employee.department
+      // department: employee.department
     });
     if (!substituteEmployee) {
       throw new APIError('代理人不存在、非在職，或部門不符', 400);

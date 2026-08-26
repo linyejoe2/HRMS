@@ -387,7 +387,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                       required
                       error={!!errors.substitute}
                       helperText={errors.substitute?.message}
-                      departmentFilter={hrMode ? selectedEmployee?.department : user?.department}
+                      // departmentFilter={hrMode ? selectedEmployee?.department : user?.department}
                       excludeEmpID={targetEmpID}
                     />
                   )}
