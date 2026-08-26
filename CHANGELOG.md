@@ -3,6 +3,19 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.3] - 2026-08-28 - Substitute Availability Checks
+
+**Author**: Randy Lin
+
+### Added
+
+- Leave creation now rejects the request (409) if the requester is currently committed as someone else's substitute during an overlapping window, or if the chosen substitute already has an overlapping leave of their own — both checked with `dayjs` in `LeaveService.checkSubstituteAvailability` / `checkSubstituteIsFree`.
+- Generated leave request DOCX now includes the substitute's name.
+
+### Changed
+
+- 代理人 (substitute) picker is no longer restricted to the requester's own department — any active employee can be chosen.
+
 ## [1.2.2] - 2026-08-27 - HR Memo on HR-Created Requests
 
 **Author**: Randy Lin

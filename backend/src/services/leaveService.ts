@@ -167,6 +167,44 @@ export class LeaveService {
     return start1 < end2 && end1 > start2;
   }
 
+  /**
+   * A substitute must be available to cover for the person they're standing in for,
+   * so they can't also be on leave during that window. Returns true when `empID` is
+   * free to take leave over [leaveStart, leaveEnd]; false if it overlaps a period
+   * where `empID` is still committed as someone else's substitute (status 'created'
+   * or 'approved' — a rejected/cancelled leave never materializes, so it's excluded).
+   */
+  static async checkSubstituteAvailability(empID: string, leaveStart: Dayjs, leaveEnd: Dayjs): Promise<boolean> {
+    const substituteDuties = await Leave.find({
+      substitute: empID,
+      status: { $in: ['created', 'approved'] }
+    });
+
+    return !substituteDuties.some(duty => {
+      const dutyStart = dayjsTz(duty.leaveStart);
+      const dutyEnd = dayjsTz(duty.leaveEnd);
+      return leaveStart.isBefore(dutyEnd) && leaveEnd.isAfter(dutyStart);
+    });
+  }
+
+  /**
+   * The chosen substitute can't already be on leave (as the requester of their own
+   * leave, status 'created' or 'approved') during the window they're being asked to
+   * cover. Returns true when `substituteEmpID` is free over [leaveStart, leaveEnd].
+   */
+  static async checkSubstituteIsFree(substituteEmpID: string, leaveStart: Dayjs, leaveEnd: Dayjs): Promise<boolean> {
+    const substituteLeaves = await Leave.find({
+      empID: substituteEmpID,
+      status: { $in: ['created', 'approved'] }
+    });
+
+    return !substituteLeaves.some(existingLeave => {
+      const existingStart = dayjsTz(existingLeave.leaveStart);
+      const existingEnd = dayjsTz(existingLeave.leaveEnd);
+      return leaveStart.isBefore(existingEnd) && leaveEnd.isAfter(existingStart);
+    });
+  }
+
   static async createLeaveRequest(empID: string, leaveData: {
     leaveType: string;
     reason: string;
@@ -201,6 +239,16 @@ export class LeaveService {
 
     const leaveStart = dayjsToTz(leaveData.leaveStart)
     const leaveEnd = dayjsToTz(leaveData.leaveEnd)
+
+    const isAvailableAsSubstitute = await this.checkSubstituteAvailability(empID, leaveStart, leaveEnd);
+    if (!isAvailableAsSubstitute) {
+      throw new APIError('您在此期間需擔任其他同事的代理人，無法同時請假', 409);
+    }
+
+    const isSubstituteFree = await this.checkSubstituteIsFree(leaveData.substitute, leaveStart, leaveEnd);
+    if (!isSubstituteFree) {
+      throw new APIError('您指定的代理人於此時段無法代理', 409);
+    }
 
     if (leaveData.leaveType === RETURN_TAIWAN_LEAVE_TYPE) {
       await ReturnTaiwanLeaveService.assertRequestAllowed(employee, leaveStart, leaveEnd);

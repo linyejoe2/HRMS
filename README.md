@@ -242,9 +242,9 @@ theme.ts            # MUI theme configuration
 ### 📝 Leave Management
 - **Employee Features**:
   - Create leave requests with multiple types (婚假, 喪假, 病假, 事假, etc.)
-  - Must choose a same-department substitute (代理人) when creating a leave request
+  - Must choose a substitute (代理人, any active employee) when creating a leave request; rejected with a 409 if the requester is already committed as someone else's substitute for an overlapping period, or if the chosen substitute already has an overlapping leave of their own
   - View personal leave request history
-  - Download leave request forms as DOCX documents
+  - Download leave request forms as DOCX documents (includes the substitute's name)
   - Real-time status tracking (pending, approved, rejected)
 
 - **Approval Workflow** (leave, business-trip, post-clock, official-business):
