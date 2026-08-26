@@ -25,6 +25,11 @@ export class OfficialBusinessController {
     const isHrOverride = ['hr', 'admin'].includes(user.role) && Array.isArray(parsedEmpIDs) && parsedEmpIDs.length > 0;
     const applicant = isHrOverride ? parsedEmpIDs[0] : user.empID;
 
+    // hrMode explicit signal from the "新增並核准" modal: records who created this
+    // request on the applicant's behalf, distinct from isHrOverride above (which
+    // also fires for an hr/admin's own self-serve submission).
+    const isAgentCreate = ['hr', 'admin'].includes(user.role) && req.body.agentMode === 'true';
+
     // Handle file uploads
     const files = req.files as Express.Multer.File[];
     const supportingInfo = files && files.length > 0
@@ -39,7 +44,8 @@ export class OfficialBusinessController {
         startTime,
         endTime,
         purpose,
-        supportingInfo
+        supportingInfo,
+        agent: isAgentCreate ? user.empID : undefined
       }
     );
 

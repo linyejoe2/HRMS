@@ -169,7 +169,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         supportingInfo: files
       };
 
-      const created = await officialBusinessAPI.create(requestData);
+      const created = await officialBusinessAPI.create(requestData, hrMode);
       if (hrMode) {
         await officialBusinessAPI.approve(created.data.data._id!);
       }

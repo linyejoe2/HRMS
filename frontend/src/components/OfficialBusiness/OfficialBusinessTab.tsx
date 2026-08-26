@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import EditIcon from '@mui/icons-material/Edit';
-import { officialBusinessAPI } from '../../services/api';
+import { officialBusinessAPI, employeeAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -42,6 +42,7 @@ const OfficialBusinessTab: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   // Edit return time dialog
   const [endTimeDialogOpen, setEndTimeDialogOpen] = useState(false);
@@ -55,6 +56,18 @@ const OfficialBusinessTab: React.FC = () => {
     try {
       const response = await officialBusinessAPI.getMy();
       setRequests(response.data.data || []);
+
+      const agentEmpIDs = Array.from(
+        new Set((response.data.data || []).map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error: any) {
       console.error('Error loading official business requests:', error);
       toast.error(error.response?.data?.message || '載入外出申請失敗');
@@ -230,7 +243,18 @@ const OfficialBusinessTab: React.FC = () => {
       headerName: '說明',
       flex: 1.5,
       minWidth: 150,
-      valueGetter: (_, row) => row.rejectionReason || '-'
+      renderCell: (params) => {
+        const lines: string[] = [];
+        if (params.row.agent) lines.push(`代辦人: ${agentNames[params.row.agent] ?? params.row.agent}`);
+        if (params.row.rejectionReason) lines.push(params.row.rejectionReason);
+        const text = lines.join(' / ') || '-';
+
+        return (
+          <Tooltip title={text}>
+            <span>{text}</span>
+          </Tooltip>
+        );
+      }
     },
     {
       field: 'actions',

@@ -20,6 +20,7 @@ export interface IPostClock extends Document {
   managerApproveStatus: 'pending' | 'approved' | 'rejected';
   managerMemo?: string;
   managerApproveAt?: Date;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +96,9 @@ const postClockSchema = new Schema<IPostClock>({
   },
   managerApproveAt: {
     type: Date
+  },
+  agent: {
+    type: String
   }
 }, {
   timestamps: true

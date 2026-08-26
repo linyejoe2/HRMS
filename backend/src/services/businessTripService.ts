@@ -11,6 +11,7 @@ export class BusinessTripService {
     estimatedCost?: number;
     notes?: string;
     supportingInfo?: string[];
+    agent?: string;
   }): Promise<IBusinessTrip> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -37,7 +38,8 @@ export class BusinessTripService {
       estimatedCost: businessTripData.estimatedCost,
       notes: businessTripData.notes,
       supportingInfo: businessTripData.supportingInfo,
-      status: 'created'
+      status: 'created',
+      agent: businessTripData.agent
     });
 
     const savedBusinessTrip = await businessTrip.save();

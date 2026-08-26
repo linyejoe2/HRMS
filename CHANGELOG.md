@@ -3,6 +3,15 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.1] - 2026-08-27 - Track HR-Created Requests
+
+**Author**: Randy Lin
+
+### Added
+
+- `agent` field on leave, business-trip, post-clock, and official-business requests: records which HR/admin created (and auto-approved) the request on an employee's behalf via hrMode.
+- The employee's own request tabs show "代辦人: {name}" in the 說明 column; the 4 HR approval grids show a new 代辦人 column.
+
 ## [1.2.0] - 2026-08-26 - Manager Assignment & Approval Refinements
 
 **Author**: Randy Lin

@@ -40,6 +40,7 @@ const AskLeaveTab: React.FC = () => {
   const [selectedLeaveData, setSelectedLeaveData] = useState<LeaveData | null>(null);
   const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
   const [substituteNames, setSubstituteNames] = useState<Record<string, string>>({});
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   const fetchLeaveRequests = async () => {
     try {
@@ -56,6 +57,18 @@ const AskLeaveTab: React.FC = () => {
         setSubstituteNames(prev => ({
           ...prev,
           ...Object.fromEntries(substituteEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -212,7 +225,19 @@ const AskLeaveTab: React.FC = () => {
       field: 'rejectionReason',
       headerName: '說明',
       flex: 1.5,
-      valueGetter: (_, row) => row.rejectionReason ?? ""
+      renderCell: (params) => {
+        const lines: string[] = [];
+        if (params.row.agent) lines.push(`代辦人: ${agentNames[params.row.agent] ?? params.row.agent}`);
+        if (params.row.rejectionReason) lines.push(params.row.rejectionReason);
+        const text = lines.join(' / ');
+        if (!text) return '';
+
+        return (
+          <Tooltip title={text}>
+            <span>{text}</span>
+          </Tooltip>
+        );
+      }
     },
     {
       field: 'actions',

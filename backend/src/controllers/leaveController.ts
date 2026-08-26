@@ -18,7 +18,8 @@ export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
     reason,
     leaveStart,
     leaveEnd,
-    substitute
+    substitute,
+    agent: isHrOverride ? req.user!.empID : undefined
   };
 
   // Handle uploaded files

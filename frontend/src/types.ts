@@ -126,6 +126,7 @@ export interface LeaveRequest {
   managerApproveStatus: ApproveStatus;
   managerMemo?: string;
   managerApproveAt?: string;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
@@ -322,6 +323,7 @@ export interface PostClockRequest {
   managerApproveStatus: ApproveStatus;
   managerMemo?: string;
   managerApproveAt?: string;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
@@ -358,6 +360,7 @@ export interface BusinessTripRequest {
   managerApproveStatus: ApproveStatus;
   managerMemo?: string;
   managerApproveAt?: string;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf
   sequenceNumber: number; // auto-increment sequence number
   createdAt?: string;
   updatedAt?: string;
@@ -392,6 +395,7 @@ export interface OfficialBusinessRequest {
   managerApproveStatus: ApproveStatus;
   managerMemo?: string;
   managerApproveAt?: string;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf
   createdAt?: string;
   updatedAt?: string;
 }

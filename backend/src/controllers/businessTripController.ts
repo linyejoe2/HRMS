@@ -7,6 +7,7 @@ export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
   const empID = isHrOverride ? req.body.empID : req.user!.empID;
   const { empID: _omit, ...businessTripData } = req.body;
+  businessTripData.agent = isHrOverride ? req.user!.empID : undefined;
 
   // Handle uploaded files
   const files = req.files as Express.Multer.File[];

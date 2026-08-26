@@ -120,6 +120,7 @@ cd frontend && npm install && npm run dev
   managerApproveStatus: 'pending'|'approved'|'rejected';
   managerMemo?: string;
   managerApproveAt?: Date;
+  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf (hrMode)
   YYYY: string; // Application year
   mm: string; // Application month
   DD: string; // Application day
@@ -128,7 +129,7 @@ cd frontend && npm install && npm run dev
 }
 ```
 
-Business-trip, post-clock, and official-business requests carry the same `manager`/`managerApproveStatus`/`managerMemo`/`managerApproveAt` fields (no `substitute*` fields — only leave requires a substitute).
+Business-trip, post-clock, and official-business requests carry the same `manager`/`managerApproveStatus`/`managerMemo`/`managerApproveAt`/`agent` fields (no `substitute*` fields — only leave requires a substitute).
 
 **Auth Flow**: Migrate → Register → Login → JWT → Role-based access
 

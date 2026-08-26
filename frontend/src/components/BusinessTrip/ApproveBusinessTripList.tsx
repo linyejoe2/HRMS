@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
-import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest } from '../../services/api';
+import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -44,6 +44,7 @@ const ApproveBusinessTripList: React.FC = () => {
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchBusinessTripRequests = async (status?: string) => {
@@ -51,6 +52,18 @@ const ApproveBusinessTripList: React.FC = () => {
       setLoading(true);
       const response = await getAllBusinessTripRequests(status);
       setBusinessTripRequests(response.data.data);
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching business trip requests:', error);
       toast.error('無法載入因公免刷卡申請');
@@ -276,6 +289,13 @@ const ApproveBusinessTripList: React.FC = () => {
           </Tooltip>
         );
       },
+      sortable: false
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      valueGetter: (_, row) => row.agent ? (agentNames[row.agent] ?? row.agent) : '-',
       sortable: false
     },
     {

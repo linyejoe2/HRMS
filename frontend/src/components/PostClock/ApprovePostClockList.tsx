@@ -25,7 +25,7 @@ import {
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { PostClockRequest } from '../../types';
-import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest } from '../../services/api';
+import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -45,6 +45,7 @@ const ApprovePostClockList: React.FC = () => {
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
@@ -52,6 +53,18 @@ const ApprovePostClockList: React.FC = () => {
       setLoading(true);
       const response = await getAllPostClockRequests(status);
       setPostClockRequests(response.data.data);
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching postclock requests:', error);
       toast.error('無法載入補單申請');
@@ -276,6 +289,13 @@ const ApprovePostClockList: React.FC = () => {
           </Tooltip>
         );
       },
+      sortable: false
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      valueGetter: (_, row) => row.agent ? (agentNames[row.agent] ?? row.agent) : '-',
       sortable: false
     },
     {

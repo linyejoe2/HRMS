@@ -643,8 +643,9 @@ export const cancelBusinessTripRequest = businessTripAPI.cancel;
 export const getCancelledBusinessTripRequests = businessTripAPI.getCancelled;
 
 export const officialBusinessAPI = {
-  // Create official business request
-  create: (officialBusinessData: OfficialBusinessRequestForm): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
+  // Create official business request. Pass isAgentCreate when creating on another
+  // employee's behalf (hrMode) so the backend can record the acting HR/admin as `agent`.
+  create: (officialBusinessData: OfficialBusinessRequestForm, isAgentCreate?: boolean): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
     const formData = new FormData();
     formData.append('empIDs', JSON.stringify(officialBusinessData.empIDs));
     formData.append('licensePlate', officialBusinessData.licensePlate);
@@ -653,6 +654,9 @@ export const officialBusinessAPI = {
       formData.append('endTime', officialBusinessData.endTime);
     }
     formData.append('purpose', officialBusinessData.purpose);
+    if (isAgentCreate) {
+      formData.append('agentMode', 'true');
+    }
 
     if (officialBusinessData.supportingInfo && officialBusinessData.supportingInfo.length > 0) {
       officialBusinessData.supportingInfo.forEach((file) => {

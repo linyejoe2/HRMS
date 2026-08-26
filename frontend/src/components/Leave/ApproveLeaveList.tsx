@@ -28,7 +28,7 @@ import {
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { LeaveRequest } from '../../types';
-import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, leaveAPI, leaveAdjustmentAPI } from '../../services/api';
+import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest, leaveAPI, leaveAdjustmentAPI, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -147,6 +147,7 @@ const ApproveLeaveList: React.FC = () => {
   });
   const [submittingAdjustmentApproval, setSubmittingAdjustmentApproval] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
@@ -154,6 +155,18 @@ const ApproveLeaveList: React.FC = () => {
       setLoading(true);
       const response = await getAllLeaveRequests(status);
       setLeaveRequests(response.data.data);
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching leave requests:', error);
       toast.error('無法載入請假申請');
@@ -370,7 +383,8 @@ const ApproveLeaveList: React.FC = () => {
       field: 'sequenceNumber',
       headerName: '編號',
       flex: 1,
-      valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
+      valueFormatter: (value) => (value ? `#${value}` : '#N/A'),
+      // valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       sortable: true
     },
     {
@@ -468,6 +482,13 @@ const ApproveLeaveList: React.FC = () => {
           </Tooltip>
         );
       },
+      sortable: false
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      valueGetter: (_, row) => row.agent ? (agentNames[row.agent] ?? row.agent) : '-',
       sortable: false
     },
     {
@@ -624,7 +645,7 @@ const ApproveLeaveList: React.FC = () => {
                   paginationModel: { page: 0, pageSize: 10 }
                 },
                 sorting: {
-                  sortModel: [{ field: 'leaveStart', sort: 'desc' }]
+                  sortModel: [{ field: 'sequenceNumber', sort: 'desc' }]
                 }
               }}
               disableRowSelectionOnClick

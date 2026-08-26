@@ -19,7 +19,7 @@ import {
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { PostClockRequest } from '../../types';
-import { getMyPostClockRequests, cancelPostClockRequest } from '../../services/api';
+import { getMyPostClockRequests, cancelPostClockRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import PostClockRequestModal from './PostClockRequestModal';
@@ -34,12 +34,25 @@ const PostClockTab: React.FC = () => {
   const [selectedPostClockId, setSelectedPostClockId] = useState<string | null>(null);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   const fetchPostClockRequests = async () => {
     try {
       setLoading(true);
       const response = await getMyPostClockRequests();
       setPostClockRequests(response.data.data);
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching postclock requests:', error);
       toast.error('無法載入補單申請');
@@ -168,17 +181,21 @@ const PostClockTab: React.FC = () => {
       field: 'rejectionReason',
       headerName: '說明',
       flex: 2,
-      renderCell: (params) => (
-        params.value ? (
-          <Tooltip title={params.value}>
+      renderCell: (params) => {
+        const lines: string[] = [];
+        if (params.row.agent) lines.push(`代辦人: ${agentNames[params.row.agent] ?? params.row.agent}`);
+        if (params.row.rejectionReason) lines.push(params.row.rejectionReason);
+        const text = lines.join(' / ');
+        if (!text) return '';
+
+        return (
+          <Tooltip title={text}>
             <span>
-              {params.value?.length > 20
-                ? `${params.value.substring(0, 20)}...`
-                : params.value}
+              {text.length > 20 ? `${text.substring(0, 20)}...` : text}
             </span>
           </Tooltip>
-        ) : ''
-      ),
+        );
+      },
       sortable: false
     },
     {

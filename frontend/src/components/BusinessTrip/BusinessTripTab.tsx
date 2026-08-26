@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
-import { getMyBusinessTripRequests, cancelBusinessTripRequest } from '../../services/api';
+import { getMyBusinessTripRequests, cancelBusinessTripRequest, employeeAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../common/ConfirmationModal';
 import BusinessTripRequestModal from './BusinessTripRequestModal';
@@ -33,12 +33,25 @@ const BusinessTripTab: React.FC = () => {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   const fetchBusinessTripRequests = async () => {
     try {
       setLoading(true);
       const response = await getMyBusinessTripRequests();
       setBusinessTripRequests(response.data.data);
+
+      const agentEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error) {
       console.error('Error fetching business trip requests:', error);
       toast.error('無法載入因公免刷卡申請');
@@ -191,23 +204,27 @@ const BusinessTripTab: React.FC = () => {
       renderCell: (params) => getStatusChip(params.value),
       sortable: true
     },
-    // {
-    //   field: 'rejectionReason',
-    //   headerName: '說明',
-    //   flex: 2,
-    //   renderCell: (params) => (
-    //     params.value ? (
-    //       <Tooltip title={params.value}>
-    //         <span>
-    //           {params.value?.length > 20
-    //             ? `${params.value.substring(0, 20)}...`
-    //             : params.value}
-    //         </span>
-    //       </Tooltip>
-    //     ) : ''
-    //   ),
-    //   sortable: false
-    // },
+    {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 2,
+      renderCell: (params) => {
+        const lines: string[] = [];
+        if (params.row.agent) lines.push(`代辦人: ${agentNames[params.row.agent] ?? params.row.agent}`);
+        if (params.row.rejectionReason) lines.push(params.row.rejectionReason);
+        const text = lines.join(' / ');
+        if (!text) return '';
+
+        return (
+          <Tooltip title={text}>
+            <span>
+              {text.length > 20 ? `${text.substring(0, 20)}...` : text}
+            </span>
+          </Tooltip>
+        );
+      },
+      sortable: false
+    },
     {
       field: 'actions',
       type: 'actions',

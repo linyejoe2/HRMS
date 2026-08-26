@@ -26,7 +26,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import AddIcon from '@mui/icons-material/Add';
-import { officialBusinessAPI } from '../../services/api';
+import { officialBusinessAPI, employeeAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
 import { toast } from 'react-toastify';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -54,6 +54,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   // File preview
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   // Load official business requests
   const loadRequests = async () => {
@@ -61,6 +62,18 @@ const ApproveOfficialBusinessTab: React.FC = () => {
     try {
       const response = await officialBusinessAPI.getAll(statusFilter === 'all' ? undefined : statusFilter);
       setRequests(response.data.data || []);
+
+      const agentEmpIDs = Array.from(
+        new Set((response.data.data || []).map(request => request.agent).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in agentNames));
+
+      if (agentEmpIDs.length > 0) {
+        const names = await Promise.all(agentEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setAgentNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
     } catch (error: any) {
       console.error('Error loading official business requests:', error);
       toast.error(error.response?.data?.message || '載入外出申請失敗');
@@ -280,6 +293,13 @@ const ApproveOfficialBusinessTab: React.FC = () => {
           </Tooltip>
         );
       }
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      minWidth: 100,
+      valueGetter: (_, row) => row.agent ? (agentNames[row.agent] ?? row.agent) : '-'
     },
     {
       field: 'status',
