@@ -175,6 +175,7 @@ export class LeaveService {
     substitute: string;
     supportingInfo?: string[];
     agent?: string;
+    rejectionReason?: string;
   }): Promise<ILeave> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -232,7 +233,8 @@ export class LeaveService {
       supportingInfo: leaveData.supportingInfo,
       status: 'created',
       substitute: leaveData.substitute,
-      agent: leaveData.agent
+      agent: leaveData.agent,
+      rejectionReason: leaveData.rejectionReason
     });
 
     const isNotOverlapping = await this.checkLeaveRequestDidntRepeat(leave);

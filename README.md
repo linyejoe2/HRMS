@@ -110,7 +110,7 @@ cd frontend && npm install && npm run dev
   leaveStart: Date;
   leaveEnd: Date;
   status: 'created'|'approved'|'rejected';
-  rejectionReason?: string;
+  rejectionReason?: string; // also doubles as a general HR memo (e.g. the "說明" note written when HR creates the request on someone's behalf)
   approvedBy?: string;
   substitute: string; // empID chosen by the requester
   substituteApproveStatus: 'pending'|'approved'|'rejected';

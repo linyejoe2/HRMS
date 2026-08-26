@@ -49,6 +49,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
       transportation: '',
       estimatedCost: undefined,
       notes: '',
+      rejectionReason: '',
       tripStartObj: null,
       tripEndObj: null
     }
@@ -83,6 +84,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
         transportation: data.transportation,
         estimatedCost: data.estimatedCost,
         notes: data.notes,
+        rejectionReason: hrMode ? data.rejectionReason : undefined,
         supportingInfo: files.length > 0 ? files : undefined
       };
 
@@ -234,6 +236,25 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                   )}
                 />
               </Grid>
+
+              {hrMode && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="rejectionReason"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="說明"
+                        multiline
+                        rows={2}
+                        fullWidth
+                        helperText="選填：代辦人可填寫的備註"
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Controller

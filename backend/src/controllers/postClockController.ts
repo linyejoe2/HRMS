@@ -8,6 +8,7 @@ export const createPostClockRequest = asyncHandler(async (req: AuthRequest, res:
   const empID = isHrOverride ? req.body.empID : req.user!.empID;
   const { empID: _omit, ...postClockData } = req.body;
   postClockData.agent = isHrOverride ? req.user!.empID : undefined;
+  postClockData.rejectionReason = isHrOverride ? postClockData.rejectionReason : undefined;
 
   // Handle uploaded files
   const files = req.files as Express.Multer.File[];

@@ -96,6 +96,7 @@ export interface LeaveRequestForm {
   leaveStart: string; // use timedate choose components
   leaveEnd: string; // use timedate choose components
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
+  rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
 
 export type ApproveStatus = 'pending' | 'approved' | 'rejected';
@@ -302,6 +303,7 @@ export interface PostClockRequestForm {
   clockType: 'in' | 'out' | 'in&out'; // Clock in, out, or both
   reason: string;
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf)
+  rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
 
 export interface PostClockRequest {
@@ -338,6 +340,7 @@ export interface BusinessTripRequestForm {
   estimatedCost?: number; // Estimated cost
   notes?: string; // Additional notes
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 相關資料
+  rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
 
 export interface BusinessTripRequest {
@@ -373,6 +376,7 @@ export interface OfficialBusinessRequestForm {
   endTime?: string; // Return time (ISO datetime) - optional, can be filled in later
   purpose: string; // Purpose of the official business
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 佐證資料
+  rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
 
 export interface OfficialBusinessRequest {

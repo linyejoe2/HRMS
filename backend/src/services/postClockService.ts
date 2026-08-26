@@ -12,6 +12,7 @@ export class PostClockService {
     reason: string;
     supportingInfo?: string[];
     agent?: string;
+    rejectionReason?: string;
   }): Promise<IPostClock> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -40,7 +41,8 @@ export class PostClockService {
       reason: postClockData.reason,
       supportingInfo: postClockData.supportingInfo,
       status: 'created',
-      agent: postClockData.agent
+      agent: postClockData.agent,
+      rejectionReason: postClockData.rejectionReason
     });
 
     const savedPostClock = await postClock.save();

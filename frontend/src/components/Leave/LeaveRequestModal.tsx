@@ -87,6 +87,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       leaveType: '',
       substitute: '',
       reason: '',
+      rejectionReason: '',
       leaveStartDate: dayjs().format('YYYY-MM-DD'),
       leaveStartTime: '08:30',
       leaveEndDate: dayjs().format('YYYY-MM-DD'),
@@ -211,6 +212,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       leaveType: formData.leaveType,
       substitute: formData.substitute,
       reason: formData.reason ?? "",
+      rejectionReason: hrMode ? formData.rejectionReason : undefined,
       leaveStart,
       leaveEnd
     };
@@ -249,13 +251,16 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       };
       const created = await leaveAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
       if (hrMode) {
-        await leaveAPI.approve(created.data.data._id!, '');
+        // approveLeaveRequest always overwrites rejectionReason with whatever is passed here,
+        // so re-send the same memo instead of '' to avoid wiping out what was just set on create.
+        await leaveAPI.approve(created.data.data._id!, submitData.rejectionReason || '');
       }
       toast.success(hrMode ? '請假申請已建立並核准' : '請假申請已成功送出');
       reset({
         leaveType: '',
         substitute: '',
         reason: '',
+        rejectionReason: '',
         leaveStartDate: dayjs().format('YYYY-MM-DD'),
         leaveStartTime: '08:30',
         leaveEndDate: dayjs().format('YYYY-MM-DD'),
@@ -289,6 +294,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
         leaveType: '',
         substitute: '',
         reason: '',
+        rejectionReason: '',
         leaveStartDate: dayjs().format('YYYY-MM-DD'),
         leaveStartTime: '08:30',
         leaveEndDate: dayjs().format('YYYY-MM-DD'),
@@ -387,6 +393,25 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
                   )}
                 />
               </Grid>
+
+              {hrMode && (
+                <Grid item xs={12}>
+                  <Controller
+                    name="rejectionReason"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="說明"
+                        multiline
+                        rows={2}
+                        fullWidth
+                        helperText="選填：代辦人可填寫的備註"
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Controller

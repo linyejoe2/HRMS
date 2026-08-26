@@ -488,7 +488,15 @@ const ApproveLeaveList: React.FC = () => {
       field: 'agent',
       headerName: '代辦人',
       flex: 0.8,
-      valueGetter: (_, row) => row.agent ? (agentNames[row.agent] ?? row.agent) : '-',
+      renderCell: (params) => {
+        if (!params.row.agent) return '-';
+        const name = agentNames[params.row.agent] ?? params.row.agent;
+        return params.row.rejectionReason ? (
+          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
+            <span>{name}</span>
+          </Tooltip>
+        ) : name;
+      },
       sortable: false
     },
     {

@@ -44,6 +44,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
   const [startTime, setStartTime] = useState<Dayjs | null>(null);
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [purpose, setPurpose] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Loading states
   const [loading, setLoading] = useState(false);
@@ -87,6 +88,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
       setStartTime(null);
       setEndTime(null);
       setPurpose('');
+      setRejectionReason('');
       clearFiles();
     } else {
       // Set default times when modal opens
@@ -166,6 +168,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         startTime: startTime.toISOString(),
         endTime: endTime ? endTime.toISOString() : undefined,
         purpose: purpose.trim(),
+        rejectionReason: hrMode ? rejectionReason : undefined,
         supportingInfo: files
       };
 
@@ -330,6 +333,19 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
               </Grid>
             </Grid>
           </LocalizationProvider>
+
+          {/* Agent memo (HR-created requests only) */}
+          {hrMode && (
+            <TextField
+              label="說明"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+              helperText="選填：代辦人可填寫的備註"
+            />
+          )}
 
           {/* Purpose */}
           <TextField

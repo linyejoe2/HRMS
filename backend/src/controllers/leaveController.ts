@@ -9,7 +9,7 @@ import { dayjsTz, errorToString, dayjsToTz } from '../util/utility';
 
 export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   // return res.status(400).json({success: false, message: "測試失敗"})
-  const { leaveType, reason, leaveStart, leaveEnd, substitute } = req.body;
+  const { leaveType, reason, leaveStart, leaveEnd, substitute, rejectionReason } = req.body;
   const isHrOverride = ['hr', 'admin'].includes(req.user!.role) && req.body.empID;
   const empID = isHrOverride ? req.body.empID : req.user!.empID;
 
@@ -19,7 +19,8 @@ export const createLeaveRequest = asyncHandler(async (req: AuthRequest, res: Res
     leaveStart,
     leaveEnd,
     substitute,
-    agent: isHrOverride ? req.user!.empID : undefined
+    agent: isHrOverride ? req.user!.empID : undefined,
+    rejectionReason: isHrOverride ? rejectionReason : undefined
   };
 
   // Handle uploaded files

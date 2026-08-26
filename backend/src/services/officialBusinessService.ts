@@ -16,6 +16,7 @@ export class OfficialBusinessService {
       purpose: string;
       supportingInfo?: string[];
       agent?: string;
+      rejectionReason?: string;
     }
   ): Promise<IOfficialBusiness> {
     // Validate applicant exists and is active
@@ -58,7 +59,8 @@ export class OfficialBusinessService {
       supportingInfo: officialBusinessData.supportingInfo || [],
       status: 'created',
       department: applicantEmployee.department || '',
-      agent: officialBusinessData.agent
+      agent: officialBusinessData.agent,
+      rejectionReason: officialBusinessData.rejectionReason
     });
 
     return officialBusiness.save();

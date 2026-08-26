@@ -14,7 +14,7 @@ export class OfficialBusinessController {
       return;
     }
 
-    const { empIDs, licensePlate, startTime, endTime, purpose } = req.body;
+    const { empIDs, licensePlate, startTime, endTime, purpose, rejectionReason } = req.body;
 
     // Parse empIDs if it's a string (from FormData)
     const parsedEmpIDs = typeof empIDs === 'string' ? JSON.parse(empIDs) : empIDs;
@@ -45,7 +45,8 @@ export class OfficialBusinessController {
         endTime,
         purpose,
         supportingInfo,
-        agent: isAgentCreate ? user.empID : undefined
+        agent: isAgentCreate ? user.empID : undefined,
+        rejectionReason: isAgentCreate ? rejectionReason : undefined
       }
     );
 

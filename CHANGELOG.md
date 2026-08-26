@@ -3,6 +3,15 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.2] - 2026-08-27 - HR Memo on HR-Created Requests
+
+**Author**: Randy Lin
+
+### Added
+
+- HR-created (hrMode) leave, business-trip, post-clock, and official-business requests can now record an optional "說明" note, positioned right before that modal's own reason/purpose field — reusing the existing `rejectionReason` field (already repurposed as a general HR memo, not strictly a rejection reason) rather than adding a new column.
+- The memo shows as a tooltip on the 代辦人 column in the 4 HR approval grids; the employee's own request tabs already surfaced `rejectionReason` there.
+
 ## [1.2.1] - 2026-08-27 - Track HR-Created Requests
 
 **Author**: Randy Lin

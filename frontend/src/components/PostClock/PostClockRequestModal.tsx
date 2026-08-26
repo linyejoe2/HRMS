@@ -46,6 +46,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [reasonChoice, setReasonChoice] = useState<string>('');
   const [customReason, setCustomReason] = useState<string>('');
+  const [rejectionReason, setRejectionReason] = useState<string>('');
 
   type FormData = {
     date: string;
@@ -107,6 +108,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         time: combinedDateTime.toISOString(),
         clockType: data.clockType,
         reason: finalReason,
+        rejectionReason: hrMode ? rejectionReason : undefined,
         supportingInfo: files.length > 0 ? files : undefined
       };
 
@@ -133,6 +135,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       setSelectedEmployee(null);
       setReasonChoice('');
       setCustomReason('');
+      setRejectionReason('');
       onClose();
     } catch (error: any) {
       console.error('Error creating postclock request:', error);
@@ -150,6 +153,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       setSelectedEmployee(null);
       setReasonChoice('');
       setCustomReason('');
+      setRejectionReason('');
       onClose();
     }
   };
@@ -289,6 +293,20 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                   )}
                 />
               </Grid>
+
+              {hrMode && (
+                <Grid item xs={12}>
+                  <TextField
+                    label="說明"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    helperText="選填：代辦人可填寫的備註"
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <FormControl component="fieldset" required>

@@ -12,6 +12,7 @@ export class BusinessTripService {
     notes?: string;
     supportingInfo?: string[];
     agent?: string;
+    rejectionReason?: string;
   }): Promise<IBusinessTrip> {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
@@ -39,7 +40,8 @@ export class BusinessTripService {
       notes: businessTripData.notes,
       supportingInfo: businessTripData.supportingInfo,
       status: 'created',
-      agent: businessTripData.agent
+      agent: businessTripData.agent,
+      rejectionReason: businessTripData.rejectionReason
     });
 
     const savedBusinessTrip = await businessTrip.save();

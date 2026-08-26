@@ -290,6 +290,7 @@ export const leaveAPI = {
     formData.append('leaveStart', leaveData.leaveStart);
     formData.append('leaveEnd', leaveData.leaveEnd);
     if (empID) formData.append('empID', empID);
+    if (leaveData.rejectionReason) formData.append('rejectionReason', leaveData.rejectionReason);
 
     if (leaveData.supportingInfo && leaveData.supportingInfo.length > 0) {
       leaveData.supportingInfo.forEach((file) => {
@@ -451,6 +452,7 @@ export const postClockAPI = {
     formData.append('clockType', postClockData.clockType);
     formData.append('reason', postClockData.reason);
     if (empID) formData.append('empID', empID);
+    if (postClockData.rejectionReason) formData.append('rejectionReason', postClockData.rejectionReason);
 
     if (postClockData.supportingInfo && postClockData.supportingInfo.length > 0) {
       postClockData.supportingInfo.forEach((file) => {
@@ -546,6 +548,7 @@ export const businessTripAPI = {
     formData.append('tripStart', businessTripData.tripStart);
     formData.append('tripEnd', businessTripData.tripEnd);
     if (empID) formData.append('empID', empID);
+    if (businessTripData.rejectionReason) formData.append('rejectionReason', businessTripData.rejectionReason);
 
     if (businessTripData.transportation) {
       formData.append('transportation', businessTripData.transportation);
@@ -656,6 +659,7 @@ export const officialBusinessAPI = {
     formData.append('purpose', officialBusinessData.purpose);
     if (isAgentCreate) {
       formData.append('agentMode', 'true');
+      if (officialBusinessData.rejectionReason) formData.append('rejectionReason', officialBusinessData.rejectionReason);
     }
 
     if (officialBusinessData.supportingInfo && officialBusinessData.supportingInfo.length > 0) {
