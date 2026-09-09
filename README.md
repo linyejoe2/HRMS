@@ -158,6 +158,7 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 - GET `/pending/manager` - Leave requests awaiting the caller's department manager review
 - PUT `/:id/substitute-approve`, `/:id/substitute-reject` - Substitute review decision
 - PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (caller must be the requester's assigned `Employee.manager`)
+- PUT `/:id/supporting-info` - Append supporting files (HR/Admin only); DELETE `/:id/supporting-info` - Remove one supporting file (HR/Admin only)
 
 Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject` routes (no substitute step).
 

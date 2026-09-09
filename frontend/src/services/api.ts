@@ -401,7 +401,11 @@ export const leaveAPI = {
     return api.put(`/leave/${id}/supporting-info`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-  }
+  },
+
+  // Remove a single supporting file from an existing leave request (HR/Admin only)
+  removeSupportingInfo: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest }>> =>
+    api.delete(`/leave/${id}/supporting-info`, { data: { filePath } })
 
 };
 

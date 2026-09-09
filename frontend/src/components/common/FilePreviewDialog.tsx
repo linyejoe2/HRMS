@@ -21,6 +21,7 @@ import {
   Visibility as PreviewIcon,
   Download as DownloadIcon,
   AttachFile as AttachFileIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import FilePreview from './FilePreview';
 import { validateFiles } from '../../utils/fileValidation';
@@ -32,6 +33,7 @@ interface FilePreviewDialogProps {
   title?: string;
   memo?: string; // Optional note shown at the bottom of the dialog
   onUpload?: (files: File[]) => Promise<void> | void; // When provided, shows an "上傳檔案" button (e.g. to append to leave.supportingInfo)
+  onDelete?: (filePath: string) => Promise<void> | void; // When provided, shows a delete button per file (e.g. to remove from leave.supportingInfo)
 }
 
 const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
@@ -41,10 +43,12 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
   title = '佐證資料',
   memo,
   onUpload,
+  onDelete,
 }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
 
   const getFileName = (filePath: string): string => {
     return filePath.split('/').pop() || '未知檔案';
@@ -106,6 +110,18 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
     }
     // Reset input to allow selecting the same file again
     event.target.value = '';
+  };
+
+  const handleDeleteFile = async (filePath: string) => {
+    if (!onDelete) return;
+    if (!window.confirm(`確定要刪除「${getFileName(filePath)}」嗎?`)) return;
+
+    setDeletingFile(filePath);
+    try {
+      await onDelete(filePath);
+    } finally {
+      setDeletingFile(null);
+    }
   };
 
   return (
@@ -188,6 +204,20 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
                         >
                           <DownloadIcon />
                         </IconButton>
+                        {onDelete && (
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFile(filePath);
+                            }}
+                            color="error"
+                            size="small"
+                            title="刪除檔案"
+                            disabled={deletingFile === filePath}
+                          >
+                            {deletingFile === filePath ? <CircularProgress size={18} /> : <DeleteIcon />}
+                          </IconButton>
+                        )}
                       </Box>
                     </ListItem>
                   );

@@ -344,6 +344,21 @@ const ApproveLeaveList: React.FC = () => {
     }
   };
 
+  const handleDeleteSupportingInfo = async (filePath: string) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await leaveAPI.removeSupportingInfo(fileDialogRequestId, filePath);
+      const updatedLeave = response.data.data;
+      setSelectedFiles(updatedLeave.supportingInfo || []);
+      setLeaveRequests(prev => prev.map(r => r._id === updatedLeave._id ? updatedLeave : r));
+      toast.success('檔案已刪除');
+    } catch (error: any) {
+      console.error('Error deleting supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案刪除失敗');
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -789,6 +804,7 @@ const ApproveLeaveList: React.FC = () => {
         title="請假佐證資料"
         memo="由於系統轉換開啟特殊補檔模式到 9/25"
         onUpload={handleUploadSupportingInfo}
+        onDelete={handleDeleteSupportingInfo}
       />
 
       {/* Warning Dialog for insufficient leave balance */}

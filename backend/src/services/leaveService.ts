@@ -486,6 +486,19 @@ export class LeaveService {
     return await leave.save();
   }
 
+  // Remove a single supporting file from an existing leave request — the HR-side
+  // counterpart to addLeaveSupportingInfo, for the same migration catch-up window.
+  static async removeLeaveSupportingInfo(leaveId: string, filePath: string): Promise<ILeave> {
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      throw new APIError('Leave request not found', 404);
+    }
+
+    leave.supportingInfo = (leave.supportingInfo || []).filter(path => path !== filePath);
+
+    return await leave.save();
+  }
+
   static async cancelLeaveRequest(leaveId: string, cancelledBy: string, reason?: string): Promise<ILeave> {
     const leave = await Leave.findById(leaveId);
     if (!leave) {

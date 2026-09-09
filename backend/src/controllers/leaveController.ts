@@ -200,6 +200,23 @@ export const addLeaveSupportingInfo = asyncHandler(async (req: AuthRequest, res:
   });
 });
 
+export const removeLeaveSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { filePath } = req.body;
+
+  if (!filePath) {
+    return res.status(400).json({ error: true, message: '請提供要刪除的檔案路徑' });
+  }
+
+  const leave = await LeaveService.removeLeaveSupportingInfo(id, filePath);
+
+  res.json({
+    error: false,
+    message: '佐證資料已刪除',
+    data: leave
+  });
+});
+
 export const cancelLeaveRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { reason } = req.body;

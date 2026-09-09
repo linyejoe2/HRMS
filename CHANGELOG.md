@@ -3,6 +3,15 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.0] - 2026-09-09 - Delete Leave Supporting Files
+
+**Author**: Randy Lin
+
+### Added
+
+- `DELETE /api/leave/:id/supporting-info` (HR/Admin only): removes a single file from a leave request's `supportingInfo`, the delete counterpart to the existing upload endpoint used during the migration catch-up window.
+- `FilePreviewDialog` gained an optional `onDelete` prop, adding a per-file delete button (with a confirm prompt); wired into 請假審核's 佐證資料 dialog alongside the existing upload button.
+
 ## [1.3.0] - 2026-08-28 - Business Trip Clock-In/Out Tracking
 
 **Author**: Randy Lin
