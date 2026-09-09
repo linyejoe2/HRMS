@@ -787,7 +787,7 @@ const ApproveLeaveList: React.FC = () => {
         }}
         files={selectedFiles}
         title="請假佐證資料"
-        memo="由於系統轉換開啟特殊補檔模式到 9/4"
+        memo="由於系統轉換開啟特殊補檔模式到 9/25"
         onUpload={handleUploadSupportingInfo}
       />
 
