@@ -134,6 +134,41 @@ export const getPostClockRequestById = asyncHandler(async (req: AuthRequest, res
   });
 });
 
+export const addPostClockSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const files = req.files as Express.Multer.File[];
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: true, message: '請選擇要上傳的檔案' });
+  }
+
+  const filePaths = files.map(file => `/uploads/postclock/${file.filename}`);
+  const postClock = await PostClockService.addPostClockSupportingInfo(id, filePaths);
+
+  res.json({
+    error: false,
+    message: '佐證資料已上傳',
+    data: postClock
+  });
+});
+
+export const removePostClockSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { filePath } = req.body;
+
+  if (!filePath) {
+    return res.status(400).json({ error: true, message: '請提供要刪除的檔案路徑' });
+  }
+
+  const postClock = await PostClockService.removePostClockSupportingInfo(id, filePath);
+
+  res.json({
+    error: false,
+    message: '佐證資料已刪除',
+    data: postClock
+  });
+});
+
 export const cancelPostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { reason } = req.body;

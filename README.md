@@ -160,7 +160,7 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 - PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (caller must be the requester's assigned `Employee.manager`)
 - PUT `/:id/supporting-info` - Append supporting files (HR/Admin only); DELETE `/:id/supporting-info` - Remove one supporting file (HR/Admin only)
 
-Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject` routes (no substitute step).
+Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject`, and `PUT`/`DELETE /:id/supporting-info` routes (no substitute step).
 
 Business-trip requests also carry a `clockTimes: { clockIn, clockOut }[]` field (one pair per day, defaulted from `constants.ts`'s working-time schedule on creation) and `PUT /api/businesstrip/:id/clock-times` lets the employee record/adjust it at any time, even after approval.
 

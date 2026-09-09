@@ -530,7 +530,20 @@ export const postClockAPI = {
 
   // Manager rejects the postclock request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
-    api.put(`/postclock/${id}/manager-reject`, { reason })
+    api.put(`/postclock/${id}/manager-reject`, { reason }),
+
+  // Append supporting files to an existing postclock request, regardless of status (HR/Admin only)
+  addSupportingInfo: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.put(`/postclock/${id}/supporting-info`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  // Remove a single supporting file from an existing postclock request (HR/Admin only)
+  removeSupportingInfo: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.delete(`/postclock/${id}/supporting-info`, { data: { filePath } })
 };
 
 // Convenience functions for postclock operations
@@ -640,7 +653,20 @@ export const businessTripAPI = {
 
   // Manager rejects the business trip request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
-    api.put(`/businesstrip/${id}/manager-reject`, { reason })
+    api.put(`/businesstrip/${id}/manager-reject`, { reason }),
+
+  // Append supporting files to an existing business trip request, regardless of status (HR/Admin only)
+  addSupportingInfo: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.put(`/businesstrip/${id}/supporting-info`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  // Remove a single supporting file from an existing business trip request (HR/Admin only)
+  removeSupportingInfo: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> =>
+    api.delete(`/businesstrip/${id}/supporting-info`, { data: { filePath } })
 };
 
 // Convenience functions for business trip operations
@@ -746,7 +772,20 @@ export const officialBusinessAPI = {
 
   // Manager rejects the official business request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
-    api.put(`/officialbusiness/${id}/manager-reject`, { reason })
+    api.put(`/officialbusiness/${id}/manager-reject`, { reason }),
+
+  // Append supporting files to an existing official business request, regardless of status (HR/Admin only)
+  addSupportingInfo: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.put(`/officialbusiness/${id}/supporting-info`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  // Remove a single supporting file from an existing official business request (HR/Admin only)
+  removeSupportingInfo: (id: string, filePath: string): Promise<AxiosResponse<{ error: boolean, message: string, data: OfficialBusinessRequest }>> =>
+    api.delete(`/officialbusiness/${id}/supporting-info`, { data: { filePath } })
 };
 
 export const constantsAPI = {

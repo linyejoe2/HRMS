@@ -144,6 +144,35 @@ export class OfficialBusinessService {
   }
 
   /**
+   * Append supporting files to an existing official business request, regardless of
+   * its current status — used by HR/Admin to backfill missing documents.
+   */
+  static async addOfficialBusinessSupportingInfo(officialBusinessId: string, filePaths: string[]): Promise<IOfficialBusiness> {
+    const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
+    if (!officialBusiness) {
+      throw new APIError('找不到該外出申請', 404);
+    }
+
+    officialBusiness.supportingInfo = [...(officialBusiness.supportingInfo || []), ...filePaths];
+
+    return await officialBusiness.save();
+  }
+
+  /**
+   * Remove a single supporting file from an existing official business request.
+   */
+  static async removeOfficialBusinessSupportingInfo(officialBusinessId: string, filePath: string): Promise<IOfficialBusiness> {
+    const officialBusiness = await OfficialBusiness.findById(officialBusinessId);
+    if (!officialBusiness) {
+      throw new APIError('找不到該外出申請', 404);
+    }
+
+    officialBusiness.supportingInfo = (officialBusiness.supportingInfo || []).filter(path => path !== filePath);
+
+    return await officialBusiness.save();
+  }
+
+  /**
    * Get official business request by sequence number
    */
   static async getOfficialBusinessRequestBySequenceNumber(sequenceNumber: number): Promise<IOfficialBusiness> {

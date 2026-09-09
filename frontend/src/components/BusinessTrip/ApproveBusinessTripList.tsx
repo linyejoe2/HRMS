@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import { BusinessTripRequest } from '../../types';
-import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest, employeeAPI } from '../../services/api';
+import { getAllBusinessTripRequests, approveBusinessTripRequest, rejectBusinessTripRequest, cancelBusinessTripRequest, employeeAPI, businessTripAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -43,6 +43,7 @@ const ApproveBusinessTripList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [fileDialogRequestId, setFileDialogRequestId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
@@ -166,6 +167,36 @@ const ApproveBusinessTripList: React.FC = () => {
     }
   };
 
+  const handleUploadSupportingInfo = async (newFiles: File[]) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await businessTripAPI.addSupportingInfo(fileDialogRequestId, newFiles);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setBusinessTripRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案上傳成功');
+    } catch (error: any) {
+      console.error('Error uploading supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案上傳失敗');
+    }
+  };
+
+  const handleDeleteSupportingInfo = async (filePath: string) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await businessTripAPI.removeSupportingInfo(fileDialogRequestId, filePath);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setBusinessTripRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案已刪除');
+    } catch (error: any) {
+      console.error('Error deleting supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案刪除失敗');
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -269,8 +300,9 @@ const ApproveBusinessTripList: React.FC = () => {
       headerName: '相關資料',
       flex: 1,
       renderCell: (params) => {
-        const files = params.value as string[] | undefined;
-        if (!files || files.length === 0) return '-';
+        // const files = params.value as string[] | undefined;
+        // if (!files || files.length === 0) return '-';
+        const files = (params.value as string[] | undefined) || [];
 
         return (
           <Tooltip title="點擊查看檔案">
@@ -278,6 +310,7 @@ const ApproveBusinessTripList: React.FC = () => {
               size="small"
               onClick={() => {
                 setSelectedFiles(files);
+                setFileDialogRequestId(params.row._id);
                 setFileDialogOpen(true);
               }}
               sx={{ color: 'primary.main' }}
@@ -592,9 +625,14 @@ const ApproveBusinessTripList: React.FC = () => {
       {/* File Preview Dialog */}
       <FilePreviewDialog
         open={fileDialogOpen}
-        onClose={() => setFileDialogOpen(false)}
+        onClose={() => {
+          setFileDialogOpen(false);
+          setFileDialogRequestId(null);
+        }}
         files={selectedFiles}
         title="因公免刷卡相關資料"
+        onUpload={handleUploadSupportingInfo}
+        onDelete={handleDeleteSupportingInfo}
       />
 
       {/* HR Create & Auto-Approve Modal */}

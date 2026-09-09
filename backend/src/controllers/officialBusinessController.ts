@@ -293,6 +293,51 @@ export class OfficialBusinessController {
   });
 
   /**
+   * Append supporting files to an existing official business request (HR/Admin only)
+   * PUT /api/officialbusiness/:id/supporting-info
+   */
+  addOfficialBusinessSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
+      res.status(400).json({ error: true, message: '請選擇要上傳的檔案' });
+      return;
+    }
+
+    const filePaths = files.map(file => `/uploads/officialbusiness/${file.filename}`);
+    const officialBusiness = await officialBusinessService.addOfficialBusinessSupportingInfo(id, filePaths);
+
+    res.status(200).json({
+      error: false,
+      message: '佐證資料已上傳',
+      data: officialBusiness
+    });
+  });
+
+  /**
+   * Remove a single supporting file from an existing official business request (HR/Admin only)
+   * DELETE /api/officialbusiness/:id/supporting-info
+   */
+  removeOfficialBusinessSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { filePath } = req.body;
+
+    if (!filePath) {
+      res.status(400).json({ error: true, message: '請提供要刪除的檔案路徑' });
+      return;
+    }
+
+    const officialBusiness = await officialBusinessService.removeOfficialBusinessSupportingInfo(id, filePath);
+
+    res.status(200).json({
+      error: false,
+      message: '佐證資料已刪除',
+      data: officialBusiness
+    });
+  });
+
+  /**
    * Cancel official business request
    * PUT /api/officialbusiness/:id/cancel
    */

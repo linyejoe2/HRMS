@@ -238,6 +238,31 @@ export class BusinessTripService {
     return businessTrip;
   }
 
+  // Append supporting files to an existing business trip request, regardless of its
+  // current status — used by HR/Admin to backfill missing documents.
+  static async addBusinessTripSupportingInfo(businessTripId: string, filePaths: string[]): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) {
+      throw new APIError('Business trip request not found', 404);
+    }
+
+    businessTrip.supportingInfo = [...(businessTrip.supportingInfo || []), ...filePaths];
+
+    return await businessTrip.save();
+  }
+
+  // Remove a single supporting file from an existing business trip request.
+  static async removeBusinessTripSupportingInfo(businessTripId: string, filePath: string): Promise<IBusinessTrip> {
+    const businessTrip = await BusinessTrip.findById(businessTripId);
+    if (!businessTrip) {
+      throw new APIError('Business trip request not found', 404);
+    }
+
+    businessTrip.supportingInfo = (businessTrip.supportingInfo || []).filter(path => path !== filePath);
+
+    return await businessTrip.save();
+  }
+
   static async cancelBusinessTripRequest(businessTripId: string, cancelledBy: string, reason?: string): Promise<IBusinessTrip> {
     const businessTrip = await BusinessTrip.findById(businessTripId);
     if (!businessTrip) {

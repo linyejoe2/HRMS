@@ -147,6 +147,41 @@ export const getBusinessTripRequestById = asyncHandler(async (req: AuthRequest, 
   });
 });
 
+export const addBusinessTripSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const files = req.files as Express.Multer.File[];
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: true, message: '請選擇要上傳的檔案' });
+  }
+
+  const filePaths = files.map(file => `/uploads/businesstrip/${file.filename}`);
+  const businessTrip = await BusinessTripService.addBusinessTripSupportingInfo(id, filePaths);
+
+  res.json({
+    error: false,
+    message: '相關資料已上傳',
+    data: businessTrip
+  });
+});
+
+export const removeBusinessTripSupportingInfo = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { filePath } = req.body;
+
+  if (!filePath) {
+    return res.status(400).json({ error: true, message: '請提供要刪除的檔案路徑' });
+  }
+
+  const businessTrip = await BusinessTripService.removeBusinessTripSupportingInfo(id, filePath);
+
+  res.json({
+    error: false,
+    message: '相關資料已刪除',
+    data: businessTrip
+  });
+});
+
 export const cancelBusinessTripRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { reason } = req.body;

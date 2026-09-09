@@ -203,6 +203,7 @@ const PostClockTab: React.FC = () => {
       headerName: '佐證資料',
       flex: 0.8,
       renderCell: (params) => {
+        // const files = (params.value as string[] | undefined) || [];
         const files = params.value as string[] | undefined;
         if (!files || files.length === 0) return '-';
 

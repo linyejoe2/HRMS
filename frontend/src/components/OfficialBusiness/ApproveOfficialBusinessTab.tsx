@@ -24,7 +24,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import CancelIcon from '@mui/icons-material/Cancel';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
+import AttachmentIcon from '@mui/icons-material/Attachment';
 import AddIcon from '@mui/icons-material/Add';
 import { officialBusinessAPI, employeeAPI } from '../../services/api';
 import { OfficialBusinessRequest } from '../../types';
@@ -54,6 +54,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   // File preview
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [filePreviewRequestId, setFilePreviewRequestId] = useState<string | null>(null);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   // Load official business requests
@@ -172,9 +173,40 @@ const ApproveOfficialBusinessTab: React.FC = () => {
   };
 
   // Handle view files
-  const handleViewFiles = (files: string[]) => {
+  const handleViewFiles = (files: string[], requestId: string) => {
     setSelectedFiles(files);
+    setFilePreviewRequestId(requestId);
     setFilePreviewOpen(true);
+  };
+
+  const handleUploadSupportingInfo = async (newFiles: File[]) => {
+    if (!filePreviewRequestId) return;
+
+    try {
+      const response = await officialBusinessAPI.addSupportingInfo(filePreviewRequestId, newFiles);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案上傳成功');
+    } catch (error: any) {
+      console.error('Error uploading supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案上傳失敗');
+    }
+  };
+
+  const handleDeleteSupportingInfo = async (filePath: string) => {
+    if (!filePreviewRequestId) return;
+
+    try {
+      const response = await officialBusinessAPI.removeSupportingInfo(filePreviewRequestId, filePath);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案已刪除');
+    } catch (error: any) {
+      console.error('Error deleting supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案刪除失敗');
+    }
   };
 
   // Get status chip
@@ -272,22 +304,24 @@ const ApproveOfficialBusinessTab: React.FC = () => {
     },
     {
       field: 'supportingInfo',
-      headerName: '佐證',
+      headerName: '佐證資料',
       flex: 0.6,
       minWidth: 60,
       align: 'center',
       renderCell: (params) => {
-        const files = params.value as string[] | undefined;
-        if (!files || files.length === 0) return '-';
+        const files = (params.value as string[] | undefined) || [];
+        // const files = params.value as string[] | undefined;
+        // if (!files || files.length === 0) return '-';
 
         return (
           <Tooltip title="檢視附件">
             <IconButton
               size="small"
-              onClick={() => handleViewFiles(files)}
+              onClick={() => handleViewFiles(files, params.row._id)}
+              sx={{ color: 'primary.main' }}
             >
               <Badge badgeContent={files.length} color="primary">
-                <AttachFileIcon fontSize="small" />
+                <AttachmentIcon />
               </Badge>
             </IconButton>
           </Tooltip>
@@ -581,8 +615,14 @@ const ApproveOfficialBusinessTab: React.FC = () => {
       {/* File Preview Dialog */}
       <FilePreviewDialog
         open={filePreviewOpen}
-        onClose={() => setFilePreviewOpen(false)}
+        onClose={() => {
+          setFilePreviewOpen(false);
+          setFilePreviewRequestId(null);
+        }}
         files={selectedFiles}
+        title="外出佐證資料"
+        onUpload={handleUploadSupportingInfo}
+        onDelete={handleDeleteSupportingInfo}
       />
 
       {/* HR Create & Auto-Approve Modal */}

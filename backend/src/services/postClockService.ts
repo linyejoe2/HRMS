@@ -172,6 +172,31 @@ export class PostClockService {
     return postClock;
   }
 
+  // Append supporting files to an existing post-clock request, regardless of its
+  // current status — used by HR/Admin to backfill missing documents.
+  static async addPostClockSupportingInfo(postClockId: string, filePaths: string[]): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+
+    postClock.supportingInfo = [...(postClock.supportingInfo || []), ...filePaths];
+
+    return await postClock.save();
+  }
+
+  // Remove a single supporting file from an existing post-clock request.
+  static async removePostClockSupportingInfo(postClockId: string, filePath: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+
+    postClock.supportingInfo = (postClock.supportingInfo || []).filter(path => path !== filePath);
+
+    return await postClock.save();
+  }
+
   static async cancelPostClockRequest(postClockId: string, cancelledBy: string, reason?: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {

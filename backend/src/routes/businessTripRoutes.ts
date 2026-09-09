@@ -12,7 +12,9 @@ import {
   managerApproveBusinessTripRequest,
   managerRejectBusinessTripRequest,
   getPendingManagerBusinessTripRequests,
-  updateBusinessTripClockTimes
+  updateBusinessTripClockTimes,
+  addBusinessTripSupportingInfo,
+  removeBusinessTripSupportingInfo
 } from '../controllers/businessTripController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { uploadBusinessTripFiles } from '../middleware/upload';
@@ -40,6 +42,10 @@ router.put('/:id/manager-approve', authenticateToken, managerApproveBusinessTrip
 router.put('/:id/manager-reject', authenticateToken, managerRejectBusinessTripRequest);
 
 router.put('/:id/clock-times', authenticateToken, updateBusinessTripClockTimes);
+
+router.put('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), uploadBusinessTripFiles.array('files', 10), addBusinessTripSupportingInfo);
+
+router.delete('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), removeBusinessTripSupportingInfo);
 
 router.put('/:id/cancel', authenticateToken, cancelBusinessTripRequest);
 

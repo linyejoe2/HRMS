@@ -28,5 +28,7 @@ router.put('/:id/approve', requireRole(['admin', 'hr']), uploadOfficialBusinessF
 router.put('/:id/reject', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.rejectOfficialBusinessRequest);
 router.put('/:id/manager-approve', officialBusinessController.managerApproveOfficialBusinessRequest);
 router.put('/:id/manager-reject', officialBusinessController.managerRejectOfficialBusinessRequest);
+router.put('/:id/supporting-info', requireRole(['admin', 'hr']), uploadOfficialBusinessFiles.array('files', 10), officialBusinessController.addOfficialBusinessSupportingInfo);
+router.delete('/:id/supporting-info', requireRole(['admin', 'hr']), officialBusinessController.removeOfficialBusinessSupportingInfo);
 
 export default router;

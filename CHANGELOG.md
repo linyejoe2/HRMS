@@ -3,6 +3,15 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.5.0] - 2026-09-09 - Supporting-File Upload/Delete for Remaining Approval Tabs
+
+**Author**: Randy Lin
+
+### Added
+
+- `PUT`/`DELETE /api/{businesstrip,postclock,officialbusiness}/:id/supporting-info` (HR/Admin only): same append/remove-one-file endpoints already available for leave, now added to the other three request types.
+- 補單審核, 因公免刷卡審核, and 外出審核's 佐證資料/相關資料 dialogs now use `FilePreviewDialog`'s `onUpload`/`onDelete` to backfill or remove files, matching 請假審核.
+
 ## [1.4.0] - 2026-09-09 - Delete Leave Supporting Files
 
 **Author**: Randy Lin

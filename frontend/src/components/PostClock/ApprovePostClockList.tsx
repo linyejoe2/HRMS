@@ -25,7 +25,7 @@ import {
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { PostClockRequest } from '../../types';
-import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest, employeeAPI } from '../../services/api';
+import { getAllPostClockRequests, approvePostClockRequest, rejectPostClockRequest, cancelPostClockRequest, employeeAPI, postClockAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
@@ -44,6 +44,7 @@ const ApprovePostClockList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [fileDialogRequestId, setFileDialogRequestId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
@@ -167,6 +168,36 @@ const ApprovePostClockList: React.FC = () => {
     }
   };
 
+  const handleUploadSupportingInfo = async (newFiles: File[]) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await postClockAPI.addSupportingInfo(fileDialogRequestId, newFiles);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setPostClockRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案上傳成功');
+    } catch (error: any) {
+      console.error('Error uploading supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案上傳失敗');
+    }
+  };
+
+  const handleDeleteSupportingInfo = async (filePath: string) => {
+    if (!fileDialogRequestId) return;
+
+    try {
+      const response = await postClockAPI.removeSupportingInfo(fileDialogRequestId, filePath);
+      const updated = response.data.data;
+      setSelectedFiles(updated.supportingInfo || []);
+      setPostClockRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
+      toast.success('檔案已刪除');
+    } catch (error: any) {
+      console.error('Error deleting supporting info:', error);
+      toast.error(error.response?.data?.message || '檔案刪除失敗');
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'created':
@@ -269,8 +300,9 @@ const ApprovePostClockList: React.FC = () => {
       headerName: '佐證資料',
       flex: 1,
       renderCell: (params) => {
-        const files = params.value as string[] | undefined;
-        if (!files || files.length === 0) return '-';
+        const files = (params.value as string[] | undefined) || [];
+        // const files = params.value as string[] | undefined;
+        // if (!files || files.length === 0) return '-';
 
         return (
           <Tooltip title="點擊查看檔案">
@@ -278,6 +310,7 @@ const ApprovePostClockList: React.FC = () => {
               size="small"
               onClick={() => {
                 setSelectedFiles(files);
+                setFileDialogRequestId(params.row._id);
                 setFileDialogOpen(true);
               }}
               sx={{ color: 'primary.main' }}
@@ -609,9 +642,14 @@ const ApprovePostClockList: React.FC = () => {
       {/* File Preview Dialog */}
       <FilePreviewDialog
         open={fileDialogOpen}
-        onClose={() => setFileDialogOpen(false)}
+        onClose={() => {
+          setFileDialogOpen(false);
+          setFileDialogRequestId(null);
+        }}
         files={selectedFiles}
         title="補單佐證資料"
+        onUpload={handleUploadSupportingInfo}
+        onDelete={handleDeleteSupportingInfo}
       />
 
       {/* HR Create & Auto-Approve Modal */}

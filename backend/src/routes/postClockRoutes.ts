@@ -11,7 +11,9 @@ import {
   getPostClockRequestBySequenceNumber,
   managerApprovePostClockRequest,
   managerRejectPostClockRequest,
-  getPendingManagerPostClockRequests
+  getPendingManagerPostClockRequests,
+  addPostClockSupportingInfo,
+  removePostClockSupportingInfo
 } from '../controllers/postClockController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { uploadPostClockFiles } from '../middleware/upload';
@@ -37,6 +39,10 @@ router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploa
 router.put('/:id/manager-approve', authenticateToken, managerApprovePostClockRequest);
 
 router.put('/:id/manager-reject', authenticateToken, managerRejectPostClockRequest);
+
+router.put('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), addPostClockSupportingInfo);
+
+router.delete('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), removePostClockSupportingInfo);
 
 router.put('/:id/cancel', authenticateToken, cancelPostClockRequest);
 
