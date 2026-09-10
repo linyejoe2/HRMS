@@ -12,6 +12,9 @@ import {
   managerApprovePostClockRequest,
   managerRejectPostClockRequest,
   getPendingManagerPostClockRequests,
+  witnessApprovePostClockRequest,
+  witnessRejectPostClockRequest,
+  getPendingWitnessPostClockRequests,
   addPostClockSupportingInfo,
   removePostClockSupportingInfo
 } from '../controllers/postClockController';
@@ -30,6 +33,8 @@ router.get('/sequence/:sequenceNumber', authenticateToken, getPostClockRequestBy
 
 router.get('/pending/manager', authenticateToken, getPendingManagerPostClockRequests);
 
+router.get('/pending/witness', authenticateToken, getPendingWitnessPostClockRequests);
+
 router.get('/:id', authenticateToken, getPostClockRequestById);
 
 router.put('/:id/approve', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), approvePostClockRequest);
@@ -39,6 +44,10 @@ router.put('/:id/reject', authenticateToken, requireRole(['hr', 'admin']), uploa
 router.put('/:id/manager-approve', authenticateToken, managerApprovePostClockRequest);
 
 router.put('/:id/manager-reject', authenticateToken, managerRejectPostClockRequest);
+
+router.put('/:id/witness-approve', authenticateToken, witnessApprovePostClockRequest);
+
+router.put('/:id/witness-reject', authenticateToken, witnessRejectPostClockRequest);
 
 router.put('/:id/supporting-info', authenticateToken, requireRole(['hr', 'admin']), uploadPostClockFiles.array('files', 10), addPostClockSupportingInfo);
 

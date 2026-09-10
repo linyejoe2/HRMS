@@ -3,6 +3,16 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.0] - 2026-09-10 - Post-Clock Witness Review Stage
+
+**Author**: Randy Lin
+
+### Added
+
+- Post-clock requests now require a 證明人 (witness, any active employee except the requester), chosen on the request form like leave's 代理人.
+- New 證明審核 stage: `witnessApproveStatus`/`witnessMemo`/`witnessApproveAt` on `PostClock`, `PUT`/`GET /api/postclock/:id/witness-approve|reject`, `/pending/witness`, and a `證明審核` tab in 審核中心 (visible to all employees).
+- Manager review for post-clock now requires the witness to approve first (400 `請先完成證明人審核`), mirroring leave's substitute→manager gate; HR/Admin's override prompt now also checks witness status.
+
 ## [1.5.0] - 2026-09-09 - Supporting-File Upload/Delete for Remaining Approval Tabs
 
 **Author**: Randy Lin

@@ -12,6 +12,7 @@ import ApproveBusinessTripList from '../BusinessTrip/ApproveBusinessTripList';
 import ApproveOfficialBusinessTab from '../OfficialBusiness/ApproveOfficialBusinessTab';
 import ApproveSubstituteList from './ApproveSubstituteList';
 import ApproveManagerList from './ApproveManagerList';
+import ApprovePostClockWitnessList from '../PostClock/ApprovePostClockWitnessList';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserLevel } from '../../types';
 
@@ -48,7 +49,7 @@ function a11yProps(index: number) {
   };
 }
 
-const TAB_NAMES = ['leave', 'postclock', 'travel', 'officialbusiness', 'substitute', 'manager'];
+const TAB_NAMES = ['leave', 'postclock', 'travel', 'officialbusiness', 'substitute', 'manager', 'postclockwitness'];
 
 const ApproveLeaveTab: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -72,6 +73,8 @@ const ApproveLeaveTab: React.FC = () => {
         return 4;
       case 'manager':
         return 5;
+      case 'postclockwitness':
+        return 6;
       default:
         return isAdminOrHr ? 0 : 4;
     }
@@ -99,6 +102,7 @@ const ApproveLeaveTab: React.FC = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="審核類型">
           <Tab label="代理審核" value={4} {...a11yProps(4)} />
+          <Tab label="證明審核" value={6} {...a11yProps(6)} />
           <Tab label="主管審核" value={5} {...a11yProps(5)} />
           {isAdminOrHr && <Tab label="請假審核" value={0} {...a11yProps(0)} />}
           {isAdminOrHr && <Tab label="補單審核" value={1} {...a11yProps(1)} />}
@@ -132,6 +136,9 @@ const ApproveLeaveTab: React.FC = () => {
       </TabPanel>
       <TabPanel value={tabValue} index={5}>
         <ApproveManagerList />
+      </TabPanel>
+      <TabPanel value={tabValue} index={6}>
+        <ApprovePostClockWitnessList />
       </TabPanel>
     </Box>
   );

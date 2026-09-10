@@ -30,6 +30,7 @@ import { toast } from 'react-toastify';
 import FileUploadField from '../common/FileUploadField';
 import EmployeeAutocomplete from '../common/EmployeeAutocomplete';
 import { useFileUpload } from '../../hooks/useFileUpload';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface PostClockRequestModalProps {
   open: boolean;
@@ -43,10 +44,21 @@ const OTHER_REASON_VALUE = '其他';
 const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onClose, hrMode = false }) => {
   const [loading, setLoading] = useState(false);
   const { files, setFiles, clearFiles } = useFileUpload();
+  const { user } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [witnessEmployee, setWitnessEmployee] = useState<Employee | null>(null);
   const [reasonChoice, setReasonChoice] = useState<string>('');
   const [customReason, setCustomReason] = useState<string>('');
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const targetEmpID = hrMode ? selectedEmployee?.empID : user?.empID;
+
+  // Reset the witness pick when the HR-mode target employee changes, since the
+  // witness can't be the requester themselves.
+  React.useEffect(() => {
+    if (hrMode) {
+      setWitnessEmployee(null);
+    }
+  }, [hrMode, selectedEmployee]);
 
   type FormData = {
     date: string;
@@ -86,6 +98,11 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         return;
       }
 
+      if (!witnessEmployee) {
+        toast.error('請選擇證明人');
+        return;
+      }
+
       const finalReason = reasonChoice === OTHER_REASON_VALUE ? customReason.trim() : reasonChoice;
       if (!finalReason) {
         toast.error('請填寫補單原因');
@@ -108,6 +125,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         time: combinedDateTime.toISOString(),
         clockType: data.clockType,
         reason: finalReason,
+        witness: witnessEmployee.empID,
         rejectionReason: hrMode ? rejectionReason : undefined,
         supportingInfo: files.length > 0 ? files : undefined
       };
@@ -133,6 +151,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       reset();
       clearFiles();
       setSelectedEmployee(null);
+      setWitnessEmployee(null);
       setReasonChoice('');
       setCustomReason('');
       setRejectionReason('');
@@ -151,6 +170,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       reset();
       clearFiles();
       setSelectedEmployee(null);
+      setWitnessEmployee(null);
       setReasonChoice('');
       setCustomReason('');
       setRejectionReason('');
@@ -271,7 +291,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                 </Grid>
               )}
 
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <Controller
                   name="clockType"
                   control={control}
@@ -291,6 +311,16 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
                       <MenuItem value="in&out">上下班</MenuItem>
                     </TextField>
                   )}
+                />
+              </Grid>
+
+              <Grid item xs={6}>
+                <EmployeeAutocomplete
+                  value={witnessEmployee}
+                  onChange={setWitnessEmployee}
+                  label="證明人"
+                  required
+                  excludeEmpID={targetEmpID}
                 />
               </Grid>
 

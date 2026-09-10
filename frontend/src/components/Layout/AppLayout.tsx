@@ -147,6 +147,7 @@ const AppLayout: React.FC = () => {
     const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
     const approvalSubItems: { text: string; path: string }[] = [
       { text: '代理審核', path: '/leave/approve?tab=substitute' },
+      { text: '證明審核', path: '/leave/approve?tab=postclockwitness' },
       { text: '主管審核', path: '/leave/approve?tab=manager' },
     ];
     if (isAdminOrHr) {

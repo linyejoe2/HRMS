@@ -10,6 +10,7 @@ export class PostClockService {
     time2?: string;
     clockType: 'in' | 'out' | 'in&out';
     reason: string;
+    witness: string;
     supportingInfo?: string[];
     agent?: string;
     rejectionReason?: string;
@@ -17,6 +18,19 @@ export class PostClockService {
     const employee = await Employee.findOne({ empID, isActive: true });
     if (!employee) {
       throw new APIError('Employee not found', 404);
+    }
+
+    if (!postClockData.witness) {
+      throw new APIError('請選擇證明人', 400);
+    }
+
+    if (postClockData.witness === empID) {
+      throw new APIError('證明人不能是本人', 400);
+    }
+
+    const witnessEmployee = await Employee.findOne({ empID: postClockData.witness, isActive: true });
+    if (!witnessEmployee) {
+      throw new APIError('證明人不存在或非在職', 400);
     }
 
     const date = dayjs(postClockData.date).toDate();
@@ -41,6 +55,7 @@ export class PostClockService {
       reason: postClockData.reason,
       supportingInfo: postClockData.supportingInfo,
       status: 'created',
+      witness: postClockData.witness,
       agent: postClockData.agent,
       rejectionReason: postClockData.rejectionReason
     });
@@ -109,6 +124,54 @@ export class PostClockService {
     return await postClock.save();
   }
 
+  static async witnessApprovePostClockRequest(postClockId: string, requesterEmpID: string, memo?: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+    if (postClock.witness !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請的證明人', 403);
+    }
+    if (postClock.witnessApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成證明人審核', 400);
+    }
+    if (postClock.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    postClock.witnessApproveStatus = 'approved';
+    postClock.witnessMemo = memo;
+    postClock.witnessApproveAt = new Date();
+
+    return await postClock.save();
+  }
+
+  static async witnessRejectPostClockRequest(postClockId: string, requesterEmpID: string, memo: string): Promise<IPostClock> {
+    const postClock = await PostClock.findById(postClockId);
+    if (!postClock) {
+      throw new APIError('PostClock request not found', 404);
+    }
+    if (postClock.witness !== requesterEmpID) {
+      throw new APIError('無權限：您不是此申請的證明人', 403);
+    }
+    if (postClock.witnessApproveStatus !== 'pending') {
+      throw new APIError('此申請已完成證明人審核', 400);
+    }
+    if (postClock.status !== 'created') {
+      throw new APIError('此申請已被人事/管理員處理', 400);
+    }
+
+    postClock.witnessApproveStatus = 'rejected';
+    postClock.witnessMemo = memo;
+    postClock.witnessApproveAt = new Date();
+
+    return await postClock.save();
+  }
+
+  static async getPendingWitnessPostClockRequests(empID: string): Promise<IPostClock[]> {
+    return await PostClock.find({ witness: empID, witnessApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  }
+
   static async managerApprovePostClockRequest(postClockId: string, requesterEmpID: string, memo?: string): Promise<IPostClock> {
     const postClock = await PostClock.findById(postClockId);
     if (!postClock) {
@@ -120,6 +183,9 @@ export class PostClockService {
     }
     if (postClock.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
+    }
+    if (postClock.witnessApproveStatus !== 'approved') {
+      throw new APIError('請先完成證明人審核', 400);
     }
     if (postClock.status !== 'created') {
       throw new APIError('此申請已被人事/管理員處理', 400);
@@ -145,6 +211,9 @@ export class PostClockService {
     if (postClock.managerApproveStatus !== 'pending') {
       throw new APIError('此申請已完成主管審核', 400);
     }
+    if (postClock.witnessApproveStatus !== 'approved') {
+      throw new APIError('請先完成證明人審核', 400);
+    }
     if (postClock.status !== 'created') {
       throw new APIError('此申請已被人事/管理員處理', 400);
     }
@@ -160,7 +229,7 @@ export class PostClockService {
   static async getPendingManagerPostClockRequests(managerEmpID: string): Promise<IPostClock[]> {
     const managedEmpIDs = (await Employee.find({ manager: managerEmpID }).select('empID')).map(e => e.empID);
     if (managedEmpIDs.length === 0) return [];
-    return await PostClock.find({ empID: { $in: managedEmpIDs }, managerApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+    return await PostClock.find({ empID: { $in: managedEmpIDs }, managerApproveStatus: 'pending', witnessApproveStatus: 'approved', status: 'created' }).sort({ createdAt: -1 });
   }
 
   static async getPostClockRequestById(postClockId: string): Promise<IPostClock> {

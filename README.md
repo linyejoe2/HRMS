@@ -129,7 +129,7 @@ cd frontend && npm install && npm run dev
 }
 ```
 
-Business-trip, post-clock, and official-business requests carry the same `manager`/`managerApproveStatus`/`managerMemo`/`managerApproveAt`/`agent` fields (no `substitute*` fields — only leave requires a substitute).
+Business-trip, post-clock, and official-business requests carry the same `manager`/`managerApproveStatus`/`managerMemo`/`managerApproveAt`/`agent` fields (no `substitute*` fields — only leave requires a substitute). Post-clock additionally carries a `witness`/`witnessApproveStatus`/`witnessMemo`/`witnessApproveAt` stage (a required 證明人, any active employee except the requester) that must approve before manager review.
 
 **Auth Flow**: Migrate → Register → Login → JWT → Role-based access
 
@@ -160,7 +160,7 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 - PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (caller must be the requester's assigned `Employee.manager`)
 - PUT `/:id/supporting-info` - Append supporting files (HR/Admin only); DELETE `/:id/supporting-info` - Remove one supporting file (HR/Admin only)
 
-Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject`, and `PUT`/`DELETE /:id/supporting-info` routes (no substitute step).
+Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject`, and `PUT`/`DELETE /:id/supporting-info` routes (no substitute step). Post-clock additionally requires a `witness` empID on `/create` and exposes `GET /pending/witness` plus `PUT /:id/witness-approve`/`/:id/witness-reject`; manager review is blocked until the witness approves.
 
 Business-trip requests also carry a `clockTimes: { clockIn, clockOut }[]` field (one pair per day, defaulted from `constants.ts`'s working-time schedule on creation) and `PUT /api/businesstrip/:id/clock-times` lets the employee record/adjust it at any time, even after approval.
 
@@ -251,10 +251,10 @@ theme.ts            # MUI theme configuration
   - Real-time status tracking (pending, approved, rejected)
 
 - **Approval Workflow** (leave, business-trip, post-clock, official-business):
-  - 代理審核 (substitute review, leave only) and 主管審核 (manager review, all 4 types) tabs in 審核中心, visible to every employee
+  - 代理審核 (substitute review, leave only), 證明審核 (witness review, post-clock only), and 主管審核 (manager review, all 4 types) tabs in 審核中心, visible to every employee
   - Manager review routes to whoever is set as the requester's `Employee.manager` (assigned in the employee edit dialog), not by role or department
-  - Manager review only unlocks after the substitute has approved (leave only)
-  - A substitute/manager rejection freezes that stage without blocking HR/Admin's final decision
+  - Manager review only unlocks after the substitute (leave) or witness (post-clock) has approved
+  - A substitute/witness/manager rejection freezes that stage without blocking HR/Admin's final decision
 
 - **HR/Admin Features**:
   - Review all leave requests with DataGrid interface

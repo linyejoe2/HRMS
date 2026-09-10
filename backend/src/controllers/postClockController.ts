@@ -85,6 +85,43 @@ export const rejectPostClockRequest = asyncHandler(async (req: AuthRequest, res:
   });
 });
 
+export const witnessApprovePostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { memo } = req.body || {};
+  const postClock = await PostClockService.witnessApprovePostClockRequest(id, req.user!.empID, memo);
+
+  res.status(200).json({
+    error: false,
+    message: '證明人審核已核准',
+    data: postClock
+  });
+});
+
+export const witnessRejectPostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  if (!reason) {
+    return res.status(400).json({ error: true, message: '拒絕理由為必填' });
+  }
+  const postClock = await PostClockService.witnessRejectPostClockRequest(id, req.user!.empID, reason);
+
+  res.status(200).json({
+    error: false,
+    message: '證明人審核已拒絕',
+    data: postClock
+  });
+});
+
+export const getPendingWitnessPostClockRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const postClocks = await PostClockService.getPendingWitnessPostClockRequests(req.user!.empID);
+
+  res.status(200).json({
+    error: false,
+    message: '成功取得待證明人審核清單',
+    data: postClocks
+  });
+});
+
 export const managerApprovePostClockRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { memo } = req.body || {};

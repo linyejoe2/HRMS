@@ -302,6 +302,7 @@ export interface PostClockRequestForm {
   time2?: string; // Time for the clock-out correction when clockType is 'in&out'
   clockType: 'in' | 'out' | 'in&out'; // Clock in, out, or both
   reason: string;
+  witness: string; // empID of the chosen witness
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf)
   rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
 }
@@ -321,6 +322,10 @@ export interface PostClockRequest {
   status: 'created' | 'approved' | 'rejected' | 'cancel';
   rejectionReason?: string;
   approvedBy?: string;
+  witness: string;
+  witnessApproveStatus: ApproveStatus;
+  witnessMemo?: string;
+  witnessApproveAt?: string;
   manager?: string;
   managerApproveStatus: ApproveStatus;
   managerMemo?: string;

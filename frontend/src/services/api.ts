@@ -455,6 +455,7 @@ export const postClockAPI = {
     if (postClockData.time2) formData.append('time2', postClockData.time2);
     formData.append('clockType', postClockData.clockType);
     formData.append('reason', postClockData.reason);
+    formData.append('witness', postClockData.witness);
     if (empID) formData.append('empID', empID);
     if (postClockData.rejectionReason) formData.append('rejectionReason', postClockData.rejectionReason);
 
@@ -531,6 +532,18 @@ export const postClockAPI = {
   // Manager rejects the postclock request
   managerReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
     api.put(`/postclock/${id}/manager-reject`, { reason }),
+
+  // Get postclock requests pending my witness review
+  getPendingWitness: (): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest[] }>> =>
+    api.get('/postclock/pending/witness'),
+
+  // Witness approves the postclock request
+  witnessApprove: (id: string, memo?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/witness-approve`, { memo }),
+
+  // Witness rejects the postclock request
+  witnessReject: (id: string, reason: string): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> =>
+    api.put(`/postclock/${id}/witness-reject`, { reason }),
 
   // Append supporting files to an existing postclock request, regardless of status (HR/Admin only)
   addSupportingInfo: (id: string, files: File[]): Promise<AxiosResponse<{ error: boolean, message: string, data: PostClockRequest }>> => {
