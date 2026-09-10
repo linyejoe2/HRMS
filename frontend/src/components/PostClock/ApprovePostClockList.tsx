@@ -47,6 +47,7 @@ const ApprovePostClockList: React.FC = () => {
   const [fileDialogRequestId, setFileDialogRequestId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [witnessNames, setWitnessNames] = useState<Record<string, string>>({});
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
@@ -64,6 +65,18 @@ const ApprovePostClockList: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const witnessEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.witness).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in witnessNames));
+
+      if (witnessEmpIDs.length > 0) {
+        const names = await Promise.all(witnessEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setWitnessNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(witnessEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -296,6 +309,28 @@ const ApprovePostClockList: React.FC = () => {
       sortable: false
     },
     {
+      field: 'witness',
+      headerName: '證明人',
+      flex: 0.8,
+      valueGetter: (_, row) => witnessNames[row.witness] ?? row.witness,
+      sortable: false
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      renderCell: (params) => {
+        if (!params.row.agent) return '-';
+        const name = agentNames[params.row.agent] ?? params.row.agent;
+        return params.row.rejectionReason ? (
+          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
+            <span>{name}</span>
+          </Tooltip>
+        ) : name;
+      },
+      sortable: false
+    },
+    {
       field: 'supportingInfo',
       headerName: '佐證資料',
       flex: 1,
@@ -321,21 +356,6 @@ const ApprovePostClockList: React.FC = () => {
             </IconButton>
           </Tooltip>
         );
-      },
-      sortable: false
-    },
-    {
-      field: 'agent',
-      headerName: '代辦人',
-      flex: 0.8,
-      renderCell: (params) => {
-        if (!params.row.agent) return '-';
-        const name = agentNames[params.row.agent] ?? params.row.agent;
-        return params.row.rejectionReason ? (
-          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
-            <span>{name}</span>
-          </Tooltip>
-        ) : name;
       },
       sortable: false
     },

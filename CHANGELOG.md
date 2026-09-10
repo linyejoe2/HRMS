@@ -3,6 +3,14 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.6.1] - 2026-09-10 - Show Post-Clock Witness Name
+
+**Author**: Randy Lin
+
+### Added
+
+- 證明人 column (resolved to the employee's name) in `PostClockTab.tsx` (own requests) and `ApprovePostClockList.tsx` (HR/Admin review grid).
+
 ## [1.6.0] - 2026-09-10 - Post-Clock Witness Review Stage
 
 **Author**: Randy Lin

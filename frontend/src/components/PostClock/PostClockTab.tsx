@@ -35,6 +35,7 @@ const PostClockTab: React.FC = () => {
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [witnessNames, setWitnessNames] = useState<Record<string, string>>({});
 
   const fetchPostClockRequests = async () => {
     try {
@@ -51,6 +52,18 @@ const PostClockTab: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const witnessEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.witness).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in witnessNames));
+
+      if (witnessEmpIDs.length > 0) {
+        const names = await Promise.all(witnessEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setWitnessNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(witnessEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -168,6 +181,13 @@ const PostClockTab: React.FC = () => {
           </span>
         </Tooltip>
       ),
+      sortable: false
+    },
+    {
+      field: 'witness',
+      headerName: '證明人',
+      flex: 0.8,
+      valueGetter: (_, row) => witnessNames[row.witness] ?? row.witness,
       sortable: false
     },
     {
