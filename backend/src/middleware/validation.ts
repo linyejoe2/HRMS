@@ -77,7 +77,8 @@ export const leaveRequestSchema = Joi.object({
     'any.required': '請選擇代理人'
   }),
   // Only honored server-side when the caller is hr/admin; ignored for self-serve requests.
-  empID: Joi.string().optional()
+  empID: Joi.string().optional(),
+  rejectionReason: Joi.optional()
 });
 
 export const validateLeaveRequest = validateRequest(leaveRequestSchema);
