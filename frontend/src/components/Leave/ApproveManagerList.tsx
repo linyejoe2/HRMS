@@ -18,6 +18,7 @@ import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import { getDepartmentDescription } from '@/services/variableService';
 import { leaveDisplaynameConverter } from '@/services/leaveService';
+import { toTaipeiString } from '@/utils/util/utility';
 
 const REQUEST_TYPE_LABELS: Record<PendingManagerRequestType, string> = {
   leave: '請假',
@@ -50,23 +51,45 @@ const getRequesterName = (item: PendingManagerItem): string =>
     ? (item.data as OfficialBusinessRequest).applicantName
     : (item.data as LeaveRequest | BusinessTripRequest | PostClockRequest).name;
 
+const getReason = (item: PendingManagerItem): string => {
+  switch (item.requestType) {
+    case 'leave':
+      return (item.data as LeaveRequest).reason;
+    case 'postClock':
+      return (item.data as PostClockRequest).reason;
+    case 'businessTrip':
+      return (item.data as BusinessTripRequest).purpose;
+    case 'officialBusiness':
+      return (item.data as OfficialBusinessRequest).purpose;
+    default:
+      return '';
+  }
+};
+
 const getDetail = (item: PendingManagerItem): string => {
   switch (item.requestType) {
     case 'leave': {
       const data = item.data as LeaveRequest;
-      return `${leaveDisplaynameConverter(data.leaveType)}：${new Date(data.leaveStart).toLocaleDateString('zh-TW')} 至 ${new Date(data.leaveEnd).toLocaleDateString('zh-TW')}`;
+      return `${leaveDisplaynameConverter(data.leaveType)}：${toTaipeiString(data.leaveStart)} 至 ${toTaipeiString(data.leaveEnd)}`;
     }
     case 'businessTrip': {
       const data = item.data as BusinessTripRequest;
-      return `${data.destination}：${new Date(data.tripStart).toLocaleDateString('zh-TW')} 至 ${new Date(data.tripEnd).toLocaleDateString('zh-TW')}`;
+      return `${data.destination}：${toTaipeiString(data.tripStart)} 至 ${toTaipeiString(data.tripEnd)}`;
     }
     case 'postClock': {
       const data = item.data as PostClockRequest;
-      return `${data.clockType}：${new Date(data.date).toLocaleDateString('zh-TW')}`;
+      if (data.clockType == "in") {
+        return `上班：${toTaipeiString(data.time)}`;
+      } else if (data.clockType == 'out') {
+        return `下班：${toTaipeiString(data.time)}`;
+      } else {
+        return `上班：${toTaipeiString(data.time)}
+        下班：${toTaipeiString(data.time2)}`;
+      }
     }
     case 'officialBusiness': {
       const data = item.data as OfficialBusinessRequest;
-      return `${data.purpose}：${new Date(data.startTime).toLocaleDateString('zh-TW')}${data.endTime ? ` 至 ${new Date(data.endTime).toLocaleDateString('zh-TW')}` : ''}`;
+      return `外出：${toTaipeiString(data.startTime)}${data.endTime ? ` 至 ${toTaipeiString(data.endTime)}` : ''}`;
     }
     default:
       return '';
@@ -175,13 +198,27 @@ const ApproveManagerList: React.FC = () => {
     },
     {
       field: 'detail',
-      headerName: '申請內容',
+      headerName: '時間',
       flex: 2.5,
       renderCell: (params) => {
         const detail = getDetail(params.row);
         return (
           <Tooltip title={detail}>
             <span>{detail}</span>
+          </Tooltip>
+        );
+      },
+      sortable: false
+    },
+    {
+      field: 'reason',
+      headerName: '原因',
+      flex: 2,
+      renderCell: (params) => {
+        const reason = getReason(params.row);
+        return (
+          <Tooltip title={reason}>
+            <span>{reason}</span>
           </Tooltip>
         );
       },
