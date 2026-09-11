@@ -3,6 +3,19 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.0] - 2026-09-10 - Approval Timeline Modal & Leave Status Labels
+
+**Author**: Randy Lin
+
+### Added
+
+- `ApprovalTimelineModal` (`components/common`): a reusable 建立→...→結果 horizontal progress timeline (green/red/gray nodes and connectors) for any multi-stage approval flow; leave's 代理人/主管/人事 stages are the first consumer via `getLeaveApprovalStages()`.
+- Clicking the 狀態 chip in `AskLeaveTab.tsx`/`ApproveLeaveList.tsx` opens the timeline for that leave request.
+
+### Changed
+
+- Leave 狀態 chip now reflects the in-progress stage instead of a flat 待審核: 代理人審核中 / 主管審核中 / 待審核 (both stages cleared, awaiting HR) / 已核准 / 人事直接核准 (light green, HR approved without both stages clearing).
+
 ## [1.6.1] - 2026-09-10 - Show Post-Clock Witness Name
 
 **Author**: Randy Lin

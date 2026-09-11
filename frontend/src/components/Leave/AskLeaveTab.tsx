@@ -26,7 +26,8 @@ import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import RemainingLeaveLabels from './RemainingLeaveLabels';
 import LeaveTypeDetailsDialog from './LeaveTypeDetailsDialog';
-import { LeaveData, leaveDisplaynameConverter } from '../../services/leaveService';
+import { LeaveData, leaveDisplaynameConverter, getLeaveApprovalStages } from '../../services/leaveService';
+import ApprovalTimelineModal from '../common/ApprovalTimelineModal';
 
 const AskLeaveTab: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -41,6 +42,8 @@ const AskLeaveTab: React.FC = () => {
   const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
   const [substituteNames, setSubstituteNames] = useState<Record<string, string>>({});
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRequest, setTimelineRequest] = useState<LeaveRequest | null>(null);
 
   const fetchLeaveRequests = async () => {
     try {
@@ -123,19 +126,33 @@ const AskLeaveTab: React.FC = () => {
     setLeaveDetailsDialogOpen(true);
   };
 
-  const getStatusChip = (status: string) => {
-    switch (status) {
+  const getStatusChip = (request: LeaveRequest) => {
+    switch (request.status) {
       case 'created':
+        if (request.substituteApproveStatus !== 'approved') {
+          return <Chip label="代理人審核中" color="info" size="small" />;
+        }
+        if (request.managerApproveStatus !== 'approved') {
+          return <Chip label="主管審核中" color="primary" size="small" />;
+        }
         return <Chip label="待審核" color="warning" size="small" />;
       case 'approved':
-        return <Chip label="已核准" color="success" size="small" />;
+        if (request.substituteApproveStatus === 'approved' && request.managerApproveStatus === 'approved') {
+          return <Chip label="已核准" color="success" size="small" />;
+        }
+        return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
       case 'cancel':
         return <Chip label="已取消" color="default" size="small" />;
       default:
-        return <Chip label={status} size="small" />;
+        return <Chip label={request.status} size="small" />;
     }
+  };
+
+  const handleStatusClick = (request: LeaveRequest) => {
+    setTimelineRequest(request);
+    setTimelineOpen(true);
   };
 
   // DataGrid column definitions
@@ -219,7 +236,16 @@ const AskLeaveTab: React.FC = () => {
       field: 'status',
       headerName: '狀態',
       flex: 1,
-      renderCell: (params: GridRenderCellParams) => getStatusChip(params.row.status),
+      renderCell: (params: GridRenderCellParams) => (
+        <Tooltip title="點擊查看簽核進度">
+          <span
+            onClick={() => handleStatusClick(params.row)}
+            style={{ cursor: 'pointer' }}
+          >
+            {getStatusChip(params.row)}
+          </span>
+        </Tooltip>
+      ),
     },
     {
       field: 'rejectionReason',
@@ -420,6 +446,14 @@ const AskLeaveTab: React.FC = () => {
           hireDate={selectedLeaveHireDate}
         />
       )}
+
+      {/* Approval Timeline Modal */}
+      <ApprovalTimelineModal
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title="請假審核進度"
+        stages={timelineRequest ? getLeaveApprovalStages(timelineRequest) : []}
+      />
     </Box>
   );
 };

@@ -1,5 +1,6 @@
 import { api } from './api';
-import { LeaveRequest, LeaveAdjustment } from '../types';
+import { LeaveRequest, LeaveAdjustment, ApproveStatus } from '../types';
+import { ApprovalStage, ApprovalStageState } from '../components/common/ApprovalTimelineModal';
 
 export const leaveDisplaynameConverter = (type: string): string => {
   switch (type) {
@@ -145,4 +146,33 @@ export interface UserLeaveData {
 export async function fetchUserLeaveData(empID: string): Promise<UserLeaveData> {
   const response = await api.get(`/leave/balance/${empID}`);
   return response.data.data;
+}
+
+const toStageState = (status: ApproveStatus): ApprovalStageState =>
+  status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
+
+// Builds the 建立 → 代理人簽核 → 主管簽核 → 人事審核 stage sequence for the shared
+// ApprovalTimelineModal, from a leave request's substitute/manager/status fields.
+export function getLeaveApprovalStages(request: LeaveRequest): ApprovalStage[] {
+  const stages: ApprovalStage[] = [
+    { label: '建立', state: 'approved' },
+    { label: '代理人簽核', state: toStageState(request.substituteApproveStatus) },
+    { label: '主管簽核', state: toStageState(request.managerApproveStatus) }
+  ];
+
+  switch (request.status) {
+    case 'approved':
+      stages.push({ label: '人事核准', state: 'approved' });
+      break;
+    case 'rejected':
+      stages.push({ label: '人事拒絕', state: 'rejected' });
+      break;
+    case 'cancel':
+      stages.push({ label: '已抽單', state: 'rejected' });
+      break;
+    default:
+      stages.push({ label: '人事審核', state: 'pending' });
+  }
+
+  return stages;
 }

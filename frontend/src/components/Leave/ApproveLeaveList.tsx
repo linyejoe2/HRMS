@@ -38,7 +38,8 @@ import Badge from '@mui/material/Badge';
 import { errorToString } from '@/utils/util/utility';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription } from '@/services/variableService';
-import { leaveDisplaynameConverter } from '@/services/leaveService';
+import { leaveDisplaynameConverter, getLeaveApprovalStages } from '@/services/leaveService';
+import ApprovalTimelineModal from '../common/ApprovalTimelineModal';
 
 // Default leave adjustment suggested when approving a request with insufficient balance.
 // TODO: fill in the day/hour rules for the remaining leave types.
@@ -148,6 +149,8 @@ const ApproveLeaveList: React.FC = () => {
   const [submittingAdjustmentApproval, setSubmittingAdjustmentApproval] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRequest, setTimelineRequest] = useState<LeaveRequest | null>(null);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchLeaveRequests = async (status?: string) => {
@@ -359,19 +362,33 @@ const ApproveLeaveList: React.FC = () => {
     }
   };
 
-  const getStatusChip = (status: string) => {
-    switch (status) {
+  const getStatusChip = (request: LeaveRequest) => {
+    switch (request.status) {
       case 'created':
+        if (request.substituteApproveStatus !== 'approved') {
+          return <Chip label="代理人審核中" color="info" size="small" />;
+        }
+        if (request.managerApproveStatus !== 'approved') {
+          return <Chip label="主管審核中" color="primary" size="small" />;
+        }
         return <Chip label="待審核" color="warning" size="small" />;
       case 'approved':
-        return <Chip label="已核准" color="success" size="small" />;
+        if (request.substituteApproveStatus === 'approved' && request.managerApproveStatus === 'approved') {
+          return <Chip label="已核准" color="success" size="small" />;
+        }
+        return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
       case 'cancel':
         return <Chip label="已取消" color="default" size="small" />;
       default:
-        return <Chip label={status} size="small" />;
+        return <Chip label={request.status} size="small" />;
     }
+  };
+
+  const handleStatusClick = (request: LeaveRequest) => {
+    setTimelineRequest(request);
+    setTimelineOpen(true);
   };
 
   const buttonStyle = {
@@ -517,8 +534,23 @@ const ApproveLeaveList: React.FC = () => {
     {
       field: 'status',
       headerName: '狀態',
-      flex: 1,
-      renderCell: (params) => getStatusChip(params.value),
+      renderCell: (params) => (
+        <Tooltip title="點擊查看簽核進度">
+          <div
+            onClick={() => handleStatusClick(params.row)}
+            style={{
+              cursor: 'pointer',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start', // Adjust to 'center' if you want the chip centered
+            }}
+          >
+            {getStatusChip(params.row)}
+          </div>
+        </Tooltip>
+      ),
       sortable: true
     },
     {
@@ -782,7 +814,7 @@ const ApproveLeaveList: React.FC = () => {
                 請假類型: {selectedRequest.leaveType}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                當前狀態: {getStatusChip(selectedRequest.status)}
+                當前狀態: {getStatusChip(selectedRequest)}
               </Typography>
               <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
                 {selectedRequest.status === 'approved' && '注意：此請假已核准，抽單將撤銷核准狀態'}
@@ -943,6 +975,14 @@ const ApproveLeaveList: React.FC = () => {
           fetchLeaveRequests(statusFilter || undefined);
         }}
         hrMode
+      />
+
+      {/* Approval Timeline Modal */}
+      <ApprovalTimelineModal
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title="請假審核進度"
+        stages={timelineRequest ? getLeaveApprovalStages(timelineRequest) : []}
       />
     </Box>
   );
