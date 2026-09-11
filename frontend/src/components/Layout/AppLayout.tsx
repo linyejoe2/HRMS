@@ -18,6 +18,8 @@ import {
   useMediaQuery,
   useTheme,
   Collapse,
+  Badge,
+  Chip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -40,6 +42,7 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserLevel } from '../../types';
+import { usePendingApprovalCounts } from '../../hooks/usePendingApprovalCounts';
 
 const DRAWER_WIDTH = 280;
 
@@ -52,6 +55,7 @@ const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const pendingCounts = usePendingApprovalCounts();
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -107,7 +111,8 @@ const AppLayout: React.FC = () => {
     text: string;
     icon: React.ReactElement;
     path?: string;
-    subItems?: { text: string; path: string }[];
+    count?: number;
+    subItems?: { text: string; path: string; count?: number }[];
   }
 
   const getMenuItems = (): MenuItem[] => {
@@ -145,23 +150,25 @@ const AppLayout: React.FC = () => {
     // (manager eligibility is now data-driven via Employee.manager, not role-based),
     // while the 4 legacy tabs stay restricted to HR/Admin.
     const isAdminOrHr = user?.role === UserLevel.ADMIN || user?.role === UserLevel.HR;
-    const approvalSubItems: { text: string; path: string }[] = [
-      { text: '代理審核', path: '/leave/approve?tab=substitute' },
-      { text: '證明審核', path: '/leave/approve?tab=postclockwitness' },
-      { text: '主管審核', path: '/leave/approve?tab=manager' },
+    const approvalSubItems: { text: string; path: string; count?: number }[] = [
+      { text: '代理審核', path: '/leave/approve?tab=substitute', count: pendingCounts.substitute },
+      { text: '證明審核', path: '/leave/approve?tab=postclockwitness', count: pendingCounts.postclockwitness },
+      { text: '主管審核', path: '/leave/approve?tab=manager', count: pendingCounts.manager },
     ];
     if (isAdminOrHr) {
       approvalSubItems.push(
-        { text: '請假審核', path: '/leave/approve?tab=leave' },
-        { text: '補單審核', path: '/leave/approve?tab=postclock' },
-        { text: '因公免刷卡審核', path: '/leave/approve?tab=travel' },
-        { text: '外出審核', path: '/leave/approve?tab=officialbusiness' },
+        { text: '請假審核', path: '/leave/approve?tab=leave', count: pendingCounts.leave },
+        { text: '補單審核', path: '/leave/approve?tab=postclock', count: pendingCounts.postclock },
+        { text: '因公免刷卡審核', path: '/leave/approve?tab=travel', count: pendingCounts.travel },
+        { text: '外出審核', path: '/leave/approve?tab=officialbusiness', count: pendingCounts.officialbusiness },
       );
     }
+    const approvalTotalCount = approvalSubItems.reduce((sum, item) => sum + (item.count ?? 0), 0);
     baseItems.push({
       text: '審核中心',
       icon: <ApprovalIcon />,
       path: isAdminOrHr ? '/leave/approve?tab=leave' : '/leave/approve?tab=substitute',
+      count: approvalTotalCount,
       subItems: approvalSubItems
     });
 
@@ -268,7 +275,15 @@ const AppLayout: React.FC = () => {
                   },
                 }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemIcon>
+                  {item.count ? (
+                    <Badge badgeContent={item.count} color="error" max={99}>
+                      {item.icon}
+                    </Badge>
+                  ) : (
+                    item.icon
+                  )}
+                </ListItemIcon>
                 <ListItemText primary={item.text} />
                 {item.subItems && (
                   <IconButton
@@ -302,6 +317,14 @@ const AppLayout: React.FC = () => {
                       }}
                     >
                       <ListItemText primary={subItem.text} />
+                      {!!subItem.count && (
+                        <Chip
+                          label={subItem.count}
+                          size="small"
+                          color="error"
+                          sx={{ height: 20, minWidth: 20, '& .MuiChip-label': { px: 0.75 } }}
+                        />
+                      )}
                     </ListItemButton>
                   ))}
                 </List>

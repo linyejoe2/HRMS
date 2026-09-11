@@ -3,6 +3,15 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.9.0] - 2026-09-11 - Pending-Approval Badge Counts
+
+**Author**: Randy Lin
+
+### Added
+
+- `AppLayout.tsx`'s 審核中心 sidebar menu now shows pending-request counts: a `Badge` on the parent item's icon (sum of all visible sub-items) and a `Chip` next to each sub-item — 代理審核 (`leaveAPI.getPendingSubstitute`), 證明審核 (`postClockAPI.getPendingWitness`), 主管審核 (`approvalAPI.getPendingManagerAll`, already aggregated across all 4 modules), and, for HR/Admin only, 請假審核/補單審核/因公免刷卡審核/外出審核 (each module's `getAll('created')`).
+- Counts are refetched whenever the route changes, so approving/rejecting a request updates the badges after navigating back to 審核中心.
+
 ## [1.8.0] - 2026-09-11 - Post-Clock Approval Timeline & Status Labels
 
 **Author**: Randy Lin
