@@ -32,6 +32,8 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import PostClockRequestModal from './PostClockRequestModal';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription, getDepartments } from '@/services/variableService';
+import { getPostClockApprovalStages } from '@/services/postClockService';
+import ApprovalTimelineModal from '../common/ApprovalTimelineModal';
 
 const ApprovePostClockList: React.FC = () => {
   const [postClockRequests, setPostClockRequests] = useState<PostClockRequest[]>([]);
@@ -48,6 +50,8 @@ const ApprovePostClockList: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   const [witnessNames, setWitnessNames] = useState<Record<string, string>>({});
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRequest, setTimelineRequest] = useState<PostClockRequest | null>(null);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
@@ -211,19 +215,33 @@ const ApprovePostClockList: React.FC = () => {
     }
   };
 
-  const getStatusChip = (status: string) => {
-    switch (status) {
+  const getStatusChip = (request: PostClockRequest) => {
+    switch (request.status) {
       case 'created':
-        return <Chip label="待審核" color="warning" size="small" />;
+        if (request.witnessApproveStatus !== 'approved') {
+          return <Chip label="證明人審核中" color="info" size="small" />;
+        }
+        if (request.managerApproveStatus !== 'approved') {
+          return <Chip label="主管審核中" color="primary" size="small" />;
+        }
+        return <Chip label="審核中" color="warning" size="small" />;
       case 'approved':
-        return <Chip label="已核准" color="success" size="small" />;
+        if (request.witnessApproveStatus === 'approved' && request.managerApproveStatus === 'approved') {
+          return <Chip label="已核准" color="success" size="small" />;
+        }
+        return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
       case 'cancel':
         return <Chip label="已取消" color="default" size="small" />;
       default:
-        return <Chip label={status} size="small" />;
+        return <Chip label={request.status} size="small" />;
     }
+  };
+
+  const handleStatusClick = (request: PostClockRequest) => {
+    setTimelineRequest(request);
+    setTimelineOpen(true);
   };
 
   const getClockTypeLabel = (clockType: string) => {
@@ -363,7 +381,16 @@ const ApprovePostClockList: React.FC = () => {
       field: 'status',
       headerName: '狀態',
       flex: 1,
-      renderCell: (params) => getStatusChip(params.value),
+      renderCell: (params) => (
+        <Tooltip title="點擊查看簽核進度">
+          <span
+            onClick={() => handleStatusClick(params.row)}
+            style={{ cursor: 'pointer' }}
+          >
+            {getStatusChip(params.row)}
+          </span>
+        </Tooltip>
+      ),
       sortable: true
     },
     {
@@ -648,7 +675,7 @@ const ApprovePostClockList: React.FC = () => {
                 補單類型: {getClockTypeLabel(selectedRequest.clockType)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                當前狀態: {getStatusChip(selectedRequest.status)}
+                當前狀態: {getStatusChip(selectedRequest)}
               </Typography>
               <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
                 {selectedRequest.status === 'approved' && '注意：此補單已核准，抽單將撤銷核准狀態'}
@@ -680,6 +707,14 @@ const ApprovePostClockList: React.FC = () => {
           fetchPostClockRequests(statusFilter || undefined);
         }}
         hrMode
+      />
+
+      {/* Approval Timeline Modal */}
+      <ApprovalTimelineModal
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title="補單審核進度"
+        stages={timelineRequest ? getPostClockApprovalStages(timelineRequest) : []}
       />
     </Box>
   );

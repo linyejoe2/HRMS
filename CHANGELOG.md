@@ -3,6 +3,19 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.8.0] - 2026-09-11 - Post-Clock Approval Timeline & Status Labels
+
+**Author**: Randy Lin
+
+### Added
+
+- `getPostClockApprovalStages()` (`services/postClockService.ts`): builds the 建立→證明人簽核→主管簽核→人事核准 stage sequence for the shared `ApprovalTimelineModal` (introduced in 1.7.0 for leave), from a post-clock request's witness/manager/status fields.
+- Clicking the 狀態 chip in `PostClockTab.tsx`/`ApprovePostClockList.tsx` opens the timeline for that post-clock request.
+
+### Changed
+
+- Post-clock 狀態 chip now reflects the in-progress stage instead of a flat 待審核: 證明人審核中 / 主管審核中 / 審核中 (both stages cleared, awaiting HR) / 已核准 / 人事直接核准 (light green, HR approved without both stages clearing).
+
 ## [1.7.0] - 2026-09-10 - Approval Timeline Modal & Leave Status Labels
 
 **Author**: Randy Lin
