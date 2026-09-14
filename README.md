@@ -259,6 +259,8 @@ theme.ts            # MUI theme configuration
   - Post-clock's 狀態 chip (`PostClockTab.tsx`/`ApprovePostClockList.tsx`) follows the same pattern — 證明人審核中 / 主管審核中 / 審核中 (HR) / 已核准 / 人事直接核准 — also clickable to open the shared `ApprovalTimelineModal`
   - The 審核中心 sidebar item (`AppLayout.tsx`) shows a pending-count badge on itself and on each visible sub-tab (代理審核/證明審核/主管審核, plus 請假審核/補單審核/因公免刷卡審核/外出審核 for HR/Admin), refetched on every navigation
   - HR/Admin's 代理申請 button (each `Approve*List`) opens the same request modal in hrMode to create a request on a chosen employee's behalf (tagged with `agent`); it's just created, not auto-approved — it still goes through the normal substitute/witness → manager → HR workflow
+  - `ApprovalTimelineModal`'s stages show who acted and exactly when — "empID name" plus the exact timestamp beneath each stage — resolved from the substitute/witness/manager/HR actor empIDs; the 主管簽核 stage falls back to the requester's assigned `Employee.manager` (via `employeeAPI.getByEmpID`) while pending, since `manager` itself is only set once a manager actually acts
+  - `ApproveLeaveList.tsx`'s grid also shows a `代理人` (substitute) column, before `代辦人`
 
 - **HR/Admin Features**:
   - Review all leave requests with DataGrid interface

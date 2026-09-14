@@ -42,6 +42,8 @@ const AskLeaveTab: React.FC = () => {
   const [selectedLeaveHireDate, setSelectedLeaveHireDate] = useState<Date | undefined>(undefined);
   const [substituteNames, setSubstituteNames] = useState<Record<string, string>>({});
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+  const [approvedByNames, setApprovedByNames] = useState<Record<string, string>>({});
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineRequest, setTimelineRequest] = useState<LeaveRequest | null>(null);
 
@@ -72,6 +74,30 @@ const AskLeaveTab: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const managerEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.manager).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in managerNames));
+
+      if (managerEmpIDs.length > 0) {
+        const names = await Promise.all(managerEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setManagerNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(managerEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const approvedByEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.approvedBy).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in approvedByNames));
+
+      if (approvedByEmpIDs.length > 0) {
+        const names = await Promise.all(approvedByEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setApprovedByNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(approvedByEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -452,7 +478,7 @@ const AskLeaveTab: React.FC = () => {
         open={timelineOpen}
         onClose={() => setTimelineOpen(false)}
         title="請假審核進度"
-        stages={timelineRequest ? getLeaveApprovalStages(timelineRequest) : []}
+        stages={timelineRequest ? getLeaveApprovalStages(timelineRequest, { ...substituteNames, ...managerNames, ...approvedByNames }) : []}
       />
     </Box>
   );

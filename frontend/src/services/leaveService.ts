@@ -151,24 +151,37 @@ export async function fetchUserLeaveData(empID: string): Promise<UserLeaveData> 
 const toStageState = (status: ApproveStatus): ApprovalStageState =>
   status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
 
+// "empID name" for display, e.g. "A540 林承慶"; falls back to just the empID if the
+// name hasn't been resolved yet.
+const formatWho = (empID: string | undefined, names: Record<string, string>): string | undefined =>
+  empID ? [empID, names[empID]].filter(Boolean).join(' ') : undefined;
+
 // Builds the 建立 → 代理人簽核 → 主管簽核 → 人事審核 stage sequence for the shared
 // ApprovalTimelineModal, from a leave request's substitute/manager/status fields.
-export function getLeaveApprovalStages(request: LeaveRequest): ApprovalStage[] {
+// `names` resolves empID -> employee name for the substitute/manager/HR actors
+// (the requester's own name is already on the request). `manager` is only set once
+// the manager actually acts, so `fallbackManagerEmpID` (the requester's assigned
+// Employee.manager) is used to still show who is expected to sign while pending.
+export function getLeaveApprovalStages(
+  request: LeaveRequest,
+  names: Record<string, string> = {},
+  fallbackManagerEmpID?: string
+): ApprovalStage[] {
   const stages: ApprovalStage[] = [
-    { label: '建立', state: 'approved' },
-    { label: '代理人簽核', state: toStageState(request.substituteApproveStatus) },
-    { label: '主管簽核', state: toStageState(request.managerApproveStatus) }
+    { label: '建立', state: 'approved', who: formatWho(request.empID, { [request.empID]: request.name }), at: request.createdAt },
+    { label: '代理人簽核', state: toStageState(request.substituteApproveStatus), who: formatWho(request.substitute, names), at: request.substituteApproveAt },
+    { label: '主管簽核', state: toStageState(request.managerApproveStatus), who: formatWho(request.manager || fallbackManagerEmpID, names), at: request.managerApproveAt }
   ];
 
   switch (request.status) {
     case 'approved':
-      stages.push({ label: '人事核准', state: 'approved' });
+      stages.push({ label: '人事核准', state: 'approved', who: formatWho(request.approvedBy, names), at: request.updatedAt });
       break;
     case 'rejected':
-      stages.push({ label: '人事拒絕', state: 'rejected' });
+      stages.push({ label: '人事拒絕', state: 'rejected', who: formatWho(request.approvedBy, names), at: request.updatedAt });
       break;
     case 'cancel':
-      stages.push({ label: '已抽單', state: 'rejected' });
+      stages.push({ label: '已抽單', state: 'rejected', who: formatWho(request.approvedBy, names), at: request.updatedAt });
       break;
     default:
       stages.push({ label: '人事審核', state: 'pending' });

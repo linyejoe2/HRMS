@@ -38,6 +38,8 @@ const PostClockTab: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   const [witnessNames, setWitnessNames] = useState<Record<string, string>>({});
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+  const [approvedByNames, setApprovedByNames] = useState<Record<string, string>>({});
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineRequest, setTimelineRequest] = useState<PostClockRequest | null>(null);
 
@@ -68,6 +70,30 @@ const PostClockTab: React.FC = () => {
         setWitnessNames(prev => ({
           ...prev,
           ...Object.fromEntries(witnessEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const managerEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.manager).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in managerNames));
+
+      if (managerEmpIDs.length > 0) {
+        const names = await Promise.all(managerEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setManagerNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(managerEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const approvedByEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.approvedBy).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in approvedByNames));
+
+      if (approvedByEmpIDs.length > 0) {
+        const names = await Promise.all(approvedByEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setApprovedByNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(approvedByEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -403,7 +429,7 @@ const PostClockTab: React.FC = () => {
         open={timelineOpen}
         onClose={() => setTimelineOpen(false)}
         title="補單審核進度"
-        stages={timelineRequest ? getPostClockApprovalStages(timelineRequest) : []}
+        stages={timelineRequest ? getPostClockApprovalStages(timelineRequest, { ...witnessNames, ...managerNames, ...approvedByNames }) : []}
       />
     </Box>
   );

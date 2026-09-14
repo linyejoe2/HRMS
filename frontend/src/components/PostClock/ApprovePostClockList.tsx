@@ -50,8 +50,11 @@ const ApprovePostClockList: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
   const [witnessNames, setWitnessNames] = useState<Record<string, string>>({});
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+  const [approvedByNames, setApprovedByNames] = useState<Record<string, string>>({});
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineRequest, setTimelineRequest] = useState<PostClockRequest | null>(null);
+  const [timelineFallbackManagerEmpID, setTimelineFallbackManagerEmpID] = useState<string | undefined>(undefined);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchPostClockRequests = async (status?: string) => {
@@ -81,6 +84,30 @@ const ApprovePostClockList: React.FC = () => {
         setWitnessNames(prev => ({
           ...prev,
           ...Object.fromEntries(witnessEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const managerEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.manager).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in managerNames));
+
+      if (managerEmpIDs.length > 0) {
+        const names = await Promise.all(managerEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setManagerNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(managerEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const approvedByEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.approvedBy).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in approvedByNames));
+
+      if (approvedByEmpIDs.length > 0) {
+        const names = await Promise.all(approvedByEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setApprovedByNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(approvedByEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -239,9 +266,25 @@ const ApprovePostClockList: React.FC = () => {
     }
   };
 
-  const handleStatusClick = (request: PostClockRequest) => {
+  const handleStatusClick = async (request: PostClockRequest) => {
     setTimelineRequest(request);
+    setTimelineFallbackManagerEmpID(undefined);
     setTimelineOpen(true);
+
+    if (!request.manager) {
+      try {
+        const employee = (await employeeAPI.getByEmpID(request.empID)).data.data.employee;
+        if (employee.manager) {
+          setTimelineFallbackManagerEmpID(employee.manager);
+          if (!(employee.manager in managerNames)) {
+            const name = await employeeAPI.getNameById(employee.manager);
+            setManagerNames(prev => ({ ...prev, [employee.manager!]: name }));
+          }
+        }
+      } catch (error) {
+        console.error('Error resolving assigned manager:', error);
+      }
+    }
   };
 
   const getClockTypeLabel = (clockType: string) => {
@@ -714,7 +757,7 @@ const ApprovePostClockList: React.FC = () => {
         open={timelineOpen}
         onClose={() => setTimelineOpen(false)}
         title="補單審核進度"
-        stages={timelineRequest ? getPostClockApprovalStages(timelineRequest) : []}
+        stages={timelineRequest ? getPostClockApprovalStages(timelineRequest, { ...witnessNames, ...managerNames, ...approvedByNames }, timelineFallbackManagerEmpID) : []}
       />
     </Box>
   );

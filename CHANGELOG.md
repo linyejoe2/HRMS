@@ -3,6 +3,22 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.11.0] - 2026-09-14 - Approval Timeline Shows Who & When
+
+**Author**: Randy Lin
+
+### Added
+
+- `ApprovalTimelineModal.tsx`'s `ApprovalStage` gained optional `who`/`at` fields; each stage node now shows the actor ("empID name") and exact timestamp (`toLocaleString('zh-TW')`) beneath its label.
+- `getLeaveApprovalStages()`/`getPostClockApprovalStages()` (`leaveService.ts`/`postClockService.ts`) take an optional `names: Record<empID, name>` map and populate `who`/`at` per stage: 建立 → requester + `createdAt`; 代理人簽核/證明人簽核 → substitute/witness + `substituteApproveAt`/`witnessApproveAt`; 主管簽核 → manager + `managerApproveAt`; 人事核准/拒絕/已抽單 → `approvedBy` + `updatedAt`.
+- `AskLeaveTab.tsx`, `ApproveLeaveList.tsx`, `PostClockTab.tsx`, `ApprovePostClockList.tsx` added `managerNames`/`approvedByNames` caches (same batched `employeeAPI.getNameById` pattern as the existing `agentNames`/`substituteNames`/`witnessNames`), merged into the `names` map passed to the stage builders.
+- `代理人` (substitute) column in `ApproveLeaveList.tsx`, placed before `代辦人`, resolved via a new `substituteNames` cache using the same batched lookup pattern.
+
+### Changed
+
+- `getLeaveApprovalStages()`/`getPostClockApprovalStages()` gained a third optional `fallbackManagerEmpID` param, used as `request.manager || fallbackManagerEmpID` for the 主管簽核 stage — `manager` is only set once a manager actually acts, so this still shows who is expected to sign while pending.
+- `ApproveLeaveList.tsx`/`ApprovePostClockList.tsx`'s `handleStatusClick` is now async: when the clicked request's `manager` is null, it fetches the requester's `Employee` record (`employeeAPI.getByEmpID`) and uses `employee.manager` as the fallback, resolving/caching that manager's name into `managerNames`.
+
 ## [1.10.0] - 2026-09-14 - Agent-Apply Replaces Create-and-Auto-Approve
 
 **Author**: Randy Lin

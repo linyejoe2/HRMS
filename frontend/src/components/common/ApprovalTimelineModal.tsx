@@ -7,6 +7,8 @@ export type ApprovalStageState = 'approved' | 'rejected' | 'pending';
 export interface ApprovalStage {
   label: string;
   state: ApprovalStageState;
+  who?: string; // e.g. "A540 林承慶" — who acted on this stage, omitted while pending
+  at?: string; // ISO timestamp of when this stage's action happened, omitted while pending
 }
 
 interface ApprovalTimelineModalProps {
@@ -23,7 +25,7 @@ const STATE_COLOR: Record<ApprovalStageState, string> = {
 };
 
 const StageNode: React.FC<{ stage: ApprovalStage }> = ({ stage }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, minWidth: 88 }}>
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, minWidth: 110 }}>
     <Box
       sx={{
         width: 32,
@@ -44,6 +46,16 @@ const StageNode: React.FC<{ stage: ApprovalStage }> = ({ stage }) => (
     <Typography variant="body2" align="center" sx={{ mt: 1, fontWeight: 500, px: 0.5 }}>
       {stage.label}
     </Typography>
+    {stage.who && (
+      <Typography variant="caption" align="center" color="text.secondary" sx={{ px: 0.5 }}>
+        {stage.who}
+      </Typography>
+    )}
+    {stage.at && (
+      <Typography variant="caption" align="center" color="text.secondary" sx={{ px: 0.5, whiteSpace: 'nowrap' }}>
+        {new Date(stage.at).toLocaleString('zh-TW')}
+      </Typography>
+    )}
   </Box>
 );
 
