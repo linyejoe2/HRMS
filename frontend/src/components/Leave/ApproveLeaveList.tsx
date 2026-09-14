@@ -149,6 +149,7 @@ const ApproveLeaveList: React.FC = () => {
   const [submittingAdjustmentApproval, setSubmittingAdjustmentApproval] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [substituteNames, setSubstituteNames] = useState<Record<string, string>>({});
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineRequest, setTimelineRequest] = useState<LeaveRequest | null>(null);
   // const [departments, setDepartments] = useState<Variable[]>([]);
@@ -168,6 +169,18 @@ const ApproveLeaveList: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const substituteEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.substitute).filter(Boolean))
+      ).filter(empID => !(empID in substituteNames));
+
+      if (substituteEmpIDs.length > 0) {
+        const names = await Promise.all(substituteEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setSubstituteNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(substituteEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -514,6 +527,13 @@ const ApproveLeaveList: React.FC = () => {
           </Tooltip>
         );
       },
+      sortable: false
+    },
+    {
+      field: 'substitute',
+      headerName: '代理人',
+      flex: 0.8,
+      valueGetter: (_, row) => substituteNames[row.substitute] ?? row.substitute,
       sortable: false
     },
     {
