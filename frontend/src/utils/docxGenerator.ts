@@ -25,7 +25,9 @@ export const generateLeaveRequestDocx = async (leaveRequest: LeaveRequest): Prom
     console.log('Template file size:', arrayBuffer.byteLength, 'bytes');
 
     const zip = new PizZip(arrayBuffer);
-    const doc = new Docxtemplater().loadZip(zip);
+    const options = { linebreaks: true };
+    const doc = new Docxtemplater(zip, options);
+    // const doc = new Docxtemplater().loadZip(zip);
 
     // Calculate leave duration in a more readable format
     // const leave = new Date(leaveRequest.leaveStart);
@@ -113,14 +115,17 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
         : '上下班';
     const templateData = {
       ...postClockRequest,
-      time: dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm'),
-      date2: postClockRequest.date2 ? dayjs(postClockRequest.date2).format('YYYY/MM/DD') : '',
-      time2: postClockRequest.time2 ? "-" + dayjs(postClockRequest.time2).format('HH:mm') : '',
+      time: postClockRequest.clockType != 'out' ? `上班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}` : `下班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}`,
+      time2: postClockRequest.time2 ? `下班: ${dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm')}` : undefined,
+      // time: dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm'),
+      // date2: postClockRequest.date2 ? dayjs(postClockRequest.date2).format('YYYY/MM/DD') : '',
+      // time2: postClockRequest.time2 ? "-" + dayjs(postClockRequest.time2).format('HH:mm') : '',
       type: clockTypeLabel,
       sequenceNumber: `#${postClockRequest.sequenceNumber || 'N/A'}`,
       YYYY: createdDate.format('YYYY'),
       mm: createdDate.format('MM'),
-      DD: createdDate.format('DD')
+      DD: createdDate.format('DD'),
+      witnessName: await employeeAPI.getNameById(postClockRequest.witness)
     };
 
     // Fill the template with data
@@ -185,7 +190,7 @@ export const generateBusinessTripRequestDocx = async (businessTripRequest: Busin
     const templateData = {
       ...businessTripRequest,
       YYYY: createdDate.getFullYear(),
-      transportation: businessTripRequest.transportation ? businessTripRequest.transportation: "",
+      transportation: businessTripRequest.transportation ? businessTripRequest.transportation : "",
       mm: String(createdDate.getMonth() + 1).padStart(2, '0'),
       DD: String(createdDate.getDate()).padStart(2, '0'),
       start: new Date(businessTripRequest.tripStart).toLocaleString('zh-TW'),
