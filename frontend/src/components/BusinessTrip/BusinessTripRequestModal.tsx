@@ -26,7 +26,7 @@ import { useFileUpload } from '../../hooks/useFileUpload';
 interface BusinessTripRequestModalProps {
   open: boolean;
   onClose: () => void;
-  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee (代理申請); it still goes through the normal manager/HR approval workflow
 }
 
 const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ open, onClose, hrMode = false }) => {
@@ -88,11 +88,8 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
         supportingInfo: files.length > 0 ? files : undefined
       };
 
-      const created = await businessTripAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
-      if (hrMode) {
-        await businessTripAPI.approve(created.data.data._id!);
-      }
-      toast.success(hrMode ? '因公免刷卡申請已建立並核准' : '因公免刷卡申請已成功送出');
+      await businessTripAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      toast.success(hrMode ? '因公免刷卡申請已代理申請成功' : '因公免刷卡申請已成功送出');
       reset();
       clearFiles();
       setSelectedEmployee(null);
@@ -128,7 +125,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            {hrMode ? '新增並核准因公免刷卡申請' : '建立因公免刷卡申請'}
+            {hrMode ? '代理申請因公免刷卡' : '建立因公免刷卡申請'}
           </Typography>
         </DialogTitle>
 
@@ -348,7 +345,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '代理申請' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

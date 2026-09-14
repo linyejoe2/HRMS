@@ -35,7 +35,7 @@ import { useAuth } from '../../contexts/AuthContext';
 interface PostClockRequestModalProps {
   open: boolean;
   onClose: () => void;
-  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee (代理申請); it still goes through the normal witness/manager/HR approval workflow
 }
 
 const POSTCLOCK_REASON_OPTIONS = ['忘記刷卡', '卡片遺失/損壞/未帶', '刷卡設備異常/刷卡未成功'];
@@ -143,11 +143,8 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
         submitData.time2 = combinedDateTime2.toISOString();
       }
 
-      const created = await postClockAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
-      if (hrMode) {
-        await postClockAPI.approve(created.data.data._id!);
-      }
-      toast.success(hrMode ? '補單已建立並核准' : '補單申請已成功送出');
+      await postClockAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      toast.success(hrMode ? '補單已代理申請成功' : '補單申請已成功送出');
       reset();
       clearFiles();
       setSelectedEmployee(null);
@@ -192,7 +189,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            {hrMode ? '新增並核准補單申請' : '建立補單申請'}
+            {hrMode ? '代理申請補單' : '建立補單申請'}
           </Typography>
         </DialogTitle>
 
@@ -406,7 +403,7 @@ const PostClockRequestModal: React.FC<PostClockRequestModalProps> = ({ open, onC
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '代理申請' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

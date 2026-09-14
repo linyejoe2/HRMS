@@ -120,7 +120,7 @@ cd frontend && npm install && npm run dev
   managerApproveStatus: 'pending'|'approved'|'rejected';
   managerMemo?: string;
   managerApproveAt?: Date;
-  agent?: string; // empID of the HR/admin who created+approved this request on the employee's behalf (hrMode)
+  agent?: string; // empID of the HR/admin who created this request on the employee's behalf (hrMode / 代理申請); the request still goes through the normal approval workflow
   YYYY: string; // Application year
   mm: string; // Application month
   DD: string; // Application day
@@ -258,6 +258,7 @@ theme.ts            # MUI theme configuration
   - Leave's 狀態 chip (`AskLeaveTab.tsx`/`ApproveLeaveList.tsx`) shows the current stage — 代理人審核中 / 主管審核中 / 待審核 (HR) / 已核准 / 人事直接核准 (HR overrode before both stages cleared) — and is clickable to open a stage-by-stage `ApprovalTimelineModal` (reusable for other request types)
   - Post-clock's 狀態 chip (`PostClockTab.tsx`/`ApprovePostClockList.tsx`) follows the same pattern — 證明人審核中 / 主管審核中 / 審核中 (HR) / 已核准 / 人事直接核准 — also clickable to open the shared `ApprovalTimelineModal`
   - The 審核中心 sidebar item (`AppLayout.tsx`) shows a pending-count badge on itself and on each visible sub-tab (代理審核/證明審核/主管審核, plus 請假審核/補單審核/因公免刷卡審核/外出審核 for HR/Admin), refetched on every navigation
+  - HR/Admin's 代理申請 button (each `Approve*List`) opens the same request modal in hrMode to create a request on a chosen employee's behalf (tagged with `agent`); it's just created, not auto-approved — it still goes through the normal substitute/witness → manager → HR workflow
 
 - **HR/Admin Features**:
   - Review all leave requests with DataGrid interface

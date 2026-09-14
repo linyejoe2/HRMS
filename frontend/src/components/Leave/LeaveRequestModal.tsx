@@ -42,7 +42,7 @@ import {
 interface LeaveRequestModalProps {
   open: boolean;
   onClose: () => void;
-  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee and it's auto-approved
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of a chosen employee (代理申請); it still goes through the normal substitute/manager/HR approval workflow
 }
 
 const startTimeOptions = [
@@ -249,13 +249,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
         ...data,
         supportingInfo: files.length > 0 ? files : undefined
       };
-      const created = await leaveAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
-      if (hrMode) {
-        // approveLeaveRequest always overwrites rejectionReason with whatever is passed here,
-        // so re-send the same memo instead of '' to avoid wiping out what was just set on create.
-        await leaveAPI.approve(created.data.data._id!, submitData.rejectionReason || '');
-      }
-      toast.success(hrMode ? '請假申請已建立並核准' : '請假申請已成功送出');
+      await leaveAPI.create(submitData, hrMode ? selectedEmployee!.empID : undefined);
+      toast.success(hrMode ? '請假申請已代理申請成功' : '請假申請已成功送出');
       reset({
         leaveType: '',
         substitute: '',
@@ -320,7 +315,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
-            {hrMode ? '新增並核准請假申請' : '建立請假申請'}
+            {hrMode ? '代理申請請假' : '建立請假申請'}
           </Typography>
         </DialogTitle>
 
@@ -566,7 +561,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} /> : null}
             >
-              {loading ? '建立中...' : hrMode ? '建立並核准' : '建立申請'}
+              {loading ? '建立中...' : hrMode ? '代理申請' : '建立申請'}
             </Button>
           </DialogActions>
         </form>

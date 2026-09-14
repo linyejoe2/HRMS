@@ -476,7 +476,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               onClick={() => setCreateModalOpen(true)}
               sx={{ ml: 'auto' }}
             >
-              新增並核准
+              代理申請
             </Button>
 
             {/* <Typography variant="body2" color="text.secondary">
@@ -625,7 +625,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
         onDelete={handleDeleteSupportingInfo}
       />
 
-      {/* HR Create & Auto-Approve Modal */}
+      {/* HR Agent-Apply Modal (代理申請) */}
       <OfficialBusinessRequestModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}

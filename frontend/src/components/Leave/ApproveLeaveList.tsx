@@ -680,7 +680,7 @@ const ApproveLeaveList: React.FC = () => {
               onClick={() => setCreateModalOpen(true)}
               sx={{ ml: 'auto' }}
             >
-              新增並核准
+              代理申請
             </Button>
           </Box>
         </CardContent>
@@ -967,7 +967,7 @@ const ApproveLeaveList: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* HR Create & Auto-Approve Modal */}
+      {/* HR Agent-Apply Modal (代理申請) */}
       <LeaveRequestModal
         open={createModalOpen}
         onClose={() => {

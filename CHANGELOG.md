@@ -3,6 +3,16 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.10.0] - 2026-09-14 - Agent-Apply Replaces Create-and-Auto-Approve
+
+**Author**: Randy Lin
+
+### Changed
+
+- Renamed the hrMode "新增並核准" (create-and-auto-approve) feature to "代理申請" across all 4 request types (leave, post-clock, business-trip, official-business) — the HR review-grid trigger button and each `*RequestModal.tsx`'s dialog title/submit button now read 代理申請.
+- hrMode no longer auto-approves immediately after create: removed the `xxxAPI.approve()` call that used to follow `xxxAPI.create()` in `LeaveRequestModal.tsx`, `PostClockRequestModal.tsx`, `BusinessTripRequestModal.tsx`, and `OfficialBusinessRequestModal.tsx`. An HR/Admin-created request on someone's behalf (still tagged with `agent`) now goes through the normal approval workflow (substitute/witness → manager → HR) instead of being force-approved on the spot, so manager review works correctly for these requests too.
+- `OfficialBusinessRequestModal.tsx`: removed the hrMode-only requirement to fill in the return time (`endTime`) up front — that only existed because hrMode used to auto-approve immediately; `endTime` is now optional in both modes, same as a normal request.
+
 ## [1.9.0] - 2026-09-11 - Pending-Approval Badge Counts
 
 **Author**: Randy Lin

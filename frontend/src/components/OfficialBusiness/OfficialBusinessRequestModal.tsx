@@ -26,7 +26,7 @@ interface OfficialBusinessRequestModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  hrMode?: boolean; // when true, HR/admin creates the request on behalf of chosen employee(s) and it's auto-approved
+  hrMode?: boolean; // when true, HR/admin creates the request on behalf of chosen employee(s) (代理申請); it still goes through the normal manager/HR approval workflow
 }
 
 const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> = ({
@@ -91,14 +91,13 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
       setRejectionReason('');
       clearFiles();
     } else {
-      // Set default times when modal opens
+      // Set default times when modal opens; leave the return time blank so the
+      // applicant (or agent) can fill it in later, same as the normal flow.
       const now = dayjs();
       setStartTime(now.hour(8).minute(30).second(0));
-      // hrMode auto-approves immediately, so default the return time too;
-      // in the normal flow leave it blank so the applicant can fill it in later.
-      setEndTime(hrMode ? now.hour(17).minute(30).second(0) : null);
+      setEndTime(null);
     }
-  }, [open, clearFiles, hrMode]);
+  }, [open, clearFiles]);
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -115,13 +114,6 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
 
     if (!startTime) {
       toast.error('請選擇外出時間');
-      return;
-    }
-
-    // hrMode auto-approves on creation, so the return time must be known up front.
-    // In the normal flow the applicant may leave it blank and fill it in later.
-    if (hrMode && !endTime) {
-      toast.error('請選擇返回時間');
       return;
     }
 
@@ -172,12 +164,9 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
         supportingInfo: files
       };
 
-      const created = await officialBusinessAPI.create(requestData, hrMode);
-      if (hrMode) {
-        await officialBusinessAPI.approve(created.data.data._id!);
-      }
+      await officialBusinessAPI.create(requestData, hrMode);
 
-      toast.success(hrMode ? '外出申請已建立並核准' : '外出申請已成功建立');
+      toast.success(hrMode ? '外出申請已代理申請成功' : '外出申請已成功建立');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -190,7 +179,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{hrMode ? '新增並核准外出申請' : '建立外出申請'}</DialogTitle>
+      <DialogTitle>{hrMode ? '代理申請外出' : '建立外出申請'}</DialogTitle>
 
       <DialogContent dividers>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
@@ -379,7 +368,7 @@ const OfficialBusinessRequestModal: React.FC<OfficialBusinessRequestModalProps> 
           variant="contained"
           disabled={loading || loadingEmployees}
         >
-          {loading ? '送出中...' : hrMode ? '建立並核准' : '送出申請'}
+          {loading ? '送出中...' : hrMode ? '代理申請' : '送出申請'}
         </Button>
       </DialogActions>
     </Dialog>
