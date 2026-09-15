@@ -225,6 +225,7 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'sequenceNumber',
       headerName: '編號',
       flex: 0.8,
+      minWidth: 100,
       valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       sortable: true
     },
@@ -232,18 +233,21 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'empID',
       headerName: '員編',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'name',
       headerName: '姓名',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'department',
       headerName: '部門',
       flex: 0.8,
+      minWidth: 100,
       valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
@@ -251,12 +255,14 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'destination',
       headerName: '目的地',
       flex: 0.6,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'tripStart',
       headerName: '出發時間',
       flex: 1.5,
+      minWidth: 160,
       valueGetter: (_, row) => new Date(row.tripStart).toLocaleString('zh-TW'),
       sortable: true
     },
@@ -264,6 +270,7 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'tripEnd',
       headerName: '返回時間',
       flex: 1.5,
+      minWidth: 160,
       valueGetter: (_, row) => new Date(row.tripEnd).toLocaleString('zh-TW'),
       sortable: true
     },
@@ -271,6 +278,7 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'purpose',
       headerName: '目的',
       flex: 2,
+      minWidth: 200,
       renderCell: (params) => (
         <Tooltip title={params.value}>
           <span>
@@ -286,6 +294,7 @@ const ApproveBusinessTripList: React.FC = () => {
       field: 'transportation',
       headerName: '交通',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     // {
@@ -296,9 +305,33 @@ const ApproveBusinessTripList: React.FC = () => {
     //   sortable: true
     // },
     {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      minWidth: 100,
+      renderCell: (params) => {
+        if (!params.row.agent) return '-';
+        const name = agentNames[params.row.agent] ?? params.row.agent;
+        return params.row.rejectionReason ? (
+          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
+            <span>{name}</span>
+          </Tooltip>
+        ) : name;
+      },
+      sortable: false
+    },
+    {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 1.5,
+      minWidth: 150,
+      valueGetter: (_, row) => row.rejectionReason || '-'
+    },
+    {
       field: 'supportingInfo',
       headerName: '相關資料',
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => {
         // const files = params.value as string[] | undefined;
         // if (!files || files.length === 0) return '-';
@@ -325,24 +358,10 @@ const ApproveBusinessTripList: React.FC = () => {
       sortable: false
     },
     {
-      field: 'agent',
-      headerName: '代辦人',
-      flex: 0.8,
-      renderCell: (params) => {
-        if (!params.row.agent) return '-';
-        const name = agentNames[params.row.agent] ?? params.row.agent;
-        return params.row.rejectionReason ? (
-          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
-            <span>{name}</span>
-          </Tooltip>
-        ) : name;
-      },
-      sortable: false
-    },
-    {
       field: 'status',
       headerName: '狀態',
       flex: 0.8,
+      minWidth: 100,
       renderCell: (params) => getStatusChip(params.value),
       sortable: true
     },
@@ -351,6 +370,7 @@ const ApproveBusinessTripList: React.FC = () => {
       type: 'actions',
       headerName: '操作',
       flex: 1.5,
+      minWidth: 120,
       getActions: (params) => {
         const actions = [];
 

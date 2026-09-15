@@ -306,6 +306,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'sequenceNumber',
       headerName: '編號',
       flex: 1,
+      minWidth: 100,
       valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       sortable: true
     },
@@ -313,18 +314,21 @@ const ApprovePostClockList: React.FC = () => {
       field: 'empID',
       headerName: '員編',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'name',
       headerName: '員工姓名',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'department',
       headerName: '部門',
       flex: 0.8,
+      minWidth: 100,
       valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
@@ -332,6 +336,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'date',
       headerName: '補單日期',
       flex: 1.5,
+      minWidth: 130,
       valueGetter: (_, row) => dayjs(row.date).format('YYYY/MM/DD'),
       sortable: true
     },
@@ -339,6 +344,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'time',
       headerName: '補單時間',
       flex: 1.5,
+      minWidth: 150,
       valueGetter: (_, row) => {
         const time = row.time ? dayjs(row.time).format('HH:mm') : null;
         const time2 = row.time2 ? dayjs(row.time2).format('HH:mm') : null;
@@ -351,6 +357,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'clockType',
       headerName: '類型',
       flex: 1,
+      minWidth: 100,
       valueGetter: (_, row) => getClockTypeLabel(row.clockType),
       sortable: true
     },
@@ -358,6 +365,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'reason',
       headerName: '原因',
       flex: 3,
+      minWidth: 200,
       renderCell: (params) => (
         <Tooltip title={params.value}>
           <span>
@@ -373,6 +381,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'witness',
       headerName: '證明人',
       flex: 0.8,
+      minWidth: 100,
       valueGetter: (_, row) => witnessNames[row.witness] ?? row.witness,
       sortable: false
     },
@@ -380,6 +389,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'agent',
       headerName: '代辦人',
       flex: 0.8,
+      minWidth: 100,
       renderCell: (params) => {
         if (!params.row.agent) return '-';
         const name = agentNames[params.row.agent] ?? params.row.agent;
@@ -392,9 +402,17 @@ const ApprovePostClockList: React.FC = () => {
       sortable: false
     },
     {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 1.5,
+      minWidth: 150,
+      valueGetter: (_, row) => row.rejectionReason || '-'
+    },
+    {
       field: 'supportingInfo',
       headerName: '佐證資料',
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => {
         const files = (params.value as string[] | undefined) || [];
         // const files = params.value as string[] | undefined;
@@ -424,6 +442,7 @@ const ApprovePostClockList: React.FC = () => {
       field: 'status',
       headerName: '狀態',
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => (
         <Tooltip title="點擊查看簽核進度">
           <span
@@ -441,6 +460,7 @@ const ApprovePostClockList: React.FC = () => {
       type: 'actions',
       headerName: '操作',
       flex: 2,
+      minWidth: 120,
       getActions: (params) => {
         const actions = [];
 

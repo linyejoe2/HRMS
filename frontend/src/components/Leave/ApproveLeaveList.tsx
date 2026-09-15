@@ -471,6 +471,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'sequenceNumber',
       headerName: '編號',
       flex: 1,
+      minWidth: 100,
       valueFormatter: (value) => (value ? `#${value}` : '#N/A'),
       // valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       sortable: true
@@ -479,18 +480,21 @@ const ApproveLeaveList: React.FC = () => {
       field: 'empID',
       headerName: '員編',
       flex: 0.6,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'name',
       headerName: '員工姓名',
       flex: 0.8,
+      minWidth: 100,
       sortable: true
     },
     {
       field: 'department',
       headerName: '部門',
       flex: 0.8,
+      minWidth: 100,
       valueGetter: (_, row) => getDepartmentDescription(row.department),
       sortable: true
     },
@@ -498,6 +502,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'leaveType',
       headerName: '請假類型',
       flex: 1,
+      minWidth: 100,
       // patch07091508
       valueGetter: (_, row) => leaveDisplaynameConverter(row.leaveType),
       sortable: true
@@ -505,6 +510,7 @@ const ApproveLeaveList: React.FC = () => {
     {
       field: 'applicationDate',
       headerName: '申請日期',
+      minWidth: 100,
       flex: 1,
       valueGetter: (_, row) => `${row.YYYY}/${row.mm}/${row.DD}`,
       sortable: true
@@ -512,6 +518,7 @@ const ApproveLeaveList: React.FC = () => {
     {
       field: 'leaveStart',
       headerName: '請假開始',
+      minWidth: 180,
       flex: 2,
       valueGetter: (_, row) => new Date(row.leaveStart).toLocaleString('zh-TW'),
       sortable: true
@@ -519,6 +526,7 @@ const ApproveLeaveList: React.FC = () => {
     {
       field: 'leaveEnd',
       headerName: '請假結束',
+      minWidth: 180,
       flex: 2,
       valueGetter: (_, row) => new Date(row.leaveEnd).toLocaleString('zh-TW'),
       sortable: true
@@ -527,6 +535,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'duration',
       headerName: '請假時數',
       flex: 1,
+      minWidth: 100,
       valueGetter: (_, row) => `${row.hour}小時`,
       sortable: false
     },
@@ -534,6 +543,7 @@ const ApproveLeaveList: React.FC = () => {
       field: 'reason',
       headerName: '原因',
       flex: 3,
+      minWidth: 200,
       renderCell: (params) => (
         <Tooltip title={params.value}>
           <span>
@@ -546,9 +556,41 @@ const ApproveLeaveList: React.FC = () => {
       sortable: false
     },
     {
+      field: 'substitute',
+      headerName: '代理人',
+      flex: 0.8,
+      minWidth: 100,
+      valueGetter: (_, row) => substituteNames[row.substitute] ?? row.substitute,
+      sortable: false
+    },
+    {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      minWidth: 100,
+      renderCell: (params) => {
+        if (!params.row.agent) return '-';
+        const name = agentNames[params.row.agent] ?? params.row.agent;
+        return params.row.rejectionReason ? (
+          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
+            <span>{name}</span>
+          </Tooltip>
+        ) : name;
+      },
+      sortable: false
+    },
+    {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 1.5,
+      minWidth: 150,
+      valueGetter: (_, row) => row.rejectionReason || '-'
+    },
+    {
       field: 'supportingInfo',
       headerName: '佐證資料',
       flex: 1,
+      minWidth: 100,
       renderCell: (params) => {
         const files = (params.value as string[] | undefined) || [];
 
@@ -573,30 +615,9 @@ const ApproveLeaveList: React.FC = () => {
       sortable: false
     },
     {
-      field: 'substitute',
-      headerName: '代理人',
-      flex: 0.8,
-      valueGetter: (_, row) => substituteNames[row.substitute] ?? row.substitute,
-      sortable: false
-    },
-    {
-      field: 'agent',
-      headerName: '代辦人',
-      flex: 0.8,
-      renderCell: (params) => {
-        if (!params.row.agent) return '-';
-        const name = agentNames[params.row.agent] ?? params.row.agent;
-        return params.row.rejectionReason ? (
-          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
-            <span>{name}</span>
-          </Tooltip>
-        ) : name;
-      },
-      sortable: false
-    },
-    {
       field: 'status',
       headerName: '狀態',
+      minWidth: 100,
       renderCell: (params) => (
         <Tooltip title="點擊查看簽核進度">
           <div
@@ -621,6 +642,7 @@ const ApproveLeaveList: React.FC = () => {
       type: 'actions',
       headerName: '操作',
       flex: 1.5,
+      minWidth: 120,
       getActions: (params) => {
         const actions = [];
 

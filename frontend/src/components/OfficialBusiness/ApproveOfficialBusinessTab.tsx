@@ -244,18 +244,21 @@ const ApproveOfficialBusinessTab: React.FC = () => {
     {
       field: 'sequenceNumber',
       headerName: '編號',
+      minWidth: 100,
       valueGetter: (_, row) => `#${row.sequenceNumber || 'N/A'}`,
       flex: 0.8
     },
     {
       field: 'applicant',
       headerName: '員編',
-      flex: 0.6
+      flex: 0.6,
+      minWidth: 100
     },
     {
       field: 'applicantName',
       headerName: '申請人',
-      flex: 0.8
+      flex: 0.8,
+      minWidth: 100
     },
     {
       field: 'participantNames',
@@ -303,6 +306,28 @@ const ApproveOfficialBusinessTab: React.FC = () => {
       }
     },
     {
+      field: 'agent',
+      headerName: '代辦人',
+      flex: 0.8,
+      minWidth: 100,
+      renderCell: (params) => {
+        if (!params.row.agent) return '-';
+        const name = agentNames[params.row.agent] ?? params.row.agent;
+        return params.row.rejectionReason ? (
+          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
+            <span>{name}</span>
+          </Tooltip>
+        ) : name;
+      }
+    },
+    {
+      field: 'rejectionReason',
+      headerName: '說明',
+      flex: 1.5,
+      minWidth: 150,
+      valueGetter: (_, row) => row.rejectionReason || '-'
+    },
+    {
       field: 'supportingInfo',
       headerName: '佐證資料',
       flex: 0.6,
@@ -329,33 +354,11 @@ const ApproveOfficialBusinessTab: React.FC = () => {
       }
     },
     {
-      field: 'agent',
-      headerName: '代辦人',
-      flex: 0.8,
-      minWidth: 100,
-      renderCell: (params) => {
-        if (!params.row.agent) return '-';
-        const name = agentNames[params.row.agent] ?? params.row.agent;
-        return params.row.rejectionReason ? (
-          <Tooltip title={`說明: ${params.row.rejectionReason}`}>
-            <span>{name}</span>
-          </Tooltip>
-        ) : name;
-      }
-    },
-    {
       field: 'status',
       headerName: '狀態',
       flex: 1,
       minWidth: 100,
       renderCell: (params) => getStatusChip(params.value)
-    },
-    {
-      field: 'rejectionReason',
-      headerName: '說明',
-      flex: 1.5,
-      minWidth: 150,
-      valueGetter: (_, row) => row.rejectionReason || '-'
     },
     {
       field: 'actions',
@@ -372,9 +375,7 @@ const ApproveOfficialBusinessTab: React.FC = () => {
             <GridActionsCellItem
               icon={
                 <Tooltip title={'核准'}>
-                  <span>
                     <CheckIcon color={'success'} />
-                  </span>
                 </Tooltip>
               }
               label="核准"
@@ -382,22 +383,6 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               showInMenu={false}
             />
           );
-          // actions.push(
-          //   <GridActionsCellItem
-          //     icon={
-          //       <Tooltip title={params.row.endTime ? '核准' : '申請人尚未填寫返回時間'}>
-          //         <span>
-          //           <CheckIcon color={params.row.endTime ? 'success' : 'disabled'} />
-          //         </span>
-          //       </Tooltip>
-          //     }
-          //     label="核准"
-          //     onClick={() => handleApproveClick(params.row)}
-          //     disabled={!params.row.endTime}
-          //     showInMenu={false}
-          //   />
-          // );
-
           // Reject
           actions.push(
             <GridActionsCellItem
@@ -411,6 +396,24 @@ const ApproveOfficialBusinessTab: React.FC = () => {
               showInMenu={false}
             />
           );
+        } else {
+             actions.push(
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="核准">
+                  <CheckIcon color="disabled" />
+                </Tooltip>
+              }
+              label="核准"
+            />,
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="拒絕">
+                  <CloseIcon color="disabled" />
+                </Tooltip>
+              }
+              label="拒絕"
+            />)
         }
 
         // Withdraw (for any status except cancel)

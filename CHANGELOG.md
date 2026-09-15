@@ -3,6 +3,18 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.11.1] - 2026-09-15 - Approval Grid Column Sizing & 說明 Column
+
+**Author**: Randy Lin
+
+### Added
+
+- `說明` column (`rejectionReason`) in `ApprovePostClockList.tsx` and `ApproveBusinessTripList.tsx`, placed after `代辦人` — matching the column `ApproveLeaveList.tsx`/`ApproveOfficialBusinessTab.tsx` already had. Both backend models already carry `rejectionReason` (`backend/src/models/PostClock.ts`, `BusinessTrip.ts`), so no backend change was needed.
+
+### Changed
+
+- Added `minWidth` to every column in the four HR approval grids (`ApprovePostClockList.tsx`, `ApproveBusinessTripList.tsx`, `ApproveLeaveList.tsx`, `ApproveOfficialBusinessTab.tsx`) so columns stop collapsing below a usable width on narrow viewports/many columns; the latter two already had `minWidth` on most columns, this fills in the remaining gaps (e.g. `applicant`/`applicantName` in `ApproveOfficialBusinessTab.tsx`).
+
 ## [1.11.0] - 2026-09-14 - Approval Timeline Shows Who & When
 
 **Author**: Randy Lin
