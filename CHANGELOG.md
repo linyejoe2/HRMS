@@ -3,6 +3,21 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.0] - 2026-09-15 - Business-Trip & Official-Business Timelines, Leave Rejection States
+
+**Author**: Randy Lin
+
+### Added
+
+- `getBusinessTripApprovalStages()` (`services/businessTripService.ts`): builds the 建立→主管簽核→人事審核 stage sequence (only one review stage — no substitute/witness) for the shared `ApprovalTimelineModal`. Wired into `BusinessTripTab.tsx`/`ApproveBusinessTripList.tsx` — status chip is clickable, with `managerNames`/`approvedByNames` caches and an async `handleStatusClick` that resolves a fallback manager via `employeeAPI.getByEmpID` while `manager` is still null.
+- `getOfficialBusinessApprovalStages()` (`services/officialBusinessService.ts`): same 建立→主管簽核→人事審核 pattern, keyed off `applicant`/`applicantName` since `OfficialBusinessRequest` names those fields differently. Wired into `OfficialBusinessTab.tsx`/`ApproveOfficialBusinessTab.tsx` with the same clickable-chip/timeline-modal/manager-fallback support.
+
+### Changed
+
+- Business-trip and official-business 狀態 chips now split the same way leave/post-clock already do: 主管審核中 (pending manager) / 主管拒絕 (manager rejected, still awaiting HR) / 待審核 (manager approved, awaiting HR) / 已核准 (manager approved) / 人事直接核准 (HR approved without the manager stage clearing) / 已拒絕 / 已取消.
+- Leave's 狀態 chip (`ApproveLeaveList.tsx`/`AskLeaveTab.tsx`) now shows 代理人拒絕/主管拒絕 (red) instead of lumping a rejected substitute/manager stage into the 審核中 states.
+- `ApproveLeaveList.tsx`: new `getEffectiveStatus()` folds a still-`created` request with a rejected substitute/manager stage into `rejected`. `fetchLeaveRequests` now fetches everything (bypassing the backend's raw `status` query param) and applies `getEffectiveStatus` client-side when the 待審核 or 已拒絕 sub-tab is selected, so a substitute/manager-rejected request shows under 已拒絕 instead of 待審核 even though its backend `status` stays `'created'` until HR's final decision. 已核准/全部 tabs are unaffected.
+
 ## [1.11.1] - 2026-09-15 - Approval Grid Column Sizing & 說明 Column
 
 **Author**: Randy Lin

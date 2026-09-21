@@ -155,8 +155,14 @@ const AskLeaveTab: React.FC = () => {
   const getStatusChip = (request: LeaveRequest) => {
     switch (request.status) {
       case 'created':
+        if (request.substituteApproveStatus === 'rejected') {
+          return <Chip label="代理人拒絕" color="error" size="small" />;
+        }
         if (request.substituteApproveStatus !== 'approved') {
           return <Chip label="代理人審核中" color="info" size="small" />;
+        }
+        if (request.managerApproveStatus === 'rejected') {
+          return <Chip label="主管拒絕" color="error" size="small" />;
         }
         if (request.managerApproveStatus !== 'approved') {
           return <Chip label="主管審核中" color="primary" size="small" />;

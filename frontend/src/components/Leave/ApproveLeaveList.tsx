@@ -126,6 +126,16 @@ const getDefaultAdjustmentForLeaveType = (
   }
 };
 
+// A request's real-world status folds a substitute/manager rejection into 已拒絕
+// even though the backend keeps `status: 'created'` until HR makes the final call
+// (a stage rejection freezes that stage without blocking HR's decision).
+const getEffectiveStatus = (request: LeaveRequest): string => {
+  if (request.status === 'created' && (request.substituteApproveStatus === 'rejected' || request.managerApproveStatus === 'rejected')) {
+    return 'rejected';
+  }
+  return request.status;
+};
+
 const ApproveLeaveList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,8 +170,16 @@ const ApproveLeaveList: React.FC = () => {
   const fetchLeaveRequests = async (status?: string) => {
     try {
       setLoading(true);
-      const response = await getAllLeaveRequests(status);
-      setLeaveRequests(response.data.data);
+      // 待審核/已拒絕 need effective-status reclassification (a substitute/manager
+      // rejection moves a still-'created' request into 已拒絕), so fetch everything
+      // for those two and filter client-side; 已核准/全部 map 1:1 to the backend
+      // status field.
+      const needsEffectiveFilter = status === 'created' || status === 'rejected';
+      const response = await getAllLeaveRequests(needsEffectiveFilter ? undefined : status);
+      const filteredData = needsEffectiveFilter
+        ? response.data.data.filter(request => getEffectiveStatus(request) === status)
+        : response.data.data;
+      setLeaveRequests(filteredData);
 
       const agentEmpIDs = Array.from(
         new Set(response.data.data.map(request => request.agent).filter((empID): empID is string => !!empID))
@@ -405,8 +423,14 @@ const ApproveLeaveList: React.FC = () => {
   const getStatusChip = (request: LeaveRequest) => {
     switch (request.status) {
       case 'created':
+        if (request.substituteApproveStatus === 'rejected') {
+          return <Chip label="代理人拒絕" color="error" size="small" />;
+        }
         if (request.substituteApproveStatus !== 'approved') {
           return <Chip label="代理人審核中" color="info" size="small" />;
+        }
+        if (request.managerApproveStatus === 'rejected') {
+          return <Chip label="主管拒絕" color="error" size="small" />;
         }
         if (request.managerApproveStatus !== 'approved') {
           return <Chip label="主管審核中" color="primary" size="small" />;

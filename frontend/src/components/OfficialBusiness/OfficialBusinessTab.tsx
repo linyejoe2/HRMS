@@ -32,6 +32,8 @@ import { toast } from 'react-toastify';
 import OfficialBusinessRequestModal from './OfficialBusinessRequestModal';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import { generateOfficialBusinessRequestDocx } from '../../utils/docxGenerator';
+import ApprovalTimelineModal from '../common/ApprovalTimelineModal';
+import { getOfficialBusinessApprovalStages } from '../../services/officialBusinessService';
 
 const OfficialBusinessTab: React.FC = () => {
   const { user } = useAuth();
@@ -43,6 +45,11 @@ const OfficialBusinessTab: React.FC = () => {
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+  const [approvedByNames, setApprovedByNames] = useState<Record<string, string>>({});
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRequest, setTimelineRequest] = useState<OfficialBusinessRequest | null>(null);
+  const [timelineFallbackManagerEmpID, setTimelineFallbackManagerEmpID] = useState<string | undefined>(undefined);
 
   // Edit return time dialog
   const [endTimeDialogOpen, setEndTimeDialogOpen] = useState(false);
@@ -66,6 +73,30 @@ const OfficialBusinessTab: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const managerEmpIDs = Array.from(
+        new Set((response.data.data || []).map(request => request.manager).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in managerNames));
+
+      if (managerEmpIDs.length > 0) {
+        const names = await Promise.all(managerEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setManagerNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(managerEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const approvedByEmpIDs = Array.from(
+        new Set((response.data.data || []).map(request => request.approvedBy).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in approvedByNames));
+
+      if (approvedByEmpIDs.length > 0) {
+        const names = await Promise.all(approvedByEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setApprovedByNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(approvedByEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error: any) {
@@ -146,16 +177,49 @@ const OfficialBusinessTab: React.FC = () => {
   };
 
   // Get status chip
-  const getStatusChip = (status: string) => {
-    const statusConfig: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'error' | 'warning' }> = {
-      created: { label: '待審核', color: 'warning' },
-      approved: { label: '已核准', color: 'success' },
-      rejected: { label: '已拒絕', color: 'error' },
-      cancel: { label: '已取消', color: 'default' }
-    };
+  const getStatusChip = (request: OfficialBusinessRequest) => {
+    switch (request.status) {
+      case 'created':
+        if (request.managerApproveStatus === 'rejected') {
+          return <Chip label="主管拒絕" color="error" size="small" />;
+        }
+        if (request.managerApproveStatus !== 'approved') {
+          return <Chip label="主管審核中" color="primary" size="small" />;
+        }
+        return <Chip label="待審核" color="warning" size="small" />;
+      case 'approved':
+        if (request.managerApproveStatus === 'approved') {
+          return <Chip label="已核准" color="success" size="small" />;
+        }
+        return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
+      case 'rejected':
+        return <Chip label="已拒絕" color="error" size="small" />;
+      case 'cancel':
+        return <Chip label="已取消" color="default" size="small" />;
+      default:
+        return <Chip label={request.status} size="small" />;
+    }
+  };
 
-    const config = statusConfig[status] || { label: status, color: 'default' };
-    return <Chip label={config.label} color={config.color} size="small" />;
+  const handleStatusClick = async (request: OfficialBusinessRequest) => {
+    setTimelineRequest(request);
+    setTimelineFallbackManagerEmpID(undefined);
+    setTimelineOpen(true);
+
+    if (!request.manager) {
+      try {
+        const employee = (await employeeAPI.getByEmpID(request.applicant)).data.data.employee;
+        if (employee.manager) {
+          setTimelineFallbackManagerEmpID(employee.manager);
+          if (!(employee.manager in managerNames)) {
+            const name = await employeeAPI.getNameById(employee.manager);
+            setManagerNames(prev => ({ ...prev, [employee.manager!]: name }));
+          }
+        }
+      } catch (error) {
+        console.error('Error resolving assigned manager:', error);
+      }
+    }
   };
 
   // Define columns
@@ -236,7 +300,16 @@ const OfficialBusinessTab: React.FC = () => {
       headerName: '狀態',
       flex: 1,
       minWidth: 100,
-      renderCell: (params) => getStatusChip(params.value)
+      renderCell: (params) => (
+        <Tooltip title="點擊查看簽核進度">
+          <span
+            onClick={() => handleStatusClick(params.row)}
+            style={{ cursor: 'pointer' }}
+          >
+            {getStatusChip(params.row)}
+          </span>
+        </Tooltip>
+      )
     },
     {
       field: 'rejectionReason',
@@ -466,6 +539,14 @@ const OfficialBusinessTab: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Approval Timeline Modal */}
+      <ApprovalTimelineModal
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title="外出審核進度"
+        stages={timelineRequest ? getOfficialBusinessApprovalStages(timelineRequest, { ...managerNames, ...approvedByNames }, timelineFallbackManagerEmpID) : []}
+      />
     </Box>
   );
 };

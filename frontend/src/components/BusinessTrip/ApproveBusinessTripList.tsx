@@ -31,6 +31,8 @@ import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import { fuzzySearchApproval } from '@/utils/fuzzySearch';
 import { getDepartmentDescription, getDepartments } from '@/services/variableService';
+import { getBusinessTripApprovalStages } from '@/services/businessTripService';
+import ApprovalTimelineModal from '../common/ApprovalTimelineModal';
 
 const ApproveBusinessTripList: React.FC = () => {
   const [businessTripRequests, setBusinessTripRequests] = useState<BusinessTripRequest[]>([]);
@@ -46,6 +48,11 @@ const ApproveBusinessTripList: React.FC = () => {
   const [fileDialogRequestId, setFileDialogRequestId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+  const [approvedByNames, setApprovedByNames] = useState<Record<string, string>>({});
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRequest, setTimelineRequest] = useState<BusinessTripRequest | null>(null);
+  const [timelineFallbackManagerEmpID, setTimelineFallbackManagerEmpID] = useState<string | undefined>(undefined);
   // const [departments, setDepartments] = useState<Variable[]>([]);
 
   const fetchBusinessTripRequests = async (status?: string) => {
@@ -63,6 +70,30 @@ const ApproveBusinessTripList: React.FC = () => {
         setAgentNames(prev => ({
           ...prev,
           ...Object.fromEntries(agentEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const managerEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.manager).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in managerNames));
+
+      if (managerEmpIDs.length > 0) {
+        const names = await Promise.all(managerEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setManagerNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(managerEmpIDs.map((empID, index) => [empID, names[index]]))
+        }));
+      }
+
+      const approvedByEmpIDs = Array.from(
+        new Set(response.data.data.map(request => request.approvedBy).filter((empID): empID is string => !!empID))
+      ).filter(empID => !(empID in approvedByNames));
+
+      if (approvedByEmpIDs.length > 0) {
+        const names = await Promise.all(approvedByEmpIDs.map(empID => employeeAPI.getNameById(empID)));
+        setApprovedByNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(approvedByEmpIDs.map((empID, index) => [empID, names[index]]))
         }));
       }
     } catch (error) {
@@ -197,18 +228,48 @@ const ApproveBusinessTripList: React.FC = () => {
     }
   };
 
-  const getStatusChip = (status: string) => {
-    switch (status) {
+  const getStatusChip = (request: BusinessTripRequest) => {
+    switch (request.status) {
       case 'created':
+        if (request.managerApproveStatus === 'rejected') {
+          return <Chip label="主管拒絕" color="error" size="small" />;
+        }
+        if (request.managerApproveStatus !== 'approved') {
+          return <Chip label="主管審核中" color="primary" size="small" />;
+        }
         return <Chip label="待審核" color="warning" size="small" />;
       case 'approved':
-        return <Chip label="已核准" color="success" size="small" />;
+        if (request.managerApproveStatus === 'approved') {
+          return <Chip label="已核准" color="success" size="small" />;
+        }
+        return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
       case 'rejected':
         return <Chip label="已拒絕" color="error" size="small" />;
       case 'cancel':
         return <Chip label="已取消" color="default" size="small" />;
       default:
-        return <Chip label={status} size="small" />;
+        return <Chip label={request.status} size="small" />;
+    }
+  };
+
+  const handleStatusClick = async (request: BusinessTripRequest) => {
+    setTimelineRequest(request);
+    setTimelineFallbackManagerEmpID(undefined);
+    setTimelineOpen(true);
+
+    if (!request.manager) {
+      try {
+        const employee = (await employeeAPI.getByEmpID(request.empID)).data.data.employee;
+        if (employee.manager) {
+          setTimelineFallbackManagerEmpID(employee.manager);
+          if (!(employee.manager in managerNames)) {
+            const name = await employeeAPI.getNameById(employee.manager);
+            setManagerNames(prev => ({ ...prev, [employee.manager!]: name }));
+          }
+        }
+      } catch (error) {
+        console.error('Error resolving assigned manager:', error);
+      }
     }
   };
 
@@ -362,7 +423,16 @@ const ApproveBusinessTripList: React.FC = () => {
       headerName: '狀態',
       flex: 0.8,
       minWidth: 100,
-      renderCell: (params) => getStatusChip(params.value),
+      renderCell: (params) => (
+        <Tooltip title="點擊查看簽核進度">
+          <span
+            onClick={() => handleStatusClick(params.row)}
+            style={{ cursor: 'pointer' }}
+          >
+            {getStatusChip(params.row)}
+          </span>
+        </Tooltip>
+      ),
       sortable: true
     },
     {
@@ -631,7 +701,7 @@ const ApproveBusinessTripList: React.FC = () => {
                 目的地: {selectedRequest.destination}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                當前狀態: {getStatusChip(selectedRequest.status)}
+                當前狀態: {getStatusChip(selectedRequest)}
               </Typography>
               <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
                 {selectedRequest.status === 'approved' && '注意：此因公免刷卡已核准，抽單將撤銷核准狀態'}
@@ -663,6 +733,14 @@ const ApproveBusinessTripList: React.FC = () => {
           fetchBusinessTripRequests(statusFilter || undefined);
         }}
         hrMode
+      />
+
+      {/* Approval Timeline Modal */}
+      <ApprovalTimelineModal
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title="因公免刷卡審核進度"
+        stages={timelineRequest ? getBusinessTripApprovalStages(timelineRequest, { ...managerNames, ...approvedByNames }, timelineFallbackManagerEmpID) : []}
       />
     </Box>
   );
