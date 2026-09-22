@@ -23,6 +23,7 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import BusinessTripRequestModal from './BusinessTripRequestModal';
 import BusinessTripClockTimesModal from './BusinessTripClockTimesModal';
 import { generateBusinessTripRequestDocx } from '../../utils/docxGenerator';
+import { generateBusinessTripClockTimesExcel } from '../../utils/excelGenerator';
 import FilePreviewDialog from '../common/FilePreviewDialog';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
@@ -107,6 +108,7 @@ const BusinessTripTab: React.FC = () => {
   const handleDownload = async (request: BusinessTripRequest) => {
     try {
       await generateBusinessTripRequestDocx(request);
+      generateBusinessTripClockTimesExcel(request);
       toast.success('因公免刷卡申請單下載成功');
     } catch (error) {
       console.error('Error downloading business trip request:', error);

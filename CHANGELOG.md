@@ -3,6 +3,18 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.14.1] - 2026-09-22 - Business-Trip Clock-Times Excel Export
+
+**Author**: Randy Lin
+
+### Added
+
+- `frontend/src/utils/excelGenerator.ts`: `generateBusinessTripClockTimesExcel(request: BusinessTripRequest): void` — builds an `.xlsx` breakdown of a business trip's recorded per-day `clockTimes` (`{clockIn, clockOut}[]`), one row per day, using the `xlsx` package the same way `AttendanceTab.tsx` already does (`XLSX.utils.json_to_sheet` → `book_new()`/`book_append_sheet` (sheet `上下班時間`) → `!cols` widths → `XLSX.writeFile`). Each row repeats the trip's header info (編號, 員工編號, 姓名, 目的地, 洽辦對象) alongside 天數/日期/上班時間/下班時間 so the file is self-contained when opened standalone. No-ops when `request.clockTimes` is empty/undefined. Filename: `因公免刷卡上下班時間_{tripStart YYYY_MM_DD}_{name}.xlsx`, mirroring the existing docx filename convention. Entirely client-side — no backend involvement.
+
+### Changed
+
+- `BusinessTripTab.tsx`'s `handleDownload()` now also calls `generateBusinessTripClockTimesExcel(request)` right after the existing `generateBusinessTripRequestDocx(request)` call, so clicking `下載因公免刷卡申請單` downloads both the `.docx` and the new `.xlsx` in one action. Only affects the employee's own request list — `ApproveBusinessTripList.tsx` has no download action and was not touched.
+
 ## [1.14.0] - 2026-09-22 - Manager-Approval Request Detail View
 
 **Author**: Randy Lin
