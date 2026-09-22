@@ -3,6 +3,22 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.14.0] - 2026-09-22 - Manager-Approval Request Detail View
+
+**Author**: Randy Lin
+
+### Added
+
+- `瀏覽詳細資料` (view details) action in `ApproveManagerList.tsx`'s actions column (a `Visibility` icon, placed first, before 主管核准/主管拒絕) — opens a new read-only `RequestDetailModal` for the clicked row regardless of request type.
+- `frontend/src/components/common/RequestDetailModal.tsx`: read-only Dialog that switches on `requestType` to render type-specific fields — leave (請假類型, 代理人, 請假期間, 請假原因, 代理人簽核狀態/時間/備註), business-trip (目的地, 洽辦對象, 出發/返回時間, 交通方式, 預估費用, 目的, per-day `clockTimes` list, 備註), post-clock (補單日期, 打卡類型, 時間 detail, 補單原因, 證明人, 證明人簽核狀態/時間/備註), official-business (同行人員, 車牌號碼, 外出/返回時間, 外出事由) — plus common fields (申請人/部門, 代辦人 if present, 建立時間, 附件 via the existing `FilePreviewDialog`). Footer is a single 關閉 button; nothing is editable. Resolves the leave substitute/post-clock witness empID to a display name via `employeeAPI.getNameById`, cached in local `resolvedNames` state, falling back to the raw empID while the lookup is in flight.
+- `frontend/src/services/pendingManagerService.ts`: `getRequesterEmpID`, `getRequesterName`, `getReason`, `getDetail` extracted out of `ApproveManagerList.tsx` (pure refactor, identical logic) so both `ApproveManagerList.tsx` and `RequestDetailModal.tsx` share one implementation instead of duplicating it.
+
+### Changed
+
+- `ApproveManagerList.tsx` now imports `getRequesterEmpID`/`getRequesterName`/`getReason`/`getDetail` from `pendingManagerService.ts` instead of defining them locally; no behavior change.
+
+Note: the 4 per-type approval screens (`ApproveLeaveList.tsx`, `ApproveBusinessTripList.tsx`, `ApprovePostClockList.tsx`, `ApproveOfficialBusinessTab.tsx`) were not touched and do not have this action — it's `ApproveManagerList.tsx` (主管審核) only.
+
 ## [1.13.0] - 2026-09-22 - Business-Trip Contact Person & Up-Front Clock Times
 
 **Author**: Randy Lin

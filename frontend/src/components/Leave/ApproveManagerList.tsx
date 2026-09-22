@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Chip, Tooltip, Typography } from '@mui/material';
-import { Check as ApproveIcon, Close as RejectIcon, Attachment as AttachmentIcon } from '@mui/icons-material';
+import { Check as ApproveIcon, Close as RejectIcon, Attachment as AttachmentIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
-import {
-  BusinessTripRequest,
-  LeaveRequest,
-  OfficialBusinessRequest,
-  PendingManagerItem,
-  PendingManagerRequestType,
-  PostClockRequest
-} from '../../types';
+import { PendingManagerItem, PendingManagerRequestType } from '../../types';
 import { approvalAPI, businessTripAPI, leaveAPI, officialBusinessAPI, postClockAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import InputDialog from '../common/InputDialog';
 import FilePreviewDialog from '../common/FilePreviewDialog';
+import RequestDetailModal from '../common/RequestDetailModal';
 import { getDepartmentDescription } from '@/services/variableService';
-import { leaveDisplaynameConverter } from '@/services/leaveService';
-import { toTaipeiString } from '@/utils/util/utility';
+import { getDetail, getReason, getRequesterEmpID, getRequesterName } from '@/services/pendingManagerService';
 
 const REQUEST_TYPE_LABELS: Record<PendingManagerRequestType, string> = {
   leave: '請假',
@@ -41,61 +34,6 @@ const managerRejectMap = {
   officialBusiness: officialBusinessAPI.managerReject
 };
 
-const getRequesterEmpID = (item: PendingManagerItem): string =>
-  item.requestType === 'officialBusiness'
-    ? (item.data as OfficialBusinessRequest).applicant
-    : (item.data as LeaveRequest | BusinessTripRequest | PostClockRequest).empID;
-
-const getRequesterName = (item: PendingManagerItem): string =>
-  item.requestType === 'officialBusiness'
-    ? (item.data as OfficialBusinessRequest).applicantName
-    : (item.data as LeaveRequest | BusinessTripRequest | PostClockRequest).name;
-
-const getReason = (item: PendingManagerItem): string => {
-  switch (item.requestType) {
-    case 'leave':
-      return (item.data as LeaveRequest).reason;
-    case 'postClock':
-      return (item.data as PostClockRequest).reason;
-    case 'businessTrip':
-      return (item.data as BusinessTripRequest).purpose;
-    case 'officialBusiness':
-      return (item.data as OfficialBusinessRequest).purpose;
-    default:
-      return '';
-  }
-};
-
-const getDetail = (item: PendingManagerItem): string => {
-  switch (item.requestType) {
-    case 'leave': {
-      const data = item.data as LeaveRequest;
-      return `${leaveDisplaynameConverter(data.leaveType)}：${toTaipeiString(data.leaveStart)} 至 ${toTaipeiString(data.leaveEnd)}`;
-    }
-    case 'businessTrip': {
-      const data = item.data as BusinessTripRequest;
-      return `${data.destination}：${toTaipeiString(data.tripStart)} 至 ${toTaipeiString(data.tripEnd)}`;
-    }
-    case 'postClock': {
-      const data = item.data as PostClockRequest;
-      if (data.clockType == "in") {
-        return `上班：${toTaipeiString(data.time)}`;
-      } else if (data.clockType == 'out') {
-        return `下班：${toTaipeiString(data.time)}`;
-      } else {
-        return `上班：${toTaipeiString(data.time)}
-        下班：${toTaipeiString(data.time2)}`;
-      }
-    }
-    case 'officialBusiness': {
-      const data = item.data as OfficialBusinessRequest;
-      return `外出：${toTaipeiString(data.startTime)}${data.endTime ? ` 至 ${toTaipeiString(data.endTime)}` : ''}`;
-    }
-    default:
-      return '';
-  }
-};
-
 const ApproveManagerList: React.FC = () => {
   const [items, setItems] = useState<PendingManagerItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +42,8 @@ const ApproveManagerList: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<PendingManagerItem | null>(null);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [detailItem, setDetailItem] = useState<PendingManagerItem | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const fetchPendingItems = async () => {
     try {
@@ -121,6 +61,11 @@ const ApproveManagerList: React.FC = () => {
   useEffect(() => {
     fetchPendingItems();
   }, []);
+
+  const handleViewDetailClick = (item: PendingManagerItem) => {
+    setDetailItem(item);
+    setDetailModalOpen(true);
+  };
 
   const handleApproveClick = (item: PendingManagerItem) => {
     setSelectedItem(item);
@@ -259,6 +204,15 @@ const ApproveManagerList: React.FC = () => {
       getActions: (params) => [
         <GridActionsCellItem
           icon={
+            <Tooltip title="瀏覽詳細資料">
+              <ViewIcon color="action" />
+            </Tooltip>
+          }
+          label="瀏覽詳細資料"
+          onClick={() => handleViewDetailClick(params.row)}
+        />,
+        <GridActionsCellItem
+          icon={
             <Tooltip title="主管核准">
               <ApproveIcon color="success" />
             </Tooltip>
@@ -349,6 +303,12 @@ const ApproveManagerList: React.FC = () => {
         onClose={() => setFileDialogOpen(false)}
         files={selectedFiles}
         title="附件資料"
+      />
+
+      <RequestDetailModal
+        open={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        item={detailItem}
       />
     </Box>
   );

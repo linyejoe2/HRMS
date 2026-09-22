@@ -263,6 +263,7 @@ theme.ts            # MUI theme configuration
   - `ApprovalTimelineModal`'s stages show who acted and exactly when — "empID name" plus the exact timestamp beneath each stage — resolved from the substitute/witness/manager/HR actor empIDs; the 主管簽核 stage falls back to the requester's assigned `Employee.manager` (via `employeeAPI.getByEmpID`) while pending, since `manager` itself is only set once a manager actually acts
   - `ApproveLeaveList.tsx`'s grid also shows a `代理人` (substitute) column, before `代辦人`
   - All 4 HR approval grids show a `說明` (`rejectionReason`) column and give every column a `minWidth` so they stay usable on narrow viewports
+  - `ApproveManagerList.tsx` (主管審核) has a `瀏覽詳細資料` action per row that opens a read-only `RequestDetailModal` with the full request detail for that request type, regardless of which of the 4 request types it is
 
 - **HR/Admin Features**:
   - Review all leave requests with DataGrid interface
