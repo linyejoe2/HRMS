@@ -30,15 +30,30 @@ function buildDefaultClockTimes(tripStart: Dayjs, tripEnd: Dayjs): IBusinessTrip
   return clockTimes;
 }
 
+// Validates and converts caller-supplied clock-in/out pairs, applying the same
+// tz-parsing and clockOut-after-clockIn rule used by updateClockTimes.
+function parseClockTimes(clockTimes: { clockIn: string; clockOut: string }[]): IBusinessTripClockTime[] {
+  return clockTimes.map(({ clockIn, clockOut }) => {
+    const clockInDayjs = dayjsToTz(clockIn);
+    const clockOutDayjs = dayjsToTz(clockOut);
+    if (!clockOutDayjs.isAfter(clockInDayjs)) {
+      throw new APIError('下班時間必須晚於上班時間', 400);
+    }
+    return { clockIn: clockInDayjs.toDate(), clockOut: clockOutDayjs.toDate() };
+  });
+}
+
 export class BusinessTripService {
   static async createBusinessTripRequest(empID: string, businessTripData: {
     destination: string;
+    contactPerson?: string;
     purpose: string;
     tripStart: string;
     tripEnd: string;
     transportation?: string;
     estimatedCost?: number;
     notes?: string;
+    clockTimes?: { clockIn: string; clockOut: string }[];
     supportingInfo?: string[];
     agent?: string;
     rejectionReason?: string;
@@ -56,18 +71,25 @@ export class BusinessTripService {
       throw new APIError('Trip end date must be after start date', 400);
     }
 
+    // Let the applicant fill in per-day clock-in/out times up front; fall back to
+    // the standard-hours default (same logic used when none were provided) otherwise.
+    const clockTimes = businessTripData.clockTimes && businessTripData.clockTimes.length > 0
+      ? parseClockTimes(businessTripData.clockTimes)
+      : buildDefaultClockTimes(tripStart, tripEnd);
+
     const businessTrip = new BusinessTrip({
       empID,
       name: employee.name,
       department: employee.department || '',
       destination: businessTripData.destination,
+      contactPerson: businessTripData.contactPerson,
       purpose: businessTripData.purpose,
       tripStart: tripStart.toDate(),
       tripEnd: tripEnd.toDate(),
       transportation: businessTripData.transportation,
       estimatedCost: businessTripData.estimatedCost,
       notes: businessTripData.notes,
-      clockTimes: buildDefaultClockTimes(tripStart, tripEnd),
+      clockTimes,
       supportingInfo: businessTripData.supportingInfo,
       status: 'created',
       agent: businessTripData.agent,
@@ -107,16 +129,7 @@ export class BusinessTripService {
       throw new APIError('請至少提供一組上下班時間', 400);
     }
 
-    const parsed = clockTimes.map(({ clockIn, clockOut }) => {
-      const clockInDayjs = dayjsToTz(clockIn);
-      const clockOutDayjs = dayjsToTz(clockOut);
-      if (!clockOutDayjs.isAfter(clockInDayjs)) {
-        throw new APIError('下班時間必須晚於上班時間', 400);
-      }
-      return { clockIn: clockInDayjs.toDate(), clockOut: clockOutDayjs.toDate() };
-    });
-
-    businessTrip.clockTimes = parsed;
+    businessTrip.clockTimes = parseClockTimes(clockTimes);
 
     return await businessTrip.save();
   }

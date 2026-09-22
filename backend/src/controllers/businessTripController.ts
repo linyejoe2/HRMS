@@ -10,6 +10,15 @@ export const createBusinessTripRequest = asyncHandler(async (req: AuthRequest, r
   businessTripData.agent = isHrOverride ? req.user!.empID : undefined;
   businessTripData.rejectionReason = isHrOverride ? businessTripData.rejectionReason : undefined;
 
+  // multipart/form-data sends non-file fields as strings; clockTimes arrives JSON-encoded
+  if (typeof businessTripData.clockTimes === 'string') {
+    try {
+      businessTripData.clockTimes = JSON.parse(businessTripData.clockTimes);
+    } catch {
+      businessTripData.clockTimes = undefined;
+    }
+  }
+
   // Handle uploaded files
   const files = req.files as Express.Multer.File[];
   if (files && files.length > 0) {

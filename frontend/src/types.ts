@@ -336,21 +336,23 @@ export interface PostClockRequest {
   updatedAt?: string;
 }
 
+export interface BusinessTripClockTime {
+  clockIn: string;
+  clockOut: string;
+}
+
 export interface BusinessTripRequestForm {
   destination: string; // Destination location
+  contactPerson?: string; // Contact person at the destination
   purpose: string; // Purpose of the trip
   tripStart: string; // Start date and time
   tripEnd: string; // End date and time
   transportation?: string; // Mode of transportation
   estimatedCost?: number; // Estimated cost
   notes?: string; // Additional notes
+  clockTimes?: BusinessTripClockTime[]; // Per-day clock-in/out during the trip; defaults to standard hours when omitted
   supportingInfo?: File[]; // Array of files (jpg, png, doc, docx, pdf) - 相關資料
   rejectionReason?: string; // optional HR memo written when creating this request on the employee's behalf (hrMode)
-}
-
-export interface BusinessTripClockTime {
-  clockIn: string;
-  clockOut: string;
 }
 
 export interface BusinessTripRequest {
@@ -359,6 +361,7 @@ export interface BusinessTripRequest {
   department: string; // from table employee
   empID: string; // from table employee
   destination: string;
+  contactPerson?: string;
   purpose: string;
   tripStart: string;
   tripEnd: string;

@@ -320,6 +320,14 @@ const ApproveBusinessTripList: React.FC = () => {
       sortable: true
     },
     {
+      field: 'contactPerson',
+      headerName: '洽辦對象',
+      flex: 0.6,
+      minWidth: 100,
+      valueGetter: (_, row) => row.contactPerson || '-',
+      sortable: true
+    },
+    {
       field: 'tripStart',
       headerName: '出發時間',
       flex: 1.5,
@@ -631,6 +639,11 @@ const ApproveBusinessTripList: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 目的地: {selectedRequest.destination}
               </Typography>
+              {selectedRequest.contactPerson && (
+                <Typography variant="body2" color="text.secondary">
+                  洽辦對象: {selectedRequest.contactPerson}
+                </Typography>
+              )}
               <Typography variant="body2" color="text.secondary">
                 出發時間: {new Date(selectedRequest.tripStart).toLocaleString('zh-TW')}
               </Typography>

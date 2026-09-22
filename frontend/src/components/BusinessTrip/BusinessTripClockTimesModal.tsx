@@ -7,11 +7,13 @@ import {
   Button,
   Typography,
   Box,
-  Divider
+  Divider,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'react-toastify';
 import { businessTripAPI, constantsAPI } from '../../services/api';
@@ -27,7 +29,11 @@ interface BusinessTripClockTimesModalProps {
 interface ClockTimeRow {
   clockIn: Dayjs | null;
   clockOut: Dayjs | null;
+  isWorkDay: boolean;
+  day: Dayjs; // calendar day this row belongs to; clockIn/clockOut are restricted to within it
 }
+
+const WEEKDAY_NAMES = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
 // Mirrors backend's buildDefaultClockTimes: one row per day of the trip, using the
 // real trip start/end on the first/last day and the standard work hours in between.
@@ -50,7 +56,9 @@ const buildDefaultRows = (
     const clockOut = isLastDay
       ? tripEnd
       : cursor.hour(workEnd.hour).minute(workEnd.minute).second(0).millisecond(0);
-    rows.push({ clockIn, clockOut });
+    // Default Saturday/Sunday to non-work days; still toggleable by the employee
+    const isWorkDay = cursor.day() !== 0 && cursor.day() !== 6;
+    rows.push({ clockIn, clockOut, isWorkDay, day: cursor });
   }
 
   return rows;
@@ -75,7 +83,9 @@ const BusinessTripClockTimesModal: React.FC<BusinessTripClockTimesModalProps> = 
       setRows(
         request.clockTimes.map(entry => ({
           clockIn: dayjs(entry.clockIn),
-          clockOut: dayjs(entry.clockOut)
+          clockOut: dayjs(entry.clockOut),
+          isWorkDay: true,
+          day: dayjs(entry.clockIn).startOf('day')
         }))
       );
       return;
@@ -92,7 +102,12 @@ const BusinessTripClockTimesModal: React.FC<BusinessTripClockTimesModalProps> = 
         setRows(buildDefaultRows(dayjs(request.tripStart), dayjs(request.tripEnd), workStart, workEnd));
       })
       .catch(() => {
-        if (active) setRows([{ clockIn: dayjs(request.tripStart), clockOut: dayjs(request.tripEnd) }]);
+        if (active) setRows([{
+          clockIn: dayjs(request.tripStart),
+          clockOut: dayjs(request.tripEnd),
+          isWorkDay: true,
+          day: dayjs(request.tripStart).startOf('day')
+        }]);
       });
 
     return () => {
@@ -100,27 +115,38 @@ const BusinessTripClockTimesModal: React.FC<BusinessTripClockTimesModalProps> = 
     };
   }, [open, request]);
 
+  // Merges the picked time-of-day with the row's fixed calendar day, since the
+  // pickers now only select a time (the date is implied by the row itself).
+  const mergeTimeWithDay = (day: Dayjs, value: Dayjs | null): Dayjs | null =>
+    value ? day.hour(value.hour()).minute(value.minute()).second(0).millisecond(0) : null;
+
   const handleClockInChange = (index: number, value: Dayjs | null) => {
-    setRows(prev => prev.map((row, i) => (i === index ? { ...row, clockIn: value } : row)));
+    setRows(prev => prev.map((row, i) => (i === index ? { ...row, clockIn: mergeTimeWithDay(row.day, value) } : row)));
   };
 
   const handleClockOutChange = (index: number, value: Dayjs | null) => {
-    setRows(prev => prev.map((row, i) => (i === index ? { ...row, clockOut: value } : row)));
+    setRows(prev => prev.map((row, i) => (i === index ? { ...row, clockOut: mergeTimeWithDay(row.day, value) } : row)));
   };
 
+  const handleWorkDayToggle = (index: number) => {
+    setRows(prev => prev.map((row, i) => (i === index ? { ...row, isWorkDay: !row.isWorkDay } : row)));
+  };
+
+  // Non-work days don't need valid clock times since they're excluded from saving
   const isRowInvalid = (row: ClockTimeRow) =>
-    !row.clockIn || !row.clockOut || !row.clockOut.isAfter(row.clockIn);
+    row.isWorkDay && (!row.clockIn || !row.clockOut || !row.clockOut.isAfter(row.clockIn));
 
   const hasInvalidRow = rows.some(isRowInvalid);
+  const workDayRows = rows.filter(row => row.isWorkDay);
 
   const handleSave = async () => {
-    if (!request?._id || hasInvalidRow) return;
+    if (!request?._id || hasInvalidRow || workDayRows.length === 0) return;
 
     setSaving(true);
     try {
       await businessTripAPI.updateClockTimes(
         request._id,
-        rows.map(row => ({
+        workDayRows.map(row => ({
           clockIn: row.clockIn!.toISOString(),
           clockOut: row.clockOut!.toISOString()
         }))
@@ -145,36 +171,51 @@ const BusinessTripClockTimesModal: React.FC<BusinessTripClockTimesModalProps> = 
             {rows.map((row, index) => (
               <Box key={index}>
                 {index > 0 && <Divider sx={{ mb: 2 }} />}
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  第 {index + 1} 天{row.clockIn ? `（${row.clockIn.format('YYYY/MM/DD')}）` : ''}
-                </Typography>
+                <FormControlLabel
+                  sx={{ ml: 0, mb: 0.5 }}
+                  control={
+                    <Switch
+                      size="small"
+                      checked={row.isWorkDay}
+                      onChange={() => handleWorkDayToggle(index)}
+                    />
+                  }
+                  label={
+                    <Typography variant="subtitle2" color="text.secondary">
+                      第 {index + 1} 天 {row.clockIn ? `${WEEKDAY_NAMES[row.clockIn.day()]}（${row.clockIn.format('YYYY/MM/DD')}）` : ''}
+                      {!row.isWorkDay && '（非工作日）'}
+                    </Typography>
+                  }
+                />
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <DateTimePicker
+                  <TimePicker
                     label="上班時間"
                     value={row.clockIn}
                     onChange={(value) => handleClockInChange(index, value)}
-                    format="YYYY/MM/DD HH:mm"
+                    format="HH:mm"
                     timeSteps={{ minutes: 1 }}
                     ampm={false}
+                    disabled={!row.isWorkDay}
                     slotProps={{
                       textField: {
-                        required: true,
+                        required: row.isWorkDay,
                         fullWidth: true,
                         sx: { minWidth: 220, flex: 1 }
                       }
                     }}
                   />
-                  <DateTimePicker
+                  <TimePicker
                     label="下班時間"
                     value={row.clockOut}
                     onChange={(value) => handleClockOutChange(index, value)}
-                    format="YYYY/MM/DD HH:mm"
+                    format="HH:mm"
                     timeSteps={{ minutes: 1 }}
                     ampm={false}
-                    minDateTime={row.clockIn ?? undefined}
+                    minTime={row.clockIn ?? undefined}
+                    disabled={!row.isWorkDay}
                     slotProps={{
                       textField: {
-                        required: true,
+                        required: row.isWorkDay,
                         fullWidth: true,
                         sx: { minWidth: 220, flex: 1 },
                         error: isRowInvalid(row),
@@ -195,7 +236,7 @@ const BusinessTripClockTimesModal: React.FC<BusinessTripClockTimesModalProps> = 
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={saving || hasInvalidRow || rows.length === 0}
+          disabled={saving || hasInvalidRow || workDayRows.length === 0}
         >
           {saving ? '儲存中...' : '儲存'}
         </Button>

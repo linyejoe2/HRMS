@@ -3,6 +3,22 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.13.0] - 2026-09-22 - Business-Trip Contact Person & Up-Front Clock Times
+
+**Author**: Randy Lin
+
+### Added
+
+- `contactPerson` (optional, 洽辦對象) field on `BusinessTrip` (`backend/src/models/BusinessTrip.ts`), threaded through `BusinessTripService.createBusinessTripRequest` (`backend/src/services/businessTripService.ts`), `businessTripAPI.create`'s FormData (`frontend/src/services/api.ts`), `BusinessTripRequestForm`/`BusinessTripRequest` (`frontend/src/types.ts`), a new text field in `BusinessTripRequestModal.tsx`, and a new grid column (plus the approve/reject confirmation dialogs) in `BusinessTripTab.tsx`/`ApproveBusinessTripList.tsx`.
+- `BusinessTripRequestModal.tsx` now lets the employee fill in per-day clock-in/out times at creation time instead of only via the post-creation `BusinessTripClockTimesModal.tsx` flow: it renders the same per-day row list inline, seeded from `constantsAPI.getAll()`'s working-time schedule, and submits the rows as a JSON-stringified `clockTimes` field in the multipart FormData.
+- `BusinessTripService.createBusinessTripRequest` (`backend/src/services/businessTripService.ts`) gained an optional `clockTimes` param; a new shared `parseClockTimes()` helper (extracted from `updateClockTimes`) validates/converts the supplied clock-in/out pairs (clockOut must be after clockIn) and is used when a non-empty array is provided, falling back to the existing `buildDefaultClockTimes()` otherwise. `businessTripController.ts`'s `createBusinessTripRequest` handler parses the incoming `clockTimes` form field from its JSON string before passing it to the service.
+- Per-day work-day `Switch` in both `BusinessTripRequestModal.tsx` and `BusinessTripClockTimesModal.tsx`: toggling a day off disables its time pickers, excludes it from the submitted/saved `clockTimes` array, and skips validation for that row (at least one work day is still required). Defaults to unchecked for Saturday/Sunday, checked otherwise, and remains manually toggleable either way. Frontend-only filter — nothing about which days were toggled is persisted server-side, only the resulting `clockTimes` array.
+
+### Changed
+
+- Each clock-time row's label now includes the weekday (`第 1 天 星期一（2026/09/21）`, via a local `WEEKDAY_NAMES` array keyed by `Dayjs.day()`, since the app never sets a global dayjs locale). The clock-in/out inputs changed from MUI `DateTimePicker` to `TimePicker` (format `HH:mm`) since each row is now pinned to a fixed `row.day`; a `mergeTimeWithDay` helper reconstructs the full `Dayjs` value from the picked hour/minute plus `row.day` so the date can't drift. Clock-out keeps `minTime` bound to clock-in.
+- `updateClockTimes` (`backend/src/services/businessTripService.ts`) now reuses the extracted `parseClockTimes()` helper (pure refactor, no behavior change).
+
 ## [1.12.0] - 2026-09-15 - Business-Trip & Official-Business Timelines, Leave Rejection States
 
 **Author**: Randy Lin

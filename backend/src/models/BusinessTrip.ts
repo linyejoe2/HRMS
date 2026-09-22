@@ -12,6 +12,7 @@ export interface IBusinessTrip extends Document {
   name: string;
   department: string;
   destination: string; // Destination location
+  contactPerson?: string; // Contact person at the destination
   purpose: string; // Purpose of the trip
   tripStart: Date; // Start date and time
   tripEnd: Date; // End date and time
@@ -58,6 +59,9 @@ const businessTripSchema = new Schema<IBusinessTrip>({
   destination: {
     type: String,
     required: true
+  },
+  contactPerson: {
+    type: String
   },
   purpose: {
     type: String,

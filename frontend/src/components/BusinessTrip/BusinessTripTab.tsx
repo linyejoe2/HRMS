@@ -199,6 +199,13 @@ const BusinessTripTab: React.FC = () => {
       sortable: true
     },
     {
+      field: 'contactPerson',
+      headerName: '洽辦對象',
+      flex: 1,
+      valueGetter: (_, row) => row.contactPerson || '-',
+      sortable: true
+    },
+    {
       field: 'tripStart',
       headerName: '出發時間',
       flex: 1.5,

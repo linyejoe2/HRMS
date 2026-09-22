@@ -162,7 +162,7 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 
 Business-trip (`/api/businesstrip`), post-clock (`/api/postclock`), and official-business (`/api/officialbusiness`) expose the equivalent `/pending/manager`, `/:id/manager-approve`, `/:id/manager-reject`, and `PUT`/`DELETE /:id/supporting-info` routes (no substitute step). Post-clock additionally requires a `witness` empID on `/create` and exposes `GET /pending/witness` plus `PUT /:id/witness-approve`/`/:id/witness-reject`; manager review is blocked until the witness approves.
 
-Business-trip requests also carry a `clockTimes: { clockIn, clockOut }[]` field (one pair per day, defaulted from `constants.ts`'s working-time schedule on creation) and `PUT /api/businesstrip/:id/clock-times` lets the employee record/adjust it at any time, even after approval.
+Business-trip requests also carry an optional `contactPerson` (洽辦對象) field and a `clockTimes: { clockIn, clockOut }[]` field (one pair per work day). `clockTimes` can be supplied up front on `/create` — the frontend only sends days the employee has marked as a work day (weekends excluded by default, but toggleable per day) — or left out, in which case it's defaulted from `constants.ts`'s working-time schedule. `PUT /api/businesstrip/:id/clock-times` still lets the employee record/adjust it at any time, even after approval.
 
 **Approvals (`/api/approvals`)**
 

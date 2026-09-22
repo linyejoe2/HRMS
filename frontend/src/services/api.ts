@@ -574,6 +574,7 @@ export const businessTripAPI = {
   create: (businessTripData: BusinessTripRequestForm, empID?: string): Promise<AxiosResponse<{ error: boolean, message: string, data: BusinessTripRequest }>> => {
     const formData = new FormData();
     formData.append('destination', businessTripData.destination);
+    if (businessTripData.contactPerson) formData.append('contactPerson', businessTripData.contactPerson);
     formData.append('purpose', businessTripData.purpose);
     formData.append('tripStart', businessTripData.tripStart);
     formData.append('tripEnd', businessTripData.tripEnd);
@@ -588,6 +589,9 @@ export const businessTripAPI = {
     }
     if (businessTripData.notes) {
       formData.append('notes', businessTripData.notes);
+    }
+    if (businessTripData.clockTimes && businessTripData.clockTimes.length > 0) {
+      formData.append('clockTimes', JSON.stringify(businessTripData.clockTimes));
     }
 
     if (businessTripData.supportingInfo && businessTripData.supportingInfo.length > 0) {
