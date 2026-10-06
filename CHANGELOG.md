@@ -3,6 +3,14 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.14.2] - 2026-10-06 - Fix Post-Clock Corrections Not Overriding Existing Times
+
+**Author**: Randy Lin
+
+### Fixed
+
+- `AttendanceTab.tsx`'s postClock (補單) aggregation only filled in `clockInTime`/`clockOutTime` when empty, so a correction submitted for a day that already had a 打卡 record was silently ignored. It now always applies the correction when a time value is present, so submitted corrections properly override the original recorded time.
+
 ## [1.14.1] - 2026-09-22 - Business-Trip Clock-Times Excel Export
 
 **Author**: Randy Lin

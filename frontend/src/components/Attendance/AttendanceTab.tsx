@@ -163,13 +163,13 @@ const AttendanceTab: React.FC = () => {
 
         if (pc.clockType === 'in&out') {
           const inRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date));
-          if (!inRecord.clockInTime) {
+          if (pc.time) {
             inRecord.clockInTime = pc.time;
             inRecord.clockInSource = '補單';
           }
 
           const outRecord = getOrCreateRecord(pc.empID, toTaipeiDate(pc.date2 || pc.date));
-          if (!outRecord.clockOutTime) {
+          if (pc.time2) {
             outRecord.clockOutTime = pc.time2;
             outRecord.clockOutSource = '補單';
           }
@@ -179,10 +179,10 @@ const AttendanceTab: React.FC = () => {
         const dateStr = toTaipeiDate(pc.date);
         const record = getOrCreateRecord(pc.empID, dateStr);
 
-        if (pc.clockType === 'in' && !record.clockInTime) {
+        if (pc.clockType === 'in' && pc.time) {
           record.clockInTime = pc.time;
           record.clockInSource = '補單';
-        } else if (pc.clockType === 'out' && !record.clockOutTime) {
+        } else if (pc.clockType === 'out' && pc.time) {
           record.clockOutTime = pc.time;
           record.clockOutSource = '補單';
         }
