@@ -155,7 +155,9 @@ Business-trip, post-clock, and official-business requests carry the same `manage
 - PUT `/:id/reject` - Reject leave request (HR/Admin only)
 - GET `/:id` - Get specific leave request
 - GET `/pending/substitute` - Leave requests awaiting the caller's substitute review
+- GET `/substitute?status=pending|approved|rejected` - All leave requests where the caller is the substitute, optionally filtered by their own review decision (omit `status` for all)
 - GET `/pending/manager` - Leave requests awaiting the caller's department manager review
+- POST `/check-substitute-conflict/:empID` - Advisory check for whether the requester is already committed as someone else's substitute over a given period; does not block creation, just informs the UI
 - PUT `/:id/substitute-approve`, `/:id/substitute-reject` - Substitute review decision
 - PUT `/:id/manager-approve`, `/:id/manager-reject` - Manager review decision (caller must be the requester's assigned `Employee.manager`)
 - PUT `/:id/supporting-info` - Append supporting files (HR/Admin only); DELETE `/:id/supporting-info` - Remove one supporting file (HR/Admin only)
@@ -250,13 +252,14 @@ theme.ts            # MUI theme configuration
 ### 📝 Leave Management
 - **Employee Features**:
   - Create leave requests with multiple types (婚假, 喪假, 病假, 事假, etc.)
-  - Must choose a substitute (代理人, any active employee) when creating a leave request; rejected with a 409 if the requester is already committed as someone else's substitute for an overlapping period, or if the chosen substitute already has an overlapping leave of their own
+  - Must choose a substitute (代理人, any active employee) when creating a leave request; rejected with a 409 if the chosen substitute already has an overlapping leave of their own. If the requester is themselves already committed as someone else's substitute for an overlapping period, this no longer blocks the request — a confirmation popup warns them and lets them proceed or reschedule
   - View personal leave request history
   - Download leave request forms as DOCX documents (includes the substitute's name)
   - Real-time status tracking (pending, approved, rejected)
 
 - **Approval Workflow** (leave, business-trip, post-clock, official-business):
   - 代理審核 (substitute review, leave only), 證明審核 (witness review, post-clock only), and 主管審核 (manager review, all 4 types) tabs in 審核中心, visible to every employee
+  - `ApproveSubstituteList.tsx` (代理審核) has its own 待審核/已核准/已拒絕/全部 filter and a 代理審核狀態 column, so a substitute can review requests they've already decided on, not just pending ones; action buttons are disabled on non-pending rows
   - Manager review routes to whoever is set as the requester's `Employee.manager` (assigned in the employee edit dialog), not by role or department
   - Manager review only unlocks after the substitute (leave) or witness (post-clock) has approved
   - A substitute/witness/manager rejection freezes that stage without blocking HR/Admin's final decision

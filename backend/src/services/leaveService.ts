@@ -205,6 +205,22 @@ export class LeaveService {
     });
   }
 
+  /**
+   * Advisory precheck for the UI: tells the requester up front if they're already
+   * committed as someone else's substitute over this window, so they can confirm
+   * anyway or reschedule, instead of the request being hard-blocked on create.
+   */
+  static async checkSubstituteConflict(empID: string, leaveStart: Dayjs, leaveEnd: Dayjs): Promise<{ hasConflict: boolean; msg: string }> {
+    const isAvailable = await this.checkSubstituteAvailability(empID, leaveStart, leaveEnd);
+
+    return {
+      hasConflict: !isAvailable,
+      msg: isAvailable
+        ? ''
+        : '您已於請假期間擔任其他同事的代理人，如果您請假的話那您的代理人需負連帶代理責任，您可確認請假或改期請假。'
+    };
+  }
+
   static async createLeaveRequest(empID: string, leaveData: {
     leaveType: string;
     reason: string;
@@ -239,11 +255,6 @@ export class LeaveService {
 
     const leaveStart = dayjsToTz(leaveData.leaveStart)
     const leaveEnd = dayjsToTz(leaveData.leaveEnd)
-
-    const isAvailableAsSubstitute = await this.checkSubstituteAvailability(empID, leaveStart, leaveEnd);
-    if (!isAvailableAsSubstitute) {
-      throw new APIError('您在此期間需擔任其他同事的代理人，無法同時請假', 409);
-    }
 
     const isSubstituteFree = await this.checkSubstituteIsFree(leaveData.substitute, leaveStart, leaveEnd);
     if (!isSubstituteFree) {
@@ -455,6 +466,24 @@ export class LeaveService {
 
   static async getPendingSubstituteLeaveRequests(empID: string): Promise<ILeave[]> {
     return await Leave.find({ substitute: empID, substituteApproveStatus: 'pending', status: 'created' }).sort({ createdAt: -1 });
+  }
+
+  /**
+   * All leave requests where `empID` is the substitute, optionally narrowed by
+   * their own substituteApproveStatus decision — for the 代理審核 tab's
+   * 待審核/已核准/已拒絕/全部 filter. 'pending' additionally requires
+   * status: 'created', matching getPendingSubstituteLeaveRequests, so an item
+   * HR already decided over the substitute's head doesn't show as actionable.
+   */
+  static async getSubstituteLeaveRequests(empID: string, substituteApproveStatus?: 'pending' | 'approved' | 'rejected'): Promise<ILeave[]> {
+    const query: any = { substitute: empID };
+    if (substituteApproveStatus) {
+      query.substituteApproveStatus = substituteApproveStatus;
+      if (substituteApproveStatus === 'pending') {
+        query.status = 'created';
+      }
+    }
+    return await Leave.find(query).sort({ createdAt: -1 });
   }
 
   static async getPendingManagerLeaveRequests(managerEmpID: string): Promise<ILeave[]> {

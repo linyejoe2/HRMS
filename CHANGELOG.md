@@ -3,6 +3,24 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.17.0] - 2026-10-06 - Substitute Review History Tabs
+
+**Author**: Randy Lin
+
+### Added
+
+- `ApproveSubstituteList.tsx` gained a 待審核/已核准/已拒絕/全部 `ToggleButtonGroup`, matching `ApproveLeaveList.tsx`'s pattern, so a substitute can browse requests they've already approved/rejected instead of only ever seeing pending ones. New `LeaveService.getSubstituteLeaveRequests(empID, substituteApproveStatus?)` / `GET /api/leave/substitute?status=...` (`leaveController.ts`, `leaveRoutes.ts`) backs it; the existing `/pending/substitute` endpoint (used for the sidebar badge count) is untouched.
+- A `代理審核狀態` chip column so rows are distinguishable in the 全部 tab; the 代理核准/代理拒絕 action buttons are grayed out on any row that isn't `pending`.
+
+## [1.16.0] - 2026-10-06 - Confirm-Instead-of-Block on Substitute Conflict
+
+**Author**: Randy Lin
+
+### Changed
+
+- Creating a leave request while already committed as someone else's substitute no longer hard-blocks with a 409 — `LeaveService.createLeaveRequest` (`backend/src/services/leaveService.ts`) dropped that check entirely. It's now an advisory precheck: new `LeaveService.checkSubstituteConflict()` / `POST /api/leave/check-substitute-conflict/:empID` (`leaveController.ts`, `leaveRoutes.ts`) tells the frontend if a conflict exists.
+- `LeaveRequestModal.tsx` calls this precheck before submitting (both normal and HR 代理申請 modes) and, on conflict, shows a new "代理人衝突提醒" popup ("您已於請假期間擔任其他同事的代理人...您可確認請假或改期請假。") with 取消/確認 buttons, instead of the request being rejected outright.
+
 ## [1.15.0] - 2026-10-06 - Public Leave-Hours API for Payroll
 
 **Author**: Randy Lin

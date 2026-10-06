@@ -71,6 +71,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<LeaveRequestForm | null>(null);
   const [warningMessage, setWarningMessage] = useState('');
+  const [substituteConflictDialogOpen, setSubstituteConflictDialogOpen] = useState(false);
+  const [substituteConflictMessage, setSubstituteConflictMessage] = useState('');
   const [leaveBalance, setLeaveBalance] = useState<UserLeaveData | null>(null);
 
   const {
@@ -218,6 +220,18 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
     };
 
     try {
+      const conflictCheck = await leaveAPI.checkSubstituteConflict({
+        leaveStart,
+        leaveEnd
+      }, targetEmpID!);
+
+      if (conflictCheck.data.data.hasConflict) {
+        setSubstituteConflictMessage(conflictCheck.data.data.msg);
+        setPendingSubmitData(data);
+        setSubstituteConflictDialogOpen(true);
+        return;
+      }
+
       const balanceCheck = await leaveAPI.checkLeaveBalance({
         leaveType: formData.leaveType,
         timeStart: leaveStart,
@@ -278,6 +292,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
 
   const handleWarningConfirm = async () => {
     setWarningDialogOpen(false);
+    if (pendingSubmitData) {
+      await performSubmit(pendingSubmitData);
+    }
+  };
+
+  const handleSubstituteConflictConfirm = async () => {
+    setSubstituteConflictDialogOpen(false);
     if (pendingSubmitData) {
       await performSubmit(pendingSubmitData);
     }
@@ -604,6 +625,40 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, hr
             disabled={loading}
           >
             仍要送出
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Warning Dialog for being someone else's substitute during this period */}
+      <Dialog
+        open={substituteConflictDialogOpen}
+        onClose={() => setSubstituteConflictDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" color="warning.main">
+            代理人衝突提醒
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning">
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+              {substituteConflictMessage}
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSubstituteConflictDialogOpen(false)}>
+            取消
+          </Button>
+          <Button
+            onClick={handleSubstituteConflictConfirm}
+            variant="contained"
+            color="warning"
+            disabled={loading}
+          >
+            確認
           </Button>
         </DialogActions>
       </Dialog>

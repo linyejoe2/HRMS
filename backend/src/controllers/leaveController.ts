@@ -161,6 +161,20 @@ export const getPendingSubstituteLeaveRequests = asyncHandler(async (req: AuthRe
   });
 });
 
+export const getSubstituteLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { status } = req.query;
+  const leaves = await LeaveService.getSubstituteLeaveRequests(
+    req.user!.empID,
+    status as 'pending' | 'approved' | 'rejected' | undefined
+  );
+
+  res.json({
+    error: false,
+    message: '成功取得代理審核紀錄',
+    data: leaves
+  });
+});
+
 export const getPendingManagerLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
   const leaves = await LeaveService.getPendingManagerLeaveRequests(req.user!.empID);
 
@@ -311,6 +325,21 @@ export const checkLeaveBalance = asyncHandler(async (req: AuthRequest, res: Resp
   } catch (error) {
     res.json({ error: true, message: errorToString(error) })
   }
+});
+
+export const checkSubstituteConflict = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { empID } = req.params;
+  // if (!canAccessLeaveBalance(req, empID)) {
+  //   return res.status(403).json({ error: true, message: '無權限查詢其他員工的代理狀態' });
+  // }
+  const { leaveStart, leaveEnd } = req.body;
+  const result = await LeaveService.checkSubstituteConflict(empID, dayjsToTz(leaveStart), dayjsToTz(leaveEnd));
+
+  res.json({
+    error: false,
+    message: '成功檢查代理人衝突',
+    data: result
+  });
 });
 
 export const importLeaveRequests = asyncHandler(async (req: AuthRequest, res: Response) => {

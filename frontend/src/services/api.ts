@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, BusinessTripClockTime, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, PendingManagerItem, AppConstants } from '../types';
+import { AuthRequest, RegisterRequest, AuthResponse, Conversation, Message, AIRequest, AIResponse, AIModel, ChangePasswordRequest, UpdateProfileRequest, User, Document, AttendanceResponse, Employee, LeaveRequestForm, LeaveRequest, PostClockRequestForm, PostClockRequest, BusinessTripRequestForm, BusinessTripRequest, BusinessTripClockTime, OfficialBusinessRequestForm, OfficialBusinessRequest, LeaveAdjustment, Variable, CheckLeaveBalanceRes, CheckSubstituteConflictRes, PendingManagerItem, AppConstants } from '../types';
 import { toast } from 'react-toastify';
 
 const API_BASE_URL = ""
@@ -370,9 +370,19 @@ export const leaveAPI = {
     leaveType: string;
   }, employeeID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: CheckLeaveBalanceRes }>> => api.post(`/leave/check-balance/${employeeID}`, queryParams),
 
+  checkSubstituteConflict: (queryParams: {
+    leaveStart: string;
+    leaveEnd: string;
+  }, employeeID: string): Promise<AxiosResponse<{ error: boolean, message: string, data: CheckSubstituteConflictRes }>> => api.post(`/leave/check-substitute-conflict/${employeeID}`, queryParams),
+
   // Get leave requests pending my substitute review
   getPendingSubstitute: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
     api.get('/leave/pending/substitute'),
+
+  // Get leave requests where I'm the substitute, optionally filtered by my own
+  // substituteApproveStatus decision (pending/approved/rejected; omit for all)
+  getSubstituteLeaveRequests: (status?: 'pending' | 'approved' | 'rejected'): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>
+    api.get('/leave/substitute', { params: status ? { status } : undefined }),
 
   // Get leave requests pending my department's manager review
   getPendingManager: (): Promise<AxiosResponse<{ error: boolean, message: string, data: LeaveRequest[] }>> =>

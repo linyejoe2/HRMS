@@ -16,11 +16,13 @@ import {
   downloadEmployeeLeaveReport,
   downloadAnnualLeaveReport,
   checkLeaveBalance,
+  checkSubstituteConflict,
   substituteApproveLeaveRequest,
   substituteRejectLeaveRequest,
   managerApproveLeaveRequest,
   managerRejectLeaveRequest,
   getPendingSubstituteLeaveRequests,
+  getSubstituteLeaveRequests,
   getPendingManagerLeaveRequests,
   addLeaveSupportingInfo,
   removeLeaveSupportingInfo
@@ -47,9 +49,13 @@ router.get('/balance/:empID', authenticateToken, getLeaveBalance);
 
 router.post('/check-balance/:empID', authenticateToken, checkLeaveBalance)
 
+router.post('/check-substitute-conflict/:empID', authenticateToken, checkSubstituteConflict)
+
 router.get('/sequence/:sequenceNumber', authenticateToken, getLeaveRequestBySequenceNumber);
 
 router.get('/pending/substitute', authenticateToken, getPendingSubstituteLeaveRequests);
+
+router.get('/substitute', authenticateToken, getSubstituteLeaveRequests);
 
 router.get('/pending/manager', authenticateToken, getPendingManagerLeaveRequests);
 

@@ -147,6 +147,11 @@ export interface CheckLeaveBalanceRes {
   requestedHours: number
 }
 
+export interface CheckSubstituteConflictRes {
+  hasConflict: boolean,
+  msg: string
+}
+
 export interface WorkingTimeConstants {
   timezone: string;
   workStart: { hour: number; minute: number };

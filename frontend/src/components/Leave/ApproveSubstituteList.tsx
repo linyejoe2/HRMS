@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Tooltip, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, Tooltip, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import {
   Check as ApproveIcon,
   Close as RejectIcon,
@@ -16,31 +16,53 @@ import FilePreviewDialog from '../common/FilePreviewDialog';
 import { getDepartmentDescription } from '@/services/variableService';
 import { leaveDisplaynameConverter } from '@/services/leaveService';
 
+const statusFilterLabels: Record<string, string> = {
+  pending: '待審核',
+  approved: '已核准',
+  rejected: '已拒絕'
+};
+
+const getSubstituteStatusChip = (request: LeaveRequest) => {
+  switch (request.substituteApproveStatus) {
+    case 'approved':
+      return <Chip label="已核准" color="success" size="small" />;
+    case 'rejected':
+      return <Chip label="已拒絕" color="error" size="small" />;
+    default:
+      return <Chip label="待審核" color="warning" size="small" />;
+  }
+};
+
 const ApproveSubstituteList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | ''>('pending');
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
-  const fetchPendingRequests = async () => {
+  const fetchSubstituteRequests = async (status?: 'pending' | 'approved' | 'rejected') => {
     try {
       setLoading(true);
-      const response = await leaveAPI.getPendingSubstitute();
+      const response = await leaveAPI.getSubstituteLeaveRequests(status || undefined);
       setLeaveRequests(response.data.data);
     } catch (error) {
-      console.error('Error fetching pending substitute requests:', error);
-      toast.error('無法載入待代理審核的請假申請');
+      console.error('Error fetching substitute requests:', error);
+      toast.error('無法載入代理審核的請假申請');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPendingRequests();
-  }, []);
+    fetchSubstituteRequests(statusFilter || undefined);
+  }, [statusFilter]);
+
+  const handleStatusFilterChange = (_: React.MouseEvent<HTMLElement>, newValue: 'pending' | 'approved' | 'rejected' | '' | null) => {
+    if (newValue !== null) setStatusFilter(newValue);
+  };
 
   const handleApproveClick = (request: LeaveRequest) => {
     setSelectedRequest(request);
@@ -53,7 +75,7 @@ const ApproveSubstituteList: React.FC = () => {
     try {
       await leaveAPI.substituteApprove(selectedRequest._id!, memo || undefined);
       toast.success('已核准代理審核');
-      fetchPendingRequests();
+      fetchSubstituteRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error approving as substitute:', error);
       toast.error(error.response?.data?.message || '核准失敗');
@@ -72,7 +94,7 @@ const ApproveSubstituteList: React.FC = () => {
     try {
       await leaveAPI.substituteReject(selectedRequest._id!, reason);
       toast.success('已拒絕代理審核');
-      fetchPendingRequests();
+      fetchSubstituteRequests(statusFilter || undefined);
     } catch (error: any) {
       console.error('Error rejecting as substitute:', error);
       toast.error(error.response?.data?.message || '拒絕失敗');
@@ -166,35 +188,90 @@ const ApproveSubstituteList: React.FC = () => {
       sortable: false
     },
     {
+      field: 'substituteApproveStatus',
+      headerName: '代理審核狀態',
+      flex: 1,
+      renderCell: (params) => getSubstituteStatusChip(params.row),
+      sortable: true
+    },
+    {
       field: 'actions',
       type: 'actions',
       headerName: '操作',
       flex: 1.2,
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={
-            <Tooltip title="代理核准">
-              <ApproveIcon color="success" />
-            </Tooltip>
-          }
-          label="代理核准"
-          onClick={() => handleApproveClick(params.row)}
-        />,
-        <GridActionsCellItem
-          icon={
-            <Tooltip title="代理拒絕">
-              <RejectIcon color="error" />
-            </Tooltip>
-          }
-          label="代理拒絕"
-          onClick={() => handleRejectClick(params.row)}
-        />
-      ]
+      getActions: (params) => {
+        if (params.row.substituteApproveStatus !== 'pending') {
+          return [
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="代理核准">
+                  <ApproveIcon color="disabled" />
+                </Tooltip>
+              }
+              label="代理核准"
+            />,
+            <GridActionsCellItem
+              icon={
+                <Tooltip title="代理拒絕">
+                  <RejectIcon color="disabled" />
+                </Tooltip>
+              }
+              label="代理拒絕"
+            />
+          ];
+        }
+
+        return [
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="代理核准">
+                <ApproveIcon color="success" />
+              </Tooltip>
+            }
+            label="代理核准"
+            onClick={() => handleApproveClick(params.row)}
+          />,
+          <GridActionsCellItem
+            icon={
+              <Tooltip title="代理拒絕">
+                <RejectIcon color="error" />
+              </Tooltip>
+            }
+            label="代理拒絕"
+            onClick={() => handleRejectClick(params.row)}
+          />
+        ];
+      }
     }
   ];
 
   return (
     <Box>
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{ '&:last-child': { p: 2 } }}>
+          <ToggleButtonGroup
+            value={statusFilter}
+            exclusive
+            onChange={handleStatusFilterChange}
+            aria-label="狀態篩選"
+            size="small"
+          >
+            <ToggleButton value="pending" aria-label="待審核">
+              待審核
+            </ToggleButton>
+            <ToggleButton value="approved" aria-label="已核准">
+              已核准
+            </ToggleButton>
+            <ToggleButton value="rejected" aria-label="已拒絕">
+              已拒絕
+            </ToggleButton>
+            <ToggleButton value="" aria-label="全部">
+              全部
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent>
           <Box sx={{ height: 600, width: '100%' }}>
@@ -209,7 +286,11 @@ const ApproveSubstituteList: React.FC = () => {
                 sorting: { sortModel: [{ field: 'leaveStart', sort: 'desc' }] }
               }}
               disableRowSelectionOnClick
-              localeText={{ noRowsLabel: '目前沒有待代理審核的請假申請' }}
+              localeText={{
+                noRowsLabel: statusFilter
+                  ? `目前沒有${statusFilterLabels[statusFilter]}的代理審核申請`
+                  : '沒有代理審核申請資料'
+              }}
             />
           </Box>
         </CardContent>
