@@ -14,7 +14,10 @@ export const config = {
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  
+
+  // Public API (service-to-service, e.g. salary system integration)
+  publicApiKey: process.env.PUBLIC_API_KEY || '',
+
   // CORS
   corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5200'],
   

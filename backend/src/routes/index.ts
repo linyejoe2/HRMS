@@ -15,6 +15,7 @@ import holidayRoutes from './holidayRoutes';
 import cardAssignmentRoutes from './cardAssignmentRoutes';
 import legacyLeaveRoutes from './legacyLeaveRoutes';
 import constantsRoutes from './constantsRoutes';
+import publicRoutes from './publicRoutes';
 import { fixMulterChineseFileName } from '../middleware/upload';
 
 const router = Router();
@@ -47,5 +48,6 @@ router.use('/holidays', holidayRoutes);
 router.use('/card-assignments', cardAssignmentRoutes);
 router.use('/legacy-leaves', legacyLeaveRoutes);
 router.use('/constants', constantsRoutes);
+router.use('/public', publicRoutes);
 
 export default router;

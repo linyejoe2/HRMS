@@ -1,0 +1,98 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HRMS Public API - Leave Records",
+    "description": "External service-to-service API for querying an employee's approved leave hours for a payroll period (the 24th of the prior month through the 23rd of the given month).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://localhost:5200/api", "description": "local" },
+    { "url": "http://192.168.0.139:5200/api", "description": "sit" }
+  ],
+  "paths": {
+    "/public/leave/records/{empID}": {
+      "post": {
+        "summary": "Get an employee's monthly leave hours for payroll",
+        "description": "Returns approved leave hours grouped by leave type for the salary period covering the 24th of the prior month through the 23rd of the requested month. A leave that only partially overlaps the period is prorated to the overlapping minutes.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "empID",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "A123456789"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["year", "month"],
+                "properties": {
+                  "year": { "type": "integer", "example": 2026 },
+                  "month": { "type": "integer", "minimum": 1, "maximum": 12, "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Leave hours grouped by leave type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "事假" },
+                      "hours": { "type": "number", "example": 4.5 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid year/month",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Static PUBLIC_API_KEY service token"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "boolean", "example": true },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}

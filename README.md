@@ -184,6 +184,11 @@ Business-trip requests also carry an optional `contactPerson` (洽辦對象) fie
 
 - GET `/` - System-wide constants (working-time schedule: `workStart`, `workEnd`, etc.)
 
+**Public API (`/api/public`)** — external service-to-service integration, authenticated with a static `PUBLIC_API_KEY` bearer token instead of an employee JWT
+
+- POST `/leave/records/:empID` - Approved leave hours grouped by `leaveType` for the payroll period from the 24th of the prior month through the 23rd of the given month (body: `{ year, month }`); a leave spanning the period boundary is prorated to its overlapping minutes
+- GET `/docs` - Scoped OpenAPI/Swagger UI page documenting only this public API (not the rest of the backend)
+
 ---
 
 ## 🔒 Security
@@ -303,6 +308,7 @@ PORT=3000
 MONGODB_URI=mongodb://user:pass@host:port/db?authSource=admin
 JWT_SECRET=your-secret
 JWT_EXPIRES_IN=7d
+PUBLIC_API_KEY=your-public-api-key
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 NGINX_PORT=80
 ```

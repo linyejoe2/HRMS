@@ -59,6 +59,32 @@ export const authenticateToken = async (
   }
 };
 
+/**
+ * Auth for the external-facing /api/public/* routes: a long-lived service
+ * token (PUBLIC_API_KEY), not an employee JWT, for server-to-server callers
+ * like the salary system that have no employee login of their own.
+ */
+export const authenticatePublicApiKey = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    res.status(401).json({ error: true, message: '需要存取權杖' });
+    return;
+  }
+
+  if (!config.publicApiKey || token !== config.publicApiKey) {
+    res.status(401).json({ error: true, message: '無效的權杖' });
+    return;
+  }
+
+  next();
+};
+
 export const requireRole = (roles: string | string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {

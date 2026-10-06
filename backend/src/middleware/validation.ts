@@ -45,6 +45,20 @@ export const registerSchema = Joi.object({
   })
 });
 
+// 公開 API：查詢請假時數驗證
+export const publicLeaveRecordsSchema = Joi.object({
+  year: Joi.number().integer().min(2000).max(2100).required().messages({
+    'number.base': 'year 必須為數字',
+    'any.required': 'year 為必填項目'
+  }),
+  month: Joi.number().integer().min(1).max(12).required().messages({
+    'number.base': 'month 必須為數字',
+    'number.min': 'month 必須介於 1 到 12 之間',
+    'number.max': 'month 必須介於 1 到 12 之間',
+    'any.required': 'month 為必填項目'
+  })
+});
+
 // 更新個人資料驗證
 export const updateProfileSchema = Joi.object({
   department: Joi.string().optional()

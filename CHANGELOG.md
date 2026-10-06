@@ -3,6 +3,16 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.15.0] - 2026-10-06 - Public Leave-Hours API for Payroll
+
+**Author**: Randy Lin
+
+### Added
+
+- `POST /api/public/leave/records/:empID` (`backend/src/routes/publicRoutes.ts`, `publicController.ts`): external/payroll-facing endpoint returning approved leave hours grouped by `leaveType` for the salary period running from the 24th of the prior month through the 23rd of the given month (body: `{ year, month }`), via new `LeaveService.getSalaryPeriodLeaveHours()` — a leave straddling the period boundary is prorated to its overlapping minutes using the existing `getOverlapMinutes` util.
+- Auth is a static service bearer token rather than an employee JWT: `authenticatePublicApiKey` (`middleware/auth.ts`) checks `Authorization: Bearer <PUBLIC_API_KEY>`, a new env var (`config/index.ts`, `docker-compose.yml`; still needs adding to `.env.example`/`.env` by hand).
+- `GET /api/public/docs`: a scoped OpenAPI 3.0 page (via the new `swagger-ui-express` dependency) documenting only this one endpoint (`backend/src/openapi/publicLeaveApi.json`), with a `servers` list covering `local` and a new `sit` (`http://192.168.0.139:5200/api`) environment; Helmet's CSP is disabled only on this route since Swagger UI needs inline scripts.
+
 ## [1.14.2] - 2026-10-06 - Fix Post-Clock Corrections Not Overriding Existing Times
 
 **Author**: Randy Lin

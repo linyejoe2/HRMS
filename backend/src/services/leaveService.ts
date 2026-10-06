@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz, getOverlapMinutes } from '../util/utility';
 import { holidayService } from './holidayService';
 import { RETURN_TAIWAN_LEAVE_TYPE, ReturnTaiwanLeaveService } from './returnTaiwanLeaveService';
 import * as XLSX from 'xlsx';
@@ -578,6 +578,53 @@ export class LeaveService {
     }
 
     return await Leave.find(query).sort({ leaveStart: -1 });
+  }
+
+  /**
+   * Leave hours grouped by leaveType, for payroll. The salary period runs from the
+   * 24th of the prior month through the 23rd of the given month (e.g. month=10 →
+   * 2026/09/24 ~ 2026/10/23), and only approved leaves count. A leave that only
+   * partially falls inside the period is prorated to its overlapping minutes.
+   */
+  static async getSalaryPeriodLeaveHours(
+    empID: string,
+    year: number,
+    month: number
+  ): Promise<{ type: string; hours: number }[]> {
+    let startYear = year;
+    let startMonth = month - 1;
+    if (startMonth < 1) {
+      startMonth = 12;
+      startYear -= 1;
+    }
+
+    const periodStart = dayjsNum(startYear, startMonth, 24, 0, 0, 0, 0);
+    const periodEnd = dayjsNum(year, month, 23, 23, 59, 59, 999);
+
+    const leaves = await Leave.find({
+      empID,
+      status: 'approved',
+      leaveStart: { $lte: periodEnd.toDate() },
+      leaveEnd: { $gte: periodStart.toDate() }
+    });
+
+    const hoursByType = new Map<string, number>();
+    for (const leave of leaves) {
+      const overlapMinutes = getOverlapMinutes(
+        dayjsToTz(leave.leaveStart),
+        dayjsToTz(leave.leaveEnd),
+        periodStart,
+        periodEnd
+      );
+      if (overlapMinutes <= 0) continue;
+
+      hoursByType.set(leave.leaveType, (hoursByType.get(leave.leaveType) || 0) + overlapMinutes / 60);
+    }
+
+    return Array.from(hoursByType.entries()).map(([type, hours]) => ({
+      type,
+      hours: Math.round(hours * 100) / 100
+    }));
   }
 
   /**
