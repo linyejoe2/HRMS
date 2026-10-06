@@ -13,7 +13,7 @@
     "/public/leave/records/{empID}": {
       "post": {
         "summary": "Get an employee's monthly leave hours for payroll",
-        "description": "Returns approved leave hours grouped by leave type for the salary period covering the 24th of the prior month through the 23rd of the requested month. A leave that only partially overlaps the period is prorated to the overlapping minutes.",
+        "description": "Returns approved leave hours grouped by leave type for the salary period covering the 24th of the prior month through the 23rd of the requested month. Any approved leave overlapping the period counts its full recorded hours (not prorated).",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {

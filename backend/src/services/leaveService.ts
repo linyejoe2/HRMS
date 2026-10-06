@@ -1,6 +1,6 @@
 import { Leave, ILeave, Employee, Attendance, LeaveAdjustment, ILeaveAdjustment, LegacyLeave, IEmployee } from '../models';
 import { APIError } from '../middleware/errorHandler';
-import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz, getOverlapMinutes } from '../util/utility';
+import { isWeekend, dayjsNum, parseJSONfromFile, dayjsTz, parseChineseDate, errorToString, dayjsToTz } from '../util/utility';
 import { holidayService } from './holidayService';
 import { RETURN_TAIWAN_LEAVE_TYPE, ReturnTaiwanLeaveService } from './returnTaiwanLeaveService';
 import * as XLSX from 'xlsx';
@@ -583,8 +583,8 @@ export class LeaveService {
   /**
    * Leave hours grouped by leaveType, for payroll. The salary period runs from the
    * 24th of the prior month through the 23rd of the given month (e.g. month=10 →
-   * 2026/09/24 ~ 2026/10/23), and only approved leaves count. A leave that only
-   * partially falls inside the period is prorated to its overlapping minutes.
+   * 2026/09/24 ~ 2026/10/23), and only approved leaves overlapping that period
+   * count, using each leave's own recorded `hour`/`minutes` total (not prorated).
    */
   static async getSalaryPeriodLeaveHours(
     empID: string,
@@ -610,15 +610,8 @@ export class LeaveService {
 
     const hoursByType = new Map<string, number>();
     for (const leave of leaves) {
-      const overlapMinutes = getOverlapMinutes(
-        dayjsToTz(leave.leaveStart),
-        dayjsToTz(leave.leaveEnd),
-        periodStart,
-        periodEnd
-      );
-      if (overlapMinutes <= 0) continue;
-
-      hoursByType.set(leave.leaveType, (hoursByType.get(leave.leaveType) || 0) + overlapMinutes / 60);
+      const hours = (parseInt(leave.hour, 10) || 0) + (parseInt(leave.minutes, 10) || 0) / 60;
+      hoursByType.set(leave.leaveType, (hoursByType.get(leave.leaveType) || 0) + hours);
     }
 
     return Array.from(hoursByType.entries()).map(([type, hours]) => ({
