@@ -22,7 +22,23 @@ const statusFilterLabels: Record<string, string> = {
   rejected: '已拒絕'
 };
 
+// HR/Admin can approve/reject a request directly without waiting on the
+// substitute stage, so the chip must reflect that outcome rather than the
+// (possibly still-'pending') substituteApproveStatus.
 const getSubstituteStatusChip = (request: LeaveRequest) => {
+  if (request.status === 'approved') {
+    if (request.substituteApproveStatus === 'approved') {
+      return <Chip label="已核准" color="success" size="small" />;
+    }
+    return <Chip label="人事直接核准" size="small" sx={{ backgroundColor: '#c8e6c9', color: '#2e7d32' }} />;
+  }
+  if (request.status === 'rejected') {
+    return <Chip label="已拒絕" color="error" size="small" />;
+  }
+  if (request.status === 'cancel') {
+    return <Chip label="已取消" color="default" size="small" />;
+  }
+
   switch (request.substituteApproveStatus) {
     case 'approved':
       return <Chip label="已核准" color="success" size="small" />;
@@ -32,6 +48,9 @@ const getSubstituteStatusChip = (request: LeaveRequest) => {
       return <Chip label="待審核" color="warning" size="small" />;
   }
 };
+
+const isSubstituteActionable = (request: LeaveRequest) =>
+  request.status === 'created' && request.substituteApproveStatus === 'pending';
 
 const ApproveSubstituteList: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -200,7 +219,7 @@ const ApproveSubstituteList: React.FC = () => {
       headerName: '操作',
       flex: 1.2,
       getActions: (params) => {
-        if (params.row.substituteApproveStatus !== 'pending') {
+        if (!isSubstituteActionable(params.row)) {
           return [
             <GridActionsCellItem
               icon={

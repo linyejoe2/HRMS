@@ -3,6 +3,14 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.17.1] - 2026-10-07 - Fix Business-Trip List Sorting by Trip Date
+
+**Author**: Randy Lin
+
+### Fixed
+
+- `BusinessTripTab.tsx`'s 出發時間/返回時間 columns sorted lexically instead of chronologically — their `valueGetter` returned a locale-formatted string (`toLocaleString('zh-TW')`) rather than the date itself, so DataGrid compared text (e.g. "10" sorting before "2"). `valueGetter` now returns the raw `Date`, with display formatting moved to a new `valueFormatter`.
+
 ## [1.17.0] - 2026-10-06 - Substitute Review History Tabs
 
 **Author**: Randy Lin

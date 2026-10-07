@@ -211,14 +211,16 @@ const BusinessTripTab: React.FC = () => {
       field: 'tripStart',
       headerName: '出發時間',
       flex: 1.5,
-      valueGetter: (_, row) => new Date(row.tripStart).toLocaleString('zh-TW'),
+      valueGetter: (_, row) => new Date(row.tripStart),
+      valueFormatter: (value: Date) => value ? value.toLocaleString('zh-TW') : '',
       sortable: true
     },
     {
       field: 'tripEnd',
       headerName: '返回時間',
       flex: 1.5,
-      valueGetter: (_, row) => new Date(row.tripEnd).toLocaleString('zh-TW'),
+      valueGetter: (_, row) => new Date(row.tripEnd),
+      valueFormatter: (value: Date) => value ? value.toLocaleString('zh-TW') : '',
       sortable: true
     },
     {
