@@ -12,7 +12,8 @@ import {
   Box,
   Divider,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Alert
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -248,6 +249,10 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Alert severity="warning">本單應於事發後3個工作天內填妥並送出簽核</Alert>
+              </Grid>
+
               {hrMode && (
                 <Grid item xs={12}>
                   <EmployeeAutocomplete
@@ -467,7 +472,7 @@ const BusinessTripRequestModal: React.FC<BusinessTripRequestModalProps> = ({ ope
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="因公免刷卡目的"
+                      label="因公事由/說明"
                       multiline
                       rows={3}
                       fullWidth

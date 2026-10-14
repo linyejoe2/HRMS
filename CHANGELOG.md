@@ -3,6 +3,14 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.17.2] - 2026-10-14 - Business-Trip Submission Deadline Callout
+
+**Author**: Randy Lin
+
+### Added
+
+- `BusinessTripRequestModal.tsx` now shows a warning `Alert` ("本單應於事發後3個工作天內填妥並送出簽核") at the top of the form, in both normal and HR 代理申請 modes.
+
 ## [1.17.1] - 2026-10-07 - Fix Business-Trip List Sorting by Trip Date
 
 **Author**: Randy Lin

@@ -124,7 +124,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({ open, onClose, 
             <DetailField label="返回時間" value={toTaipeiString(d.tripEnd)} />
             <DetailField label="交通方式" value={d.transportation} />
             <DetailField label="預估費用" value={d.estimatedCost ? `NT$ ${d.estimatedCost.toLocaleString()}` : undefined} />
-            <DetailField label="因公免刷卡目的" value={d.purpose} sm={12} />
+            <DetailField label="因公事由/說明" value={d.purpose} sm={12} />
             {d.clockTimes && d.clockTimes.length > 0 && (
               <DetailField
                 label="每日上下班時間"
