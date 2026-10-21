@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "HRMS Public API - Leave Records",
-    "description": "External service-to-service API for querying an employee's approved leave hours for a payroll period (the 24th of the prior month through the 23rd of the given month).",
+    "description": "External service-to-service API for querying an employee's approved leave hours, either for a fixed payroll period (24th of the prior month through the 23rd of the given month) or an arbitrary date range.",
     "version": "1.0.0"
   },
   "servers": [
@@ -13,7 +13,7 @@
     "/public/leave/records/{empID}": {
       "post": {
         "summary": "Get an employee's monthly leave hours for payroll",
-        "description": "Returns approved leave hours grouped by leave type for the salary period covering the 24th of the prior month through the 23rd of the requested month. Any approved leave overlapping the period counts its full recorded hours (not prorated).",
+        "description": "Returns approved leave hours grouped by leave type for the salary period covering the 24th of the prior month through the 23rd of the requested month. A leave entirely inside the period counts its full recorded hours; one that crosses the period boundary is prorated to the portion falling inside it.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -59,6 +59,72 @@
           },
           "400": {
             "description": "Invalid year/month",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/leave/records-by-range/{empID}": {
+      "post": {
+        "summary": "Get an employee's leave hours over an arbitrary date range",
+        "description": "Same as /public/leave/records/{empID}, but over a caller-supplied [startDate, endDate] range instead of a fixed 24th-23rd salary period. A leave entirely inside the range counts its full recorded hours; one that crosses the range boundary is prorated to the portion falling inside it.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "empID",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "A123456789"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["startDate", "endDate"],
+                "properties": {
+                  "startDate": { "type": "string", "format": "date", "example": "2026-09-24" },
+                  "endDate": { "type": "string", "format": "date", "example": "2026-10-23" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Leave hours grouped by leave type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": { "type": "string", "example": "事假" },
+                      "hours": { "type": "number", "example": 4.5 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid startDate/endDate",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }

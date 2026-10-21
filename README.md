@@ -188,7 +188,9 @@ Business-trip requests also carry an optional `contactPerson` (洽辦對象) fie
 
 **Public API (`/api/public`)** — external service-to-service integration, authenticated with a static `PUBLIC_API_KEY` bearer token instead of an employee JWT
 
-- POST `/leave/records/:empID` - Approved leave hours grouped by `leaveType` for the payroll period from the 24th of the prior month through the 23rd of the given month (body: `{ year, month }`); a leave spanning the period boundary is prorated to its overlapping minutes
+- POST `/leave/records/:empID` - Approved leave hours grouped by `leaveType` for the payroll period from the 24th of the prior month through the 23rd of the given month (body: `{ year, month }`)
+- POST `/leave/records-by-range/:empID` - Same as above, but over an arbitrary caller-supplied range (body: `{ startDate, endDate }`, ISO dates)
+- Both endpoints recompute a leave that crosses the query range's boundary via `calcWorkingDurationHelper()` for just the overlapping interval, so weekends/holidays/lunch breaks are excluded correctly rather than approximated by a raw-time ratio
 - GET `/docs` - Scoped OpenAPI/Swagger UI page documenting only this public API (not the rest of the backend)
 
 ---

@@ -116,7 +116,7 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
     const templateData = {
       ...postClockRequest,
       time: postClockRequest.clockType != 'out' ? `上班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}` : `下班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}`,
-      time2: postClockRequest.time2 ? `下班: ${dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm')}` : undefined,
+      time2: postClockRequest.time2 ? `下班: ${dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm')}` : "",
       // time: dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm'),
       // date2: postClockRequest.date2 ? dayjs(postClockRequest.date2).format('YYYY/MM/DD') : '',
       // time2: postClockRequest.time2 ? "-" + dayjs(postClockRequest.time2).format('HH:mm') : '',
@@ -127,6 +127,8 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
       DD: createdDate.format('DD'),
       witnessName: await employeeAPI.getNameById(postClockRequest.witness)
     };
+
+    // if (postClockRequest.time2) templateData.time2 = `下班: ${dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm')}`
 
     // Fill the template with data
     doc.setData(templateData);

@@ -3,6 +3,18 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.0] - 2026-10-21 - Date-Range Public Leave-Hours API & Accurate Boundary Proration
+
+**Author**: Randy Lin
+
+### Added
+
+- `POST /api/public/leave/records-by-range/:empID` (`publicController.ts`, `publicRoutes.ts`): same auth/output as `/public/leave/records/:empID`, but takes a caller-supplied `{ startDate, endDate }` range instead of a fixed `{ year, month }` salary period. New Joi `publicLeaveRecordsByRangeSchema` (`middleware/validation.ts`) validates both are ISO dates and `endDate` isn't before `startDate`. Documented in the scoped OpenAPI page at `/api/public/docs`.
+
+### Changed
+
+- Extracted the shared aggregation into `LeaveService.sumApprovedLeaveHoursInRange()` (`leaveService.ts`), used by both public endpoints. A leave that crosses the query range's boundary is no longer prorated by a raw elapsed-time ratio — it now recomputes working minutes for just the overlapping `[leaveStart, leaveEnd] ∩ [rangeStart, rangeEnd]` interval via `calcWorkingDurationHelper()` (`workingTimeCalcService.ts`), so weekends/holidays/lunch breaks are excluded correctly instead of approximated.
+
 ## [1.17.2] - 2026-10-14 - Business-Trip Submission Deadline Callout
 
 **Author**: Randy Lin

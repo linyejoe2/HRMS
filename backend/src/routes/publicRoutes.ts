@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import { getPublicLeaveRecords } from '../controllers/publicController';
+import { getPublicLeaveRecords, getPublicLeaveRecordsByRange } from '../controllers/publicController';
 import { authenticatePublicApiKey } from '../middleware/auth';
-import { validateRequest, publicLeaveRecordsSchema } from '../middleware/validation';
+import { validateRequest, publicLeaveRecordsSchema, publicLeaveRecordsByRangeSchema } from '../middleware/validation';
 import publicLeaveApiSpec from '../openapi/publicLeaveApi.json';
 
 const router = Router();
@@ -18,6 +18,13 @@ router.post(
   authenticatePublicApiKey,
   validateRequest(publicLeaveRecordsSchema),
   getPublicLeaveRecords
+);
+
+router.post(
+  '/leave/records-by-range/:empID',
+  authenticatePublicApiKey,
+  validateRequest(publicLeaveRecordsByRangeSchema),
+  getPublicLeaveRecordsByRange
 );
 
 export default router;

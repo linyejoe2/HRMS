@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
+import dayjs from 'dayjs';
 
 export const validateRequest = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -57,6 +58,25 @@ export const publicLeaveRecordsSchema = Joi.object({
     'number.max': 'month 必須介於 1 到 12 之間',
     'any.required': 'month 為必填項目'
   })
+});
+
+// 公開 API：依日期範圍查詢請假時數驗證
+export const publicLeaveRecordsByRangeSchema = Joi.object({
+  startDate: Joi.string().isoDate().required().messages({
+    'string.isoDate': 'startDate 必須是有效的 ISO 日期格式',
+    'any.required': 'startDate 為必填項目'
+  }),
+  endDate: Joi.string().isoDate().required().messages({
+    'string.isoDate': 'endDate 必須是有效的 ISO 日期格式',
+    'any.required': 'endDate 為必填項目'
+  })
+}).custom((value, helpers) => {
+  if (dayjs(value.endDate).isBefore(dayjs(value.startDate))) {
+    return helpers.error('date.range');
+  }
+  return value;
+}).messages({
+  'date.range': 'endDate 不能早於 startDate'
 });
 
 // 更新個人資料驗證

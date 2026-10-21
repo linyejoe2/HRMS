@@ -610,10 +610,50 @@ export class LeaveService {
   }
 
   /**
+   * Leave hours grouped by leaveType, for payroll: only approved leaves
+   * overlapping [rangeStart, rangeEnd] count. For each leave, only the portion
+   * of its span that falls inside the range is counted, recomputed via
+   * calcWorkingDurationHelper() (the same working-time calc used when the
+   * leave's own hour/minutes total was first computed on creation) so
+   * weekends/holidays/lunch breaks are excluded correctly instead of being
+   * approximated by a raw-time ratio.
+   */
+  private static async sumApprovedLeaveHoursInRange(
+    empID: string,
+    rangeStart: Dayjs,
+    rangeEnd: Dayjs
+  ): Promise<{ type: string; hours: number }[]> {
+    const leaves = await Leave.find({
+      empID,
+      status: 'approved',
+      leaveStart: { $lte: rangeEnd.toDate() },
+      leaveEnd: { $gte: rangeStart.toDate() }
+    });
+
+    const hoursByType = new Map<string, number>();
+    for (const leave of leaves) {
+      const leaveStart = dayjsToTz(leave.leaveStart);
+      const leaveEnd = dayjsToTz(leave.leaveEnd);
+      const overlapStart = leaveStart.isAfter(rangeStart) ? leaveStart : rangeStart;
+      const overlapEnd = leaveEnd.isBefore(rangeEnd) ? leaveEnd : rangeEnd;
+      if (!overlapStart.isBefore(overlapEnd)) continue;
+
+      const { workingMinutes } = await calcWorkingDurationHelper(overlapStart, overlapEnd);
+      if (workingMinutes <= 0) continue;
+
+      hoursByType.set(leave.leaveType, (hoursByType.get(leave.leaveType) || 0) + workingMinutes / 60);
+    }
+
+    return Array.from(hoursByType.entries()).map(([type, hours]) => ({
+      type,
+      hours: Math.round(hours * 100) / 100
+    }));
+  }
+
+  /**
    * Leave hours grouped by leaveType, for payroll. The salary period runs from the
    * 24th of the prior month through the 23rd of the given month (e.g. month=10 →
-   * 2026/09/24 ~ 2026/10/23), and only approved leaves overlapping that period
-   * count, using each leave's own recorded `hour`/`minutes` total (not prorated).
+   * 2026/09/24 ~ 2026/10/23).
    */
   static async getSalaryPeriodLeaveHours(
     empID: string,
@@ -630,23 +670,19 @@ export class LeaveService {
     const periodStart = dayjsNum(startYear, startMonth, 24, 0, 0, 0, 0);
     const periodEnd = dayjsNum(year, month, 23, 23, 59, 59, 999);
 
-    const leaves = await Leave.find({
-      empID,
-      status: 'approved',
-      leaveStart: { $lte: periodEnd.toDate() },
-      leaveEnd: { $gte: periodStart.toDate() }
-    });
+    return this.sumApprovedLeaveHoursInRange(empID, periodStart, periodEnd);
+  }
 
-    const hoursByType = new Map<string, number>();
-    for (const leave of leaves) {
-      const hours = (parseInt(leave.hour, 10) || 0) + (parseInt(leave.minutes, 10) || 0) / 60;
-      hoursByType.set(leave.leaveType, (hoursByType.get(leave.leaveType) || 0) + hours);
-    }
-
-    return Array.from(hoursByType.entries()).map(([type, hours]) => ({
-      type,
-      hours: Math.round(hours * 100) / 100
-    }));
+  /**
+   * Same as getSalaryPeriodLeaveHours, but over an arbitrary caller-supplied
+   * date range instead of a fixed 24th-23rd salary period.
+   */
+  static async getLeaveHoursByDateRange(
+    empID: string,
+    startDate: Dayjs,
+    endDate: Dayjs
+  ): Promise<{ type: string; hours: number }[]> {
+    return this.sumApprovedLeaveHoursInRange(empID, startDate.startOf('day'), endDate.endOf('day'));
   }
 
   /**
