@@ -113,6 +113,14 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
       : postClockRequest.clockType === 'out'
         ? '下班'
         : '上下班';
+    // Only show the manager's name once they've actually approved the request.
+    // Resolved from the requester's assigned manager (Employee.manager), not
+    // postClockRequest.manager which is only set once a manager has acted.
+    let managerName = '';
+    if (postClockRequest.managerApproveStatus === 'approved') {
+      const requesterEmployee = (await employeeAPI.getByEmpID(postClockRequest.empID)).data.data.employee;
+      managerName = requesterEmployee.manager ? await employeeAPI.getNameById(requesterEmployee.manager) : '';
+    }
     const templateData = {
       ...postClockRequest,
       time: postClockRequest.clockType != 'out' ? `上班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}` : `下班: ${dayjs(postClockRequest.time).format('YYYY/MM/DD HH:mm')}`,
@@ -125,7 +133,8 @@ export const generatePostClockRequestDocx = async (postClockRequest: PostClockRe
       YYYY: createdDate.format('YYYY'),
       mm: createdDate.format('MM'),
       DD: createdDate.format('DD'),
-      witnessName: await employeeAPI.getNameById(postClockRequest.witness)
+      witnessName: await employeeAPI.getNameById(postClockRequest.witness),
+      managerName
     };
 
     // if (postClockRequest.time2) templateData.time2 = `下班: ${dayjs(postClockRequest.time2).format('YYYY/MM/DD HH:mm')}`

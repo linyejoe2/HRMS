@@ -3,6 +3,14 @@
 All notable changes to the HRMS project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.1] - 2026-10-21 - Post-Clock DOCX Shows Approving Manager's Name
+
+**Author**: Randy Lin
+
+### Added
+
+- `generatePostClockRequestDocx()` (`docxGenerator.ts`) now fills a `managerName` template field, resolved from the requester's assigned manager (`Employee.manager`, via `employeeAPI.getByEmpID`/`getNameById`) rather than `postClockRequest.manager` (which is only set once a manager has acted). It's only populated once `managerApproveStatus === 'approved'`; otherwise it's `''`, and the lookup is skipped entirely.
+
 ## [1.18.0] - 2026-10-21 - Date-Range Public Leave-Hours API & Accurate Boundary Proration
 
 **Author**: Randy Lin
